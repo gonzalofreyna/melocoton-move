@@ -1,0 +1,19 @@
+# dependencias y build
+node_modules/
+.next/
+out/
+dist/
+build/
+.vercel/
+.turbo/
+amplify/.config/local-*
+
+# SO / editores
+.DS_Store
+Thumbs.db
+*.log
+
+# env
+.env
+.env.*
+!.env.example

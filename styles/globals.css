@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "swiper/css";
+@import "swiper/css/pagination";
+@import "swiper/css/navigation";
+
+body {
+  @apply font-sans;
+}
+.custom-swiper .swiper-pagination {
+  display: none;
+}
