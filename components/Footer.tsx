@@ -1,37 +1,59 @@
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { EnvelopeIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { fetchConfig, AppConfig } from "../lib/fetchConfig";
 
 export default function Footer() {
+  const [config, setConfig] = useState<AppConfig | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await fetchConfig();
+        setConfig(data);
+      } catch (err) {
+        console.error("Error cargando configuración en Footer:", err);
+      }
+    })();
+  }, []);
+
   return (
     <footer className="bg-brand-blue text-white mt-auto">
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-center md:text-left">
         {/* Columna izquierda - Links legales */}
         <div>
           <ul className="space-y-2 text-sm">
-            <li>
-              <a
-                href="/aviso-de-privacidad"
-                className="hover:text-brand-beige transition-colors"
-              >
-                Aviso de Privacidad
-              </a>
-            </li>
-            <li>
-              <a
-                href="/terminos-y-condiciones"
-                className="hover:text-brand-beige transition-colors"
-              >
-                Términos y Condiciones
-              </a>
-            </li>
-            <li>
-              <a
-                href="/politica-de-cancelaciones"
-                className="hover:text-brand-beige transition-colors"
-              >
-                Política de Cancelaciones / Devoluciones
-              </a>
-            </li>
+            {config?.featureFlags.showPrivacyPolicy && (
+              <li>
+                <Link
+                  href="/legal/aviso-de-privacidad"
+                  className="hover:text-brand-beige transition-colors"
+                >
+                  {config.privacyPolicy.title}
+                </Link>
+              </li>
+            )}
+            {config?.featureFlags.showTermsAndConditions && (
+              <li>
+                <Link
+                  href="/legal/terminos-y-condiciones"
+                  className="hover:text-brand-beige transition-colors"
+                >
+                  {config.termsAndConditions.title}
+                </Link>
+              </li>
+            )}
+            {config?.featureFlags.showReturnPolicy && (
+              <li>
+                <Link
+                  href="/legal/politica-de-cancelaciones"
+                  className="hover:text-brand-beige transition-colors"
+                >
+                  {config.returnPolicy.title}
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
 

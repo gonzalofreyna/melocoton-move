@@ -1,4 +1,19 @@
 // lib/fetchConfig.ts
+
+export type InfoSection = { title: string; content: string };
+
+export type OfferBadgeConfig = {
+  enabled: boolean;
+  mode: "text" | "icon" | "both";
+  text: string;
+  shape: "pill" | "rounded" | "square";
+  size: "sm" | "md" | "lg";
+  uppercase: boolean;
+  colors: { bg: string; text: string; border: string };
+  icon: { enabled: boolean; src: string; alt: string; size: number };
+  position: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+};
+
 export type AppConfig = {
   version: number;
   updatedAt: string;
@@ -36,14 +51,10 @@ export type AppConfig = {
     buttonLink: string;
   };
 
-  termsAndConditions: {
-    title: string;
-    sections: { title: string; content: string }[];
-  };
-  returnPolicy: {
-    title: string;
-    sections: { title: string; content: string }[];
-  };
+  // Páginas legales
+  termsAndConditions: { title: string; sections: InfoSection[] };
+  returnPolicy: { title: string; sections: InfoSection[] };
+  privacyPolicy: { title: string; sections: InfoSection[] };
 
   featureFlags: {
     showHero: boolean;
@@ -53,16 +64,17 @@ export type AppConfig = {
     showFinalCTA: boolean;
     showTermsAndConditions: boolean;
     showReturnPolicy: boolean;
+    showPrivacyPolicy: boolean;
+    showOfferBadge: boolean; // 👈 NUEVO
   };
 
   ui: { brandName: string; themeColor: string };
 
-  // 🔹 NUEVO: categorías
-  categories: {
-    name: string;
-    image: string;
-    href: string;
-  }[];
+  // Categorías
+  categories: { name: string; image: string; href: string }[];
+
+  // Badge de oferta
+  offerBadge: OfferBadgeConfig; // 👈 NUEVO
 };
 
 const CONFIG_URL =
@@ -71,8 +83,6 @@ const CONFIG_URL =
 
 export async function fetchConfig(): Promise<AppConfig> {
   const res = await fetch(CONFIG_URL, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Error cargando config: ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`Error cargando config: ${res.status}`);
   return res.json();
 }

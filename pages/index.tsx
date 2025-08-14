@@ -225,7 +225,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PRODUCTOS DESTACADOS (igual que antes) */}
+      {/* PRODUCTOS DESTACADOS */}
       <section className="py-20 px-6 bg-white w-full">
         <h2 className="text-3xl font-bold text-brand-blue mb-12">Destacados</h2>
 
@@ -251,7 +251,11 @@ export default function Home() {
             >
               {featuredProducts.map((product, idx) => (
                 <SwiperSlide key={product.slug ?? idx}>
-                  <ProductCard product={product} />
+                  <ProductCard
+                    product={product}
+                    offerBadge={config.offerBadge}
+                    featureFlags={config.featureFlags}
+                  />
                 </SwiperSlide>
               ))}
             </Swiper>

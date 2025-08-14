@@ -26,8 +26,9 @@ export default function Header() {
   const router = useRouter();
 
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Cargar productos para sugerencias
+  // Cargar productos para sugerencias (como antes)
   useEffect(() => {
     (async () => {
       try {
@@ -41,7 +42,7 @@ export default function Header() {
     })();
   }, []);
 
-  // Detectar click fuera para cerrar menú
+  // Detectar click fuera para cerrar menú (como antes)
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -66,11 +67,14 @@ export default function Header() {
       router.push(`/products?search=${encodeURIComponent(term)}`);
       setSearchTerm("");
       setShowSuggestions(false);
+      // Mantener el foco en el input tras buscar para no "perder" el cursor
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSearch();
+    if (e.key === "Escape") setShowSuggestions(false);
   };
 
   const filteredSuggestions = useMemo(() => {
@@ -97,6 +101,7 @@ export default function Header() {
             <button
               className="text-brand-blue focus:outline-none"
               onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             >
               {menuOpen ? (
                 <XMarkIcon className="h-8 w-8" />
@@ -108,7 +113,7 @@ export default function Header() {
 
           {/* Columna central: Logo */}
           <div className="flex justify-center">
-            <Link href="/" className="flex justify-center">
+            <Link href="/" className="flex justify-center" aria-label="Inicio">
               <img
                 src="/images/logoSVG.svg"
                 alt="Melocotón Move"
@@ -119,9 +124,10 @@ export default function Header() {
 
           {/* Columna derecha: Búsqueda, usuario y carrito */}
           <div className="flex justify-end items-center space-x-4 text-brand-blue relative">
-            {/* Búsqueda */}
+            {/* Búsqueda (estructura original para evitar pérdida de foco) */}
             <div className="relative">
               <input
+                ref={inputRef}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => {
@@ -131,8 +137,15 @@ export default function Header() {
                 onKeyDown={handleKeyDown}
                 placeholder="Buscar..."
                 className="border border-gray-300 rounded-xl px-3 py-1 text-sm focus:outline-none focus:ring focus:border-brand-blue"
+                aria-label="Buscar productos"
+                autoComplete="off"
               />
-              <button onClick={handleSearch} className="absolute right-2 top-1">
+              <button
+                onClick={handleSearch}
+                aria-label="Buscar"
+                className="absolute right-2 top-1"
+                type="button"
+              >
                 <MagnifyingGlassIcon className="h-5 w-5 text-gray-500" />
               </button>
 
@@ -144,14 +157,22 @@ export default function Header() {
                     filteredSuggestions.map((item) => (
                       <button
                         key={item.slug}
-                        onClick={() => {
+                        // Usamos onMouseDown para evitar que el blur del input cierre
+                        // el dropdown antes de ejecutar la navegación (mantiene mejor el foco)
+                        onMouseDown={(e) => {
+                          e.preventDefault();
                           router.push(
                             `/products?search=${encodeURIComponent(item.name)}`
                           );
                           setSearchTerm("");
                           setShowSuggestions(false);
+                          requestAnimationFrame(() =>
+                            inputRef.current?.focus()
+                          );
                         }}
                         className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+                        aria-label={`Buscar ${item.name}`}
+                        type="button"
                       >
                         {item.name}
                       </button>
@@ -166,13 +187,13 @@ export default function Header() {
             </div>
 
             {/* Usuario */}
-            <Link href="/contact">
+            <Link href="/contact" aria-label="Contacto">
               <UserIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
             </Link>
 
-            {/* Carrito */}
+            {/* Carrito con badge (mejora conservada) */}
             <div className="relative">
-              <Link href="/cart">
+              <Link href="/cart" aria-label="Carrito">
                 <ShoppingCartIcon className="h-7 w-7" />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-brand-beige text-brand-blue text-xs font-bold rounded-full px-2 py-0.5">
