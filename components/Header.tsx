@@ -94,7 +94,7 @@ export default function Header() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4 }}
-          className="fixed top-8 left-0 w-full z-40 bg-white shadow-md grid grid-cols-3 items-center px-6 py-3"
+          className="fixed top-8 left-0 w-full z-40 bg-white shadow-md grid grid-cols-3 items-center px-4 md:px-6 py-3 gap-2"
         >
           {/* Columna izquierda: Menú */}
           <div className="flex items-center">
@@ -117,15 +117,15 @@ export default function Header() {
               <img
                 src="/images/logoSVG.svg"
                 alt="Melocotón Move"
-                className="h-20 w-auto max-h-24 hover:opacity-80 transition-opacity"
+                className="h-14 md:h-16 lg:h-20 w-auto max-h-24 hover:opacity-80 transition-opacity"
               />
             </Link>
           </div>
 
           {/* Columna derecha: Búsqueda, usuario y carrito */}
-          <div className="flex justify-end items-center space-x-4 text-brand-blue relative">
-            {/* Búsqueda (estructura original para evitar pérdida de foco) */}
-            <div className="relative">
+          <div className="flex justify-end items-center space-x-4 text-brand-blue relative min-w-0">
+            {/* Búsqueda desktop (solo ≥900px) */}
+            <div className="relative hidden min-[900px]:block w-[220px] lg:w-[280px] xl:w-[320px] flex-shrink-0">
               <input
                 ref={inputRef}
                 type="text"
@@ -136,7 +136,7 @@ export default function Header() {
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Buscar..."
-                className="border border-gray-300 rounded-xl px-3 py-1 text-sm focus:outline-none focus:ring focus:border-brand-blue"
+                className="w-full border border-gray-300 rounded-xl px-3 py-1 text-sm focus:outline-none focus:ring focus:border-brand-blue"
                 aria-label="Buscar productos"
                 autoComplete="off"
               />
@@ -157,8 +157,6 @@ export default function Header() {
                     filteredSuggestions.map((item) => (
                       <button
                         key={item.slug}
-                        // Usamos onMouseDown para evitar que el blur del input cierre
-                        // el dropdown antes de ejecutar la navegación (mantiene mejor el foco)
                         onMouseDown={(e) => {
                           e.preventDefault();
                           router.push(
@@ -191,7 +189,7 @@ export default function Header() {
               <UserIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
             </Link>
 
-            {/* Carrito con badge (mejora conservada) */}
+            {/* Carrito con badge */}
             <div className="relative">
               <Link href="/cart" aria-label="Carrito">
                 <ShoppingCartIcon className="h-7 w-7" />
@@ -201,6 +199,34 @@ export default function Header() {
                   </span>
                 )}
               </Link>
+            </div>
+          </div>
+
+          {/* Buscador mobile (≤899px) en su propia fila */}
+          <div className="min-[900px]:hidden col-span-3 px-2 mt-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Buscar..."
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring focus:border-brand-blue"
+                aria-label="Buscar productos"
+                autoComplete="off"
+              />
+              <button
+                onClick={handleSearch}
+                aria-label="Buscar"
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+                type="button"
+              >
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-500" />
+              </button>
+              {/* (Si quieres dropdown de sugerencias también aquí, lo duplicamos tal cual) */}
             </div>
           </div>
 
