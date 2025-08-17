@@ -5,7 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "verify:node": "node -e \"const v=+process.versions.node.split('.')[0]; if(v!==20){console.error('❌ Node 20 requerido'); process.exit(1)}\"",
+    "preinstall": "npm run verify:node"
+  },
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">=10"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -20,7 +26,7 @@
     "swiper": "^11.2.10"
   },
   "devDependencies": {
-    "@types/node": "24.2.0",
+    "@types/node": "20.12.12",
     "@types/react": "19.1.9",
     "@types/react-icons": "^2.2.7",
     "autoprefixer": "^10.4.21",
