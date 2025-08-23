@@ -1,5 +1,4 @@
 // lib/fetchConfig.ts
-
 export type InfoSection = { title: string; content: string };
 
 export type OfferBadgeConfig = {
@@ -12,6 +11,31 @@ export type OfferBadgeConfig = {
   colors: { bg: string; text: string; border: string };
   icon: { enabled: boolean; src: string; alt: string; size: number };
   position: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+};
+
+// 👇 Instagram strip
+export type InstagramMediaItem = {
+  type: "image" | "video";
+  src: string;
+  poster?: string;
+  href?: string | null;
+  alt?: string;
+};
+
+export type InstagramStripConfig = {
+  enabled: boolean;
+  username?: string;
+  url?: string;
+  items: InstagramMediaItem[];
+};
+
+// 👇 Navegación configurable
+export type NavItem = {
+  label: string;
+  enabled?: boolean;
+  kind?: "link" | "category" | "onSale" | "popular" | "freeShipping";
+  href?: string; // si kind = "link"
+  category?: string; // si kind = "category"
 };
 
 export type AppConfig = {
@@ -65,7 +89,7 @@ export type AppConfig = {
     showTermsAndConditions: boolean;
     showReturnPolicy: boolean;
     showPrivacyPolicy: boolean;
-    showOfferBadge: boolean; // 👈 NUEVO
+    showOfferBadge: boolean;
   };
 
   ui: { brandName: string; themeColor: string };
@@ -74,7 +98,16 @@ export type AppConfig = {
   categories: { name: string; image: string; href: string }[];
 
   // Badge de oferta
-  offerBadge: OfferBadgeConfig; // 👈 NUEVO
+  offerBadge: OfferBadgeConfig;
+
+  // Instagram (opcional)
+  instagramStrip?: InstagramStripConfig;
+
+  // 👇 Navegación (opcional)
+  navigation?: {
+    primary?: NavItem[];
+    quickFilters?: NavItem[];
+  };
 };
 
 const CONFIG_URL =
@@ -84,5 +117,55 @@ const CONFIG_URL =
 export async function fetchConfig(): Promise<AppConfig> {
   const res = await fetch(CONFIG_URL, { cache: "no-store" });
   if (!res.ok) throw new Error(`Error cargando config: ${res.status}`);
-  return res.json();
+
+  const raw = (await res.json()) as AppConfig;
+
+  // ===== Normalización SOLO para instagramStrip (respeta el resto tal cual)
+  const base = (raw.assets?.baseUrl || "").replace(/\/+$/, "");
+  const isHttp = (u?: string) => !!u && /^https?:\/\//i.test(u);
+  const abs = (u?: string) => {
+    if (!u) return u;
+    if (isHttp(u)) return u;
+    if (!base) return u;
+    return `${base}${u.startsWith("/") ? "" : "/"}${u}`;
+  };
+
+  let instagramStrip: InstagramStripConfig | undefined = raw.instagramStrip;
+  if (instagramStrip) {
+    instagramStrip = {
+      enabled: !!instagramStrip.enabled,
+      username: instagramStrip.username,
+      url:
+        instagramStrip.url ||
+        (instagramStrip.username
+          ? `https://instagram.com/${instagramStrip.username}`
+          : undefined),
+      items: Array.isArray(instagramStrip.items)
+        ? (instagramStrip.items
+            .map((it) => {
+              const type: "image" | "video" =
+                it?.type === "video" ? "video" : "image";
+              const src = abs(it?.src);
+              if (!src) return null;
+              return {
+                type,
+                src,
+                poster: abs(it?.poster),
+                href: it?.href ?? undefined,
+                alt: it?.alt ?? undefined,
+              } as InstagramMediaItem;
+            })
+            .filter(Boolean) as InstagramMediaItem[])
+        : [],
+    };
+  }
+
+  // Navegación: se respeta tal cual venga del AC (sin tocarla)
+  const navigation = raw.navigation;
+
+  return {
+    ...raw,
+    instagramStrip,
+    navigation,
+  };
 }

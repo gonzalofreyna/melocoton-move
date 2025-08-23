@@ -1,14 +1,16 @@
+// pages/products.tsx
 import { useRouter } from "next/router";
 import ProductCard from "../components/ProductCard";
 import { fetchProducts } from "../lib/fetchProducts";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { Product } from "../lib/fetchProducts";
 import { fetchConfig } from "../lib/fetchConfig";
 import type { AppConfig } from "../lib/fetchConfig";
 
 export default function ProductsPage() {
   const router = useRouter();
-  const { category, search } = router.query;
+  const { category, search, onSale, popular, freeShipping, sort } =
+    router.query;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,32 +37,77 @@ export default function ProductsPage() {
     })();
   }, []);
 
-  const categoryString = decodeURIComponent(
-    String(category || "")
-  ).toLowerCase();
-  const searchString = String(search || "").toLowerCase();
+  const q = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesCategory =
-      categoryString === "ofertas"
-        ? typeof product.discountPrice === "number"
-        : category
-        ? product.category.toLowerCase() === categoryString
+  const categoryString = decodeURIComponent((q(category) ?? "").toLowerCase());
+  const searchString = (q(search) ?? "").toLowerCase();
+  const sortParam = (q(sort) ?? "").toLowerCase();
+
+  // Soporta flags directos y sort=...
+  const onSaleParam =
+    q(onSale) === "1" ||
+    categoryString === "ofertas" ||
+    sortParam === "best-deals" ||
+    sortParam === "sale" ||
+    sortParam === "ofertas";
+
+  const popularParam = q(popular) === "1" || sortParam === "popular";
+
+  const freeShippingParam =
+    q(freeShipping) === "1" ||
+    sortParam === "free-shipping" ||
+    sortParam === "envio-gratis";
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesCategory =
+        categoryString && categoryString !== "ofertas" && !onSaleParam
+          ? product.category.toLowerCase() === categoryString
+          : true;
+
+      const matchesSearch = searchString
+        ? product.name.toLowerCase().includes(searchString)
         : true;
 
-    const matchesSearch = search
-      ? product.name.toLowerCase().includes(searchString)
-      : true;
+      const matchesOnSale = onSaleParam
+        ? typeof product.discountPrice === "number"
+        : true;
 
-    return matchesCategory && matchesSearch;
-  });
+      const matchesPopular = popularParam ? product.featured === true : true;
 
-  const title = search
-    ? `Resultados para "${search}"`
-    : categoryString === "ofertas"
-    ? "Ofertas"
-    : category
-    ? categoryString.charAt(0).toUpperCase() + categoryString.slice(1)
+      const matchesFreeShipping = freeShippingParam
+        ? product.freeShipping === true
+        : true;
+
+      return (
+        matchesCategory &&
+        matchesSearch &&
+        matchesOnSale &&
+        matchesPopular &&
+        matchesFreeShipping
+      );
+    });
+  }, [
+    products,
+    categoryString,
+    searchString,
+    onSaleParam,
+    popularParam,
+    freeShippingParam,
+  ]);
+
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const title = searchString
+    ? `Resultados para "${q(search)}"`
+    : onSaleParam
+    ? "Mejores ofertas"
+    : popularParam
+    ? "Populares"
+    : freeShippingParam
+    ? "Envío gratis"
+    : categoryString
+    ? cap(categoryString)
     : "Nuestros Productos";
 
   const isLoading = loading || configLoading;

@@ -1,9 +1,12 @@
+// ------------------------------------------------------------
 // components/ProductCard.tsx
 import Link from "next/link";
 import { useCart } from "../context/CartContext";
 import { resolveImage } from "../lib/resolveImage";
 import type { Product } from "../lib/fetchProducts";
 import type { OfferBadgeConfig, AppConfig } from "../lib/fetchConfig";
+import OfferBadge from "./OfferBadge";
+import { ShoppingCart } from "lucide-react";
 
 type Props = {
   product: Product;
@@ -25,30 +28,96 @@ export default function ProductCard({
     offerBadge?.enabled &&
     typeof product.discountPrice === "number";
 
+  // Stock helpers
+  const stock =
+    typeof product.stock === "number" ? Math.max(0, product.stock) : undefined;
+  const isOut = stock !== undefined ? stock <= 0 : false;
+  const isLow = stock !== undefined ? stock > 0 && stock <= 5 : false;
+  const stockLabel =
+    stock === undefined
+      ? null
+      : isOut
+      ? "Agotado"
+      : isLow
+      ? "Pocas piezas"
+      : "Disponible";
+  const stockClass =
+    stock === undefined
+      ? ""
+      : isOut
+      ? "bg-red-100 text-red-700 border-red-200"
+      : isLow
+      ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+      : "bg-green-100 text-green-700 border-green-200";
+
+  const handleAddToCart = () => {
+    if (isOut) return;
+    addToCart({
+      name: product.name,
+      image: img,
+      price: finalPrice,
+      freeShipping: product.freeShipping === true,
+      // 👇 pasa el stock para que el CartContext limite la cantidad
+      maxStock: stock,
+    } as any); // as any si tu CartContext ya acepta maxStock, no es necesario
+  };
+
   return (
     <div className="relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-transform transform hover:scale-105">
-      {/* Badge de oferta (configurable desde AC) */}
       {shouldShowBadge && <OfferBadge cfg={offerBadge} />}
 
-      {/* Imagen con enlace */}
-      <Link href={`/${product.slug}`}>
-        <div className="w-full aspect-square flex items-center justify-center bg-white cursor-pointer">
-          <img
-            src={img}
-            alt={product.name}
-            className="max-h-full max-w-full object-contain"
-          />
-        </div>
-      </Link>
+      {/* Imagen + overlay integrado */}
+      <div className="relative">
+        <Link href={`/${product.slug}`} aria-label={`Ir a ${product.name}`}>
+          <div className="w-full aspect-square flex items-center justify-center bg-white cursor-pointer">
+            <img
+              src={img}
+              alt={product.name}
+              className={`max-h-full max-w-full object-contain ${
+                isOut ? "opacity-80" : ""
+              }`}
+            />
+          </div>
+        </Link>
+
+        {/* Franja: Envío gratis */}
+        {product.freeShipping === true && (
+          <div className="absolute inset-x-0 bottom-0">
+            <div className="bg-black/30 backdrop-blur-[2px]">
+              <div className="px-3 py-2 text-center text-white text-[12px] tracking-wide">
+                <span className="inline-flex items-center font-medium">
+                  Envío gratis
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Overlay: Agotado */}
+        {isOut && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+            <span className="px-3 py-1.5 text-sm rounded-full bg-red-600 text-white font-semibold shadow">
+              Agotado
+            </span>
+          </div>
+        )}
+      </div>
 
       <div className="p-4 text-center">
-        {/* Nombre */}
-        <h3 className="text-lg font-semibold text-brand-blue">
-          {product.name}
-        </h3>
+        <div className="flex items-start justify-center gap-2 mb-1">
+          <h3 className="text-lg font-semibold text-brand-blue">
+            {product.name}
+          </h3>
+          {stockLabel && (
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-full border ${stockClass}`}
+            >
+              {stockLabel}
+            </span>
+          )}
+        </div>
 
-        {/* Colores disponibles */}
-        {product.colors && (
+        {product.colors && product.colors.length > 0 && (
           <div className="flex justify-center space-x-2 mt-2">
             {product.colors.map((color, idx) => (
               <div
@@ -60,7 +129,6 @@ export default function ProductCard({
           </div>
         )}
 
-        {/* Precios */}
         <div className="mt-2">
           {typeof product.discountPrice === "number" ? (
             <>
@@ -79,108 +147,25 @@ export default function ProductCard({
         </div>
 
         {/* Botones */}
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-4 flex items-center justify-between gap-3">
           <button
-            onClick={() =>
-              addToCart({
-                name: product.name,
-                image: img,
-                price: finalPrice,
-              })
-            }
-            className="w-full bg-brand-blue text-white py-2 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-colors"
+            onClick={handleAddToCart}
+            disabled={isOut}
+            className="flex items-center justify-center bg-brand-blue text-white p-2 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={isOut ? "Producto agotado" : "Añadir al carrito"}
+            aria-disabled={isOut}
           >
-            Agregar al carrito
+            <ShoppingCart size={18} />
           </button>
 
           <Link
             href={`/${product.slug}`}
-            className="w-full inline-block text-sm text-brand-blue border border-brand-blue py-2 rounded-xl hover:bg-brand-blue hover:text-white transition-colors"
+            className="flex-1 text-center text-sm text-brand-blue border border-brand-blue py-2 rounded-xl hover:bg-brand-blue hover:text-white transition-colors"
           >
-            Ver detalles
+            Detalles
           </Link>
         </div>
       </div>
     </div>
   );
-}
-
-/* ---------- Badge configurable ---------- */
-
-function OfferBadge({ cfg }: { cfg: OfferBadgeConfig }) {
-  const posCls = positionClass(cfg.position);
-  const shapeCls = shapeClass(cfg.shape);
-  const sizeCls = sizeClass(cfg.size);
-  const textTransform = cfg.uppercase ? "uppercase" : "";
-
-  // Estilos desde AC
-  const style = {
-    backgroundColor: cfg.colors.bg,
-    color: cfg.colors.text,
-    borderColor: cfg.colors.border,
-  } as React.CSSProperties;
-
-  const showIcon = cfg.mode !== "text" && cfg.icon?.enabled && !!cfg.icon.src;
-  const showText = cfg.mode !== "icon" && !!cfg.text?.trim();
-
-  return (
-    <div
-      className={`absolute ${posCls} z-10 border shadow-md ${shapeCls} ${sizeCls} ${textTransform} inline-flex items-center gap-1`}
-      style={style}
-    >
-      {showIcon && (
-        <img
-          src={cfg.icon!.src}
-          alt={cfg.icon!.alt || ""}
-          width={cfg.icon!.size}
-          height={cfg.icon!.size}
-          className="inline-block"
-        />
-      )}
-      {showText && (
-        <span className="font-semibold leading-none">{cfg.text}</span>
-      )}
-    </div>
-  );
-}
-
-function positionClass(pos: OfferBadgeConfig["position"]): string {
-  switch (pos) {
-    case "top-left":
-      return "top-3 left-3";
-    case "top-right":
-      return "top-3 right-3";
-    case "bottom-left":
-      return "bottom-3 left-3";
-    case "bottom-right":
-      return "bottom-3 right-3";
-    default:
-      return "top-3 left-3";
-  }
-}
-
-function shapeClass(shape: OfferBadgeConfig["shape"]): string {
-  switch (shape) {
-    case "pill":
-      return "rounded-full";
-    case "rounded":
-      return "rounded-md";
-    case "square":
-      return "rounded-none";
-    default:
-      return "rounded-md";
-  }
-}
-
-function sizeClass(size: OfferBadgeConfig["size"]): string {
-  switch (size) {
-    case "sm":
-      return "px-2 py-0.5 text-[10px]";
-    case "md":
-      return "px-2.5 py-1 text-xs";
-    case "lg":
-      return "px-3 py-1.5 text-sm";
-    default:
-      return "px-2.5 py-1 text-xs";
-  }
 }

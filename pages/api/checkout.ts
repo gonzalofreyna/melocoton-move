@@ -2,12 +2,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 
-type Item = { name: string; image: string; price: number; quantity: number };
+type Item = {
+  name: string;
+  image: string;
+  price: number;
+  quantity: number;
+  freeShipping?: boolean; // flag por producto
+};
 
-const SHIPPING_THRESHOLD_MXN = 1000;
 const SHIPPING_FEE_MXN = 300;
-
-// (opcional) export const config = { api: { bodyParser: true } };
 
 export default async function handler(
   req: NextApiRequest,
@@ -30,7 +33,7 @@ export default async function handler(
         .json({ ok: false, message: "Falta STRIPE_SECRET_KEY en el entorno" });
     }
 
-    const stripe = new Stripe(secretKey); // usa versión de tu cuenta
+    const stripe = new Stripe(secretKey /*, { apiVersion: "2024-06-20" } */);
 
     const siteUrl =
       process.env.NEXT_PUBLIC_SITE_URL ||
@@ -45,30 +48,31 @@ export default async function handler(
       return res.status(400).json({ ok: false, message: "No hay items" });
     }
 
-    // Normaliza y filtra ítems inválidos o con precio 0 (Stripe exige > 0)
+    // Normaliza
     const safeItems = items
       .map((p) => ({
         name: String(p.name || "").slice(0, 200),
         image: String(p.image || ""),
         price: Math.max(0, Number(p.price) || 0),
         quantity: Math.max(1, Math.floor(Number(p.quantity) || 1)),
+        freeShipping: Boolean(p.freeShipping),
       }))
       .filter((p) => p.price > 0);
 
     if (safeItems.length === 0) {
-      return res
-        .status(400)
-        .json({
-          ok: false,
-          message: "Todos los items tienen precio inválido (0)",
-        });
+      return res.status(400).json({
+        ok: false,
+        message: "Todos los items tienen precio inválido (0)",
+      });
     }
 
+    // Imagen absoluta para Stripe
     const toAbsoluteImage = (img: string) =>
       /^https?:\/\//.test(img)
         ? img
         : `${origin}${img?.startsWith("/") ? "" : "/"}${img || ""}`;
 
+    // Line items
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] =
       safeItems.map((p) => ({
         quantity: p.quantity,
@@ -82,23 +86,21 @@ export default async function handler(
         },
       }));
 
-    const productsTotalMXN = safeItems.reduce(
-      (sum, it) => sum + it.price * it.quantity,
-      0
+    // Envío: gratis solo si TODOS los items lo traen
+    const allItemsFreeShipping = safeItems.every(
+      (it) => it.freeShipping === true
     );
-    const discountedForShippingMXN =
-      productsTotalMXN * (1 - Math.max(0, discountPercent) / 100);
-    const shippingAmountCents =
-      discountedForShippingMXN >= SHIPPING_THRESHOLD_MXN
-        ? 0
-        : SHIPPING_FEE_MXN * 100;
+    const shippingAmountCents = allItemsFreeShipping
+      ? 0
+      : SHIPPING_FEE_MXN * 100;
 
-    // Aplica cupón solo si existe y hay descuento solicitado
+    // Cupones
     const shouldApplyDiscount = discountPercent > 0 && hasCoupon;
     const discounts = shouldApplyDiscount
       ? [{ coupon: process.env.STRIPE_COUPON_ID! }]
       : undefined;
 
+    // Opción de envío (única)
     const shipping_options: Stripe.Checkout.SessionCreateParams.ShippingOption[] =
       [
         {
@@ -131,16 +133,22 @@ export default async function handler(
         metadata: {
           source: "web",
           discountPercent: String(discountPercent || 0),
-          freeShipping: String(shippingAmountCents === 0),
+          freeShipping: String(allItemsFreeShipping),
+          shippingAmountCents: String(shippingAmountCents),
+          // útil para auditoría rápida:
+          anyItemWithoutFreeShipping: String(!allItemsFreeShipping),
         },
         discounts,
+        // MSI habilitado (planes gobernados por Dashboard)
+        payment_method_options: {
+          card: { installments: { enabled: true } },
+        },
       });
 
       return res
         .status(200)
         .json({ ok: true, id: session.id, url: session.url });
     } catch (stripeErr: any) {
-      // Devuelve el mensaje real para depurar (quítalo cuando quede estable)
       console.error("Stripe create session error:", stripeErr);
       const msg =
         stripeErr?.raw?.message ||

@@ -2,13 +2,60 @@
 import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
+  // URL del sitio (ajústala en tu .env si quieres)
+  const SITE_URL = (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://main.d15wjbc4ifk2rq.amplifyapp.com"
+  ).replace(/\/$/, "");
+
+  const orgLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Melocotón Move",
+    url: SITE_URL,
+    logo: `${SITE_URL}/images/logomelocoton.png`,
+    sameAs: [
+      // añade tus redes si quieres
+      // "https://www.instagram.com/tu_marca"
+    ],
+  };
+
+  const webLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    url: SITE_URL,
+    name: "Melocotón Move",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${SITE_URL}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <Html lang="es">
       <Head>
+        {/* Perf de fuentes */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap"
           rel="stylesheet"
-        ></link>
+        />
+
+        {/* JSON-LD global (no poner <title> aquí) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webLd) }}
+        />
       </Head>
       <body>
         <Main />

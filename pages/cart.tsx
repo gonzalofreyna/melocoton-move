@@ -1,4 +1,3 @@
-// pages/cart.tsx
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
 
@@ -10,6 +9,8 @@ export default function CartPage() {
     increment,
     decrement,
     updateQuantity,
+    allItemsFreeShipping,
+    hasAnyNonFreeShipping,
   } = useCart();
 
   const [code, setCode] = useState("");
@@ -17,7 +18,6 @@ export default function CartPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
 
-  // Subtotales y descuento (desde .env)
   const subtotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -29,7 +29,6 @@ export default function CartPage() {
   const discount = applied ? subtotal * (envPercent / 100) : 0;
   const total = Math.max(0, subtotal - discount);
 
-  // Aplicar / quitar código
   const applyCode = () => {
     const normalized = code.trim().toUpperCase();
     if (!normalized) {
@@ -51,18 +50,17 @@ export default function CartPage() {
     setCode("");
   };
 
-  // Checkout con Stripe (redirige a la URL que devuelve tu API)
   const handleCheckout = async () => {
     try {
       setMsg(null);
       setCheckingOut(true);
 
-      // Prepara items como los espera la API
       const items = cart.map((i) => ({
         name: i.name,
-        image: i.image, // si es ruta relativa, el backend la convierte a absoluta
-        price: i.price, // MXN (el backend lo pasa a centavos)
+        image: i.image,
+        price: i.price,
         quantity: i.quantity,
+        freeShipping: i.freeShipping === true,
       }));
 
       const res = await fetch("/api/checkout", {
@@ -75,16 +73,13 @@ export default function CartPage() {
       });
 
       const data = await res.json();
-
       if (!res.ok || !data?.ok) {
         throw new Error(data?.message || "No se pudo iniciar el checkout");
       }
-
       if (data.url) {
-        window.location.href = data.url; // Redirige a Stripe Checkout
+        window.location.href = data.url;
         return;
       }
-
       setMsg("No se recibió URL de Stripe.");
     } catch (e: any) {
       console.error(e);
@@ -100,68 +95,131 @@ export default function CartPage() {
         Tu Carrito ({cartCount} {cartCount === 1 ? "producto" : "productos"})
       </h1>
 
+      {cart.length > 0 && (
+        <div className="w-full max-w-4xl mb-4">
+          {hasAnyNonFreeShipping ? (
+            <div className="rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 text-sm">
+              Este pedido <strong>no aplica a envío gratis</strong> porque uno o
+              más productos no lo incluyen.
+            </div>
+          ) : (
+            <div className="rounded-lg bg-green-50 border border-green-200 text-green-800 p-3 text-sm">
+              Envío gratis incluido 🚚✨
+            </div>
+          )}
+        </div>
+      )}
+
       {cart.length === 0 ? (
         <p className="text-gray-600">Tu carrito está vacío.</p>
       ) : (
         <div className="w-full max-w-4xl space-y-4">
-          {cart.map((item) => (
-            <div
-              key={item.name}
-              className="flex items-center bg-white shadow-md rounded-xl p-4"
-            >
-              <img
-                src={item.image}
-                alt={item.name}
-                className="h-20 w-20 object-contain rounded-lg"
-              />
-              <div className="flex-1 ml-4 text-left">
-                <h3 className="text-lg font-semibold text-brand-blue">
-                  {item.name}
-                </h3>
-                <p className="text-gray-700 text-sm">
-                  Precio unitario: ${item.price.toFixed(2)} MXN
-                </p>
+          {cart.map((item) => {
+            const max = item.maxStock;
+            const atLimit =
+              typeof max === "number" && Number.isFinite(max)
+                ? item.quantity >= max
+                : false;
 
-                {/* Controles de cantidad */}
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    aria-label={`Disminuir cantidad de ${item.name}`}
-                    onClick={() => decrement(item.name)}
-                    className="px-2 py-1 rounded-lg border hover:bg-gray-100"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                    onChange={(e) =>
-                      updateQuantity(item.name, Number(e.target.value) || 1)
-                    }
-                    className="w-16 text-center border rounded-lg py-1"
-                  />
-                  <button
-                    aria-label={`Aumentar cantidad de ${item.name}`}
-                    onClick={() => increment(item.name)}
-                    className="px-2 py-1 rounded-lg border hover:bg-gray-100"
-                  >
-                    +
-                  </button>
+            return (
+              <div
+                key={item.name}
+                className="flex items-center bg-white shadow-md rounded-xl p-4"
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="h-20 w-20 object-contain rounded-lg"
+                />
+                <div className="flex-1 ml-4 text-left">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-brand-blue">
+                      {item.name}
+                    </h3>
+
+                    {item.freeShipping ? (
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
+                        Envío gratis
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
+                        No incluye envío gratis
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-gray-700 text-sm">
+                    Precio unitario: ${item.price.toFixed(2)} MXN
+                  </p>
+
+                  {/* Controles de cantidad */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      aria-label={`Disminuir cantidad de ${item.name}`}
+                      onClick={() => decrement(item.name)}
+                      className="px-2 py-1 rounded-lg border hover:bg-gray-100"
+                    >
+                      −
+                    </button>
+
+                    <input
+                      type="number"
+                      min={1}
+                      max={typeof max === "number" ? max : undefined}
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const v = Math.max(
+                          1,
+                          Math.floor(Number(e.target.value) || 1)
+                        );
+                        const clamped =
+                          typeof max === "number" && Number.isFinite(max)
+                            ? Math.min(v, max)
+                            : v;
+                        updateQuantity(item.name, clamped);
+                      }}
+                      className="w-16 text-center border rounded-lg py-1"
+                    />
+
+                    <button
+                      aria-label={`Aumentar cantidad de ${item.name}`}
+                      onClick={() => increment(item.name)}
+                      disabled={atLimit}
+                      className={`px-2 py-1 rounded-lg border hover:bg-gray-100 ${
+                        atLimit ? "opacity-40 cursor-not-allowed" : ""
+                      }`}
+                      title={atLimit ? "Alcanzaste el stock disponible" : ""}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* mensaje de stock */}
+                  {typeof max === "number" && Number.isFinite(max) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Stock disponible: {max}{" "}
+                      {atLimit && (
+                        <span className="text-red-600 font-medium">
+                          (stock máximo)
+                        </span>
+                      )}
+                    </p>
+                  )}
+
+                  <p className="text-brand-beige font-bold mt-2">
+                    Subtotal: ${(item.price * item.quantity).toFixed(2)} MXN
+                  </p>
                 </div>
 
-                <p className="text-brand-beige font-bold mt-2">
-                  Subtotal: ${(item.price * item.quantity).toFixed(2)} MXN
-                </p>
+                <button
+                  onClick={() => removeFromCart(item.name)}
+                  className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Eliminar
+                </button>
               </div>
-
-              <button
-                onClick={() => removeFromCart(item.name)}
-                className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Eliminar
-              </button>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Código de descuento */}
           <div className="bg-white shadow-md rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -214,6 +272,19 @@ export default function CartPage() {
                 Descuento ({envPercent}%): −${discount.toFixed(2)} MXN
               </p>
             )}
+
+            <p className="text-sm mt-2">
+              {hasAnyNonFreeShipping ? (
+                <span className="text-yellow-800">
+                  Este pedido <strong>no aplica a envío gratis</strong>.
+                </span>
+              ) : (
+                <span className="text-green-700">
+                  Envío gratis incluido 🚚✨
+                </span>
+              )}
+            </p>
+
             <p className="text-lg font-bold text-brand-blue mt-2">
               Total: ${total.toFixed(2)} MXN
             </p>

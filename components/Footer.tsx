@@ -65,7 +65,7 @@ export default function Footer() {
             className="h-16 mb-4"
           />
           <p className="text-sm text-gray-200 max-w-xs text-center">
-            Calcetas deportivas antiderrapantes para Pilates, Barre y más.
+            Mt 13:31-32
           </p>
         </div>
 
