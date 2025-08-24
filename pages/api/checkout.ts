@@ -43,9 +43,9 @@ const ALLOWED_ORIGINS = new Set<string>([
 ]);
 const SITE_URL = "https://www.melocotonmove.com";
 
-// Mínimo para que aplique el cupón (centavos MXN). Por defecto $1,500 MXN.
+// Mínimo para que aplique el cupón (centavos MXN). Por defecto $500 MXN.
 const MIN_COUPON_SUBTOTAL_CENTS =
-  Number(process.env.MIN_COUPON_SUBTOTAL_CENTS ?? 150000) || 150000;
+  Number(process.env.MIN_COUPON_SUBTOTAL_CENTS ?? 30000) || 30000;
 
 // Cache simple en memoria para el catálogo
 let _cacheData: { ts: number; map: Map<string, CatalogItem> } | null = null;
