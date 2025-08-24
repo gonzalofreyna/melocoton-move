@@ -24,8 +24,7 @@ export default function CartPage() {
     0
   );
 
-  // Si quieres mostrar un estimado visual cuando el usuario aplique código
-  // (esto NO afecta el pago real, solo la UI):
+  // Solo para UI (no afecta el cargo real en Stripe)
   const ENV_UI_PERCENT = Number(process.env.NEXT_PUBLIC_COUPON_PERCENT) || 0;
   const ENV_UI_CODE = (process.env.NEXT_PUBLIC_COUPON_CODE || "").toUpperCase();
 
@@ -58,7 +57,16 @@ export default function CartPage() {
       setMsg(null);
       setCheckingOut(true);
 
-      // 👇 solo lo necesario para el server
+      // Validación: todo ítem debe tener slug
+      const invalid = cart.find((i) => !i.slug || typeof i.slug !== "string");
+      if (invalid) {
+        setMsg(
+          "Un producto de tu carrito es de una versión anterior. Elimínalo y vuelve a agregarlo."
+        );
+        return;
+      }
+
+      // Solo lo necesario para el servidor
       const items = cart.map((i) => ({
         slug: i.slug,
         quantity: i.quantity,
@@ -69,7 +77,7 @@ export default function CartPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items,
-          // mandamos el código de texto; el backend decide si aplica
+          // Mandamos el código de texto; el backend decide si aplica (COUPON_CODE + STRIPE_COUPON_ID)
           couponCode: applied ? code.trim().toUpperCase() : undefined,
         }),
       });
@@ -159,7 +167,7 @@ export default function CartPage() {
                     <button
                       aria-label={`Disminuir cantidad de ${item.name}`}
                       onClick={() => decrement(item.slug)}
-                      className="px-2 py-1 rounded-lg border hover:bg-gray-100"
+                      className="px-2 py-1 rounded-lg border md:hover:bg-gray-100"
                     >
                       −
                     </button>
@@ -187,7 +195,7 @@ export default function CartPage() {
                       aria-label={`Aumentar cantidad de ${item.name}`}
                       onClick={() => increment(item.slug)}
                       disabled={atLimit}
-                      className={`px-2 py-1 rounded-lg border hover:bg-gray-100 ${
+                      className={`px-2 py-1 rounded-lg border md:hover:bg-gray-100 ${
                         atLimit ? "opacity-40 cursor-not-allowed" : ""
                       }`}
                       title={atLimit ? "Alcanzaste el stock disponible" : ""}
@@ -215,7 +223,7 @@ export default function CartPage() {
 
                 <button
                   onClick={() => removeFromCart(item.slug)}
-                  className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors"
+                  className="bg-red-500 text-white px-3 py-1 rounded-lg md:hover:bg-red-600 transition-colors"
                 >
                   Eliminar
                 </button>
@@ -223,7 +231,7 @@ export default function CartPage() {
             );
           })}
 
-          {/* Código de descuento (solo visual en UI; el backend decide el real) */}
+          {/* Código de descuento (UI; el backend decide el real) */}
           <div className="bg-white shadow-md rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -250,21 +258,21 @@ export default function CartPage() {
             {applied ? (
               <button
                 onClick={removeCode}
-                className="whitespace-nowrap bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                className="whitespace-nowrap bg-gray-200 text-gray-800 px-4 py-2 rounded-lg md:hover:bg-gray-300 transition-colors"
               >
                 Quitar código
               </button>
             ) : (
               <button
                 onClick={applyCode}
-                className="whitespace-nowrap bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-beige hover:text-brand-blue transition-colors"
+                className="whitespace-nowrap bg-brand-blue text-white px-4 py-2 rounded-lg md:hover:bg-brand-beige md:hover:text-brand-blue transition-colors"
               >
                 Aplicar
               </button>
             )}
           </div>
 
-          {/* Resumen final (el total real lo mostrará Stripe en el Checkout) */}
+          {/* Resumen final (Stripe mostrará el total real) */}
           <div className="bg-white shadow-md rounded-xl p-6 text-right mt-4">
             <p className="text-sm text-gray-600">
               Subtotal: ${subtotal.toFixed(2)} MXN
@@ -296,7 +304,7 @@ export default function CartPage() {
             <button
               onClick={handleCheckout}
               disabled={checkingOut}
-              className="mt-4 bg-brand-blue text-white py-3 px-6 rounded-xl font-semibold hover:bg-brand-beige hover:text-brand-blue transition-colors disabled:opacity-50"
+              className="mt-4 bg-brand-blue text-white py-3 px-6 rounded-xl font-semibold md:hover:bg-brand-beige md:hover:text-brand-blue transition-colors disabled:opacity-50"
             >
               {checkingOut ? "Redirigiendo..." : "Proceder al pago"}
             </button>

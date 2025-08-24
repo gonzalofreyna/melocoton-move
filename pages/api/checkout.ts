@@ -4,12 +4,11 @@ import Stripe from "stripe";
 import crypto from "crypto";
 
 /**
- * Este handler:
- * - Lee el catálogo desde S3 (server-side).
+ * - Lee catálogo desde S3 (server-truth).
  * - Calcula precios en el servidor (ignora montos del cliente).
- * - Bloquea open-redirect (whitelist de dominios).
- * - Usa idempotencia para evitar sesiones/pedidos duplicados.
- * - Aplica cupón SOLO si el backend lo decide.
+ * - Whitelist de dominios para success/cancel (anti open-redirect).
+ * - Idempotencia para evitar sesiones duplicadas.
+ * - Aplica cupón SOLO si (couponCode === COUPON_CODE) y (total >= MIN).
  * - Captura dirección de envío SIN cobrar costo de envío (sin shipping_options).
  */
 
@@ -27,27 +26,28 @@ type CartItem = { slug: string; quantity: number };
 
 const DEFAULT_MAX_QTY = 10;
 
-// ⚠️ Si tu TS marcaba error por la versión de Stripe, usa `apiVersion: null`.
-// Si ya actualizaste tu cuenta a la última, pon: { apiVersion: "2025-07-30.basil" }.
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: null,
-});
+// Si TS marca error por versión, usa apiVersion: null (usa la de tu cuenta)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: null });
 
-// URL del catálogo (S3 o CloudFront). Puedes hardcodear aquí, o usar env var.
+// URL del catálogo (S3/CloudFront)
 const CATALOG_URL =
   process.env.PRODUCT_CATALOG_URL ||
   "https://melocoton-move-assets.s3.us-east-1.amazonaws.com/products.json";
 
-// Dominios permitidos para success/cancel (NO usar req.headers.origin a ciegas).
+// Whitelist de orígenes permitidos
 const ALLOWED_ORIGINS = new Set<string>([
   "https://www.melocotonmove.com",
   "https://melocotonmove.com",
-  // agrega tu preview solo si lo necesitas:
+  // agrega tu preview si lo necesitas:
   // "https://main.d15wjbc4ifk2rq.amplifyapp.com",
 ]);
 const SITE_URL = "https://www.melocotonmove.com";
 
-// Cache en memoria para el catálogo (reduce fetch a S3)
+// Mínimo para que aplique el cupón (centavos MXN). Por defecto $1,500 MXN.
+const MIN_COUPON_SUBTOTAL_CENTS =
+  Number(process.env.MIN_COUPON_SUBTOTAL_CENTS ?? 150000) || 150000;
+
+// Cache simple en memoria para el catálogo
 let _cacheData: { ts: number; map: Map<string, CatalogItem> } | null = null;
 const CACHE_MS = 60_000; // 60s
 
@@ -91,9 +91,9 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    if (req.method !== "POST")
+    if (req.method !== "POST") {
       return res.status(405).json({ ok: false, message: "Method not allowed" });
-
+    }
     if (!process.env.STRIPE_SECRET_KEY) {
       return res
         .status(500)
@@ -105,16 +105,17 @@ export default async function handler(
     const hdrOrigin = (req.headers.origin as string | undefined) || "";
     if (ALLOWED_ORIGINS.has(hdrOrigin)) baseUrl = hdrOrigin;
 
-    // Body esperado: { items: [{slug, quantity}], couponCode?: string }
+    // Body: { items: [{slug, quantity}], couponCode?: string }
     const { items, couponCode } =
       (req.body as { items: CartItem[]; couponCode?: string }) || {};
-    if (!Array.isArray(items) || items.length === 0)
+    if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ ok: false, message: "Carrito vacío" });
+    }
 
-    // Cargar catálogo (server-truth)
+    // Cargar catálogo
     const catalog = await getCatalogMap();
 
-    // Construir line_items desde catálogo (NO confiar en precios del cliente)
+    // Construcción de line_items confiando SOLO en el catálogo
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
     for (const it of items) {
@@ -132,7 +133,7 @@ export default async function handler(
 
       line_items.push({
         quantity: qty,
-        // Si luego migras a Stripe Price IDs, usa { price: "price_xxx" } aquí.
+        // Si migras a Stripe Price IDs, usa { price: "price_xxx" } aquí.
         price_data: {
           currency: "mxn",
           unit_amount: unitAmountCents(ref),
@@ -144,22 +145,20 @@ export default async function handler(
       });
     }
 
-    // Total para reglas de cupón (en centavos)
+    // Total (centavos) para reglas del cupón
     const totalAmount = line_items.reduce((sum, li) => {
       const unit = li.price_data!.unit_amount!;
       const qty = li.quantity || 1;
       return sum + unit * qty;
     }, 0);
 
-    // Regla de cupón controlada en backend:
-    // - Si envías `couponCode` desde cliente, compáralo con COUPON_CODE (env).
-    // - Además puedes exigir total mínimo (ej: >= $1500 MXN).
+    // Validación del cupón (texto ↔︎ COUPON_CODE), y mínimo
     const codeOK =
       couponCode &&
       couponCode.toUpperCase() ===
         (process.env.COUPON_CODE || "").toUpperCase();
 
-    const minOK = totalAmount >= 150000; // $1500 MXN
+    const minOK = totalAmount >= MIN_COUPON_SUBTOTAL_CENTS;
 
     const discounts:
       | Stripe.Checkout.SessionCreateParams.Discount[]
@@ -178,25 +177,23 @@ export default async function handler(
         .digest("hex")
         .slice(0, 32);
 
-    // Crear sesión (sin shipping_options → no se cobra envío)
+    // Crear sesión (sin shipping_options → no hay costo de envío)
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
         line_items,
 
-        // ✅ Capturamos dirección de envío sin costo extra
+        // Capturar dirección de envío, sin costo
         shipping_address_collection: { allowed_countries: ["MX"] },
 
-        // Si NO envías `discounts`, queda true y Stripe permite Promotion Codes en la UI.
+        // Si no se envía 'discounts', permitimos escribir Promotion Codes en la UI.
         allow_promotion_codes: discounts ? undefined : true,
 
         phone_number_collection: { enabled: true },
         success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/cart`,
         customer_creation: "always",
-        metadata: {
-          source: "web",
-        },
+        metadata: { source: "web" },
         payment_method_options: { card: { installments: { enabled: true } } },
         discounts,
       },
