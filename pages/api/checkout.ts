@@ -1,3 +1,4 @@
+// pages/api/checkout.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import crypto from "crypto";
@@ -106,6 +107,12 @@ export default async function handler(
       return res.status(400).json({ ok: false, message: "Carrito vacío" });
     }
 
+    // 🔎 Log de diagnóstico
+    console.log("=== CHECKOUT DEBUG ===");
+    console.log("couponCode recibido:", couponCode);
+    console.log("COUPON_CODE esperado:", process.env.COUPON_CODE);
+    console.log("STRIPE_COUPON_ID:", process.env.STRIPE_COUPON_ID);
+
     // Cargar catálogo
     const catalog = await getCatalogMap();
 
@@ -127,7 +134,6 @@ export default async function handler(
 
       line_items.push({
         quantity: qty,
-        // Si migras a Stripe Price IDs, usa { price: "price_xxx" } aquí.
         price_data: {
           currency: "mxn",
           unit_amount: unitAmountCents(ref),
@@ -145,6 +151,8 @@ export default async function handler(
       couponCode.toUpperCase() ===
         (process.env.COUPON_CODE || "").toUpperCase();
 
+    console.log("codeOK:", codeOK);
+
     const discounts:
       | Stripe.Checkout.SessionCreateParams.Discount[]
       | undefined =
@@ -152,7 +160,7 @@ export default async function handler(
         ? [{ coupon: process.env.STRIPE_COUPON_ID! }]
         : undefined;
 
-    // Idempotencia (hash del carrito + timestamp)
+    // Idempotencia
     const idemSeed = JSON.stringify({ items, couponCode });
     const idempotencyKey =
       "checkout_" +
@@ -162,18 +170,13 @@ export default async function handler(
         .digest("hex")
         .slice(0, 32);
 
-    // Crear sesión (sin shipping_options → no hay costo de envío)
+    // Crear sesión
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
         line_items,
-
-        // Capturar dirección de envío, sin costo
         shipping_address_collection: { allowed_countries: ["MX"] },
-
-        // Si no se envía 'discounts', permitimos escribir Promotion Codes en la UI.
         allow_promotion_codes: discounts ? undefined : true,
-
         phone_number_collection: { enabled: true },
         success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/cart`,
@@ -184,6 +187,8 @@ export default async function handler(
       },
       { idempotencyKey }
     );
+
+    console.log("Checkout session creada:", session.id);
 
     return res.status(200).json({ ok: true, id: session.id, url: session.url });
   } catch (e: any) {
