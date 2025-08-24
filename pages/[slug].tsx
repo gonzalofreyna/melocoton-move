@@ -368,11 +368,11 @@ export default function ProductDetail() {
             <button
               onClick={() =>
                 addToCart({
+                  slug: product.slug, // 👈 necesario
                   name: product.name,
                   image: resolveImage(product.image),
                   price: finalPrice,
                   freeShipping: product.freeShipping === true,
-                  // 👇 pasamos el stock para limitar cantidades en el carrito
                   maxStock:
                     typeof product.stock === "number"
                       ? product.stock

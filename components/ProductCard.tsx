@@ -53,13 +53,13 @@ export default function ProductCard({
   const handleAddToCart = () => {
     if (isOut) return;
     addToCart({
+      slug: product.slug, // 👈 necesario para checkout seguro
       name: product.name,
       image: img,
       price: finalPrice,
       freeShipping: product.freeShipping === true,
-      // 👇 pasa el stock para que el CartContext limite la cantidad
       maxStock: stock,
-    } as any); // as any si tu CartContext ya acepta maxStock, no es necesario
+    });
   };
 
   return (

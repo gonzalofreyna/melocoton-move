@@ -1,3 +1,4 @@
+// pages/cart.tsx
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
 
@@ -23,11 +24,13 @@ export default function CartPage() {
     0
   );
 
-  const envPercent = Number(process.env.NEXT_PUBLIC_COUPON_PERCENT) || 0;
-  const envCode = (process.env.NEXT_PUBLIC_COUPON_CODE || "").toUpperCase();
+  // Si quieres mostrar un estimado visual cuando el usuario aplique código
+  // (esto NO afecta el pago real, solo la UI):
+  const ENV_UI_PERCENT = Number(process.env.NEXT_PUBLIC_COUPON_PERCENT) || 0;
+  const ENV_UI_CODE = (process.env.NEXT_PUBLIC_COUPON_CODE || "").toUpperCase();
 
-  const discount = applied ? subtotal * (envPercent / 100) : 0;
-  const total = Math.max(0, subtotal - discount);
+  const visualDiscount = applied ? subtotal * (ENV_UI_PERCENT / 100) : 0;
+  const visualTotal = Math.max(0, subtotal - visualDiscount);
 
   const applyCode = () => {
     const normalized = code.trim().toUpperCase();
@@ -35,7 +38,7 @@ export default function CartPage() {
       setMsg("Ingresa un código.");
       return;
     }
-    if (normalized === envCode && envPercent > 0) {
+    if (normalized === ENV_UI_CODE && ENV_UI_PERCENT > 0) {
       setApplied(true);
       setMsg("Código aplicado ✔︎");
     } else {
@@ -55,12 +58,10 @@ export default function CartPage() {
       setMsg(null);
       setCheckingOut(true);
 
+      // 👇 solo lo necesario para el server
       const items = cart.map((i) => ({
-        name: i.name,
-        image: i.image,
-        price: i.price,
+        slug: i.slug,
         quantity: i.quantity,
-        freeShipping: i.freeShipping === true,
       }));
 
       const res = await fetch("/api/checkout", {
@@ -68,7 +69,8 @@ export default function CartPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items,
-          discountPercent: applied ? envPercent : 0,
+          // mandamos el código de texto; el backend decide si aplica
+          couponCode: applied ? code.trim().toUpperCase() : undefined,
         }),
       });
 
@@ -123,7 +125,7 @@ export default function CartPage() {
 
             return (
               <div
-                key={item.name}
+                key={item.slug}
                 className="flex items-center bg-white shadow-md rounded-xl p-4"
               >
                 <img
@@ -156,7 +158,7 @@ export default function CartPage() {
                   <div className="mt-2 flex items-center gap-2">
                     <button
                       aria-label={`Disminuir cantidad de ${item.name}`}
-                      onClick={() => decrement(item.name)}
+                      onClick={() => decrement(item.slug)}
                       className="px-2 py-1 rounded-lg border hover:bg-gray-100"
                     >
                       −
@@ -176,14 +178,14 @@ export default function CartPage() {
                           typeof max === "number" && Number.isFinite(max)
                             ? Math.min(v, max)
                             : v;
-                        updateQuantity(item.name, clamped);
+                        updateQuantity(item.slug, clamped);
                       }}
                       className="w-16 text-center border rounded-lg py-1"
                     />
 
                     <button
                       aria-label={`Aumentar cantidad de ${item.name}`}
-                      onClick={() => increment(item.name)}
+                      onClick={() => increment(item.slug)}
                       disabled={atLimit}
                       className={`px-2 py-1 rounded-lg border hover:bg-gray-100 ${
                         atLimit ? "opacity-40 cursor-not-allowed" : ""
@@ -212,7 +214,7 @@ export default function CartPage() {
                 </div>
 
                 <button
-                  onClick={() => removeFromCart(item.name)}
+                  onClick={() => removeFromCart(item.slug)}
                   className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors"
                 >
                   Eliminar
@@ -221,7 +223,7 @@ export default function CartPage() {
             );
           })}
 
-          {/* Código de descuento */}
+          {/* Código de descuento (solo visual en UI; el backend decide el real) */}
           <div className="bg-white shadow-md rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -262,14 +264,16 @@ export default function CartPage() {
             )}
           </div>
 
-          {/* Resumen final */}
+          {/* Resumen final (el total real lo mostrará Stripe en el Checkout) */}
           <div className="bg-white shadow-md rounded-xl p-6 text-right mt-4">
             <p className="text-sm text-gray-600">
               Subtotal: ${subtotal.toFixed(2)} MXN
             </p>
+
             {applied && (
               <p className="text-sm text-green-700">
-                Descuento ({envPercent}%): −${discount.toFixed(2)} MXN
+                Descuento (estimado {ENV_UI_PERCENT}%): −
+                {visualDiscount.toFixed(2)} MXN
               </p>
             )}
 
@@ -286,7 +290,7 @@ export default function CartPage() {
             </p>
 
             <p className="text-lg font-bold text-brand-blue mt-2">
-              Total: ${total.toFixed(2)} MXN
+              Total estimado: ${visualTotal.toFixed(2)} MXN
             </p>
 
             <button

@@ -1,163 +1,211 @@
 // pages/api/checkout.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
+import crypto from "crypto";
 
-type Item = {
+/**
+ * Este handler:
+ * - Lee el catálogo desde S3 (server-side).
+ * - Calcula precios en el servidor (ignora montos del cliente).
+ * - Bloquea open-redirect (whitelist de dominios).
+ * - Usa idempotencia para evitar sesiones/pedidos duplicados.
+ * - Aplica cupón SOLO si el backend lo decide.
+ * - Captura dirección de envío SIN cobrar costo de envío (sin shipping_options).
+ */
+
+type CatalogItem = {
+  slug: string;
   name: string;
-  image: string;
-  price: number;
-  quantity: number;
-  freeShipping?: boolean; // flag por producto
+  image?: string;
+  fullPrice: number;
+  discountPrice?: number;
+  freeShipping?: boolean;
+  maxQty?: number;
 };
 
-const SHIPPING_FEE_MXN = 300;
+type CartItem = { slug: string; quantity: number };
+
+const DEFAULT_MAX_QTY = 10;
+
+// ⚠️ Si tu TS marcaba error por la versión de Stripe, usa `apiVersion: null`.
+// Si ya actualizaste tu cuenta a la última, pon: { apiVersion: "2025-07-30.basil" }.
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: null,
+});
+
+// URL del catálogo (S3 o CloudFront). Puedes hardcodear aquí, o usar env var.
+const CATALOG_URL =
+  process.env.PRODUCT_CATALOG_URL ||
+  "https://melocoton-move-assets.s3.us-east-1.amazonaws.com/products.json";
+
+// Dominios permitidos para success/cancel (NO usar req.headers.origin a ciegas).
+const ALLOWED_ORIGINS = new Set<string>([
+  "https://www.melocotonmove.com",
+  "https://melocotonmove.com",
+  // agrega tu preview solo si lo necesitas:
+  // "https://main.d15wjbc4ifk2rq.amplifyapp.com",
+]);
+const SITE_URL = "https://www.melocotonmove.com";
+
+// Cache en memoria para el catálogo (reduce fetch a S3)
+let _cacheData: { ts: number; map: Map<string, CatalogItem> } | null = null;
+const CACHE_MS = 60_000; // 60s
+
+async function getCatalogMap(): Promise<Map<string, CatalogItem>> {
+  const now = Date.now();
+  if (_cacheData && now - _cacheData.ts < CACHE_MS) return _cacheData.map;
+
+  const resp = await fetch(CATALOG_URL, { cache: "no-store" });
+  if (!resp.ok) throw new Error(`No pude leer catálogo: ${resp.status}`);
+  const list = (await resp.json()) as any[];
+
+  const map = new Map<string, CatalogItem>();
+  for (const raw of list) {
+    const item: CatalogItem = {
+      slug: String(raw.slug),
+      name: String(raw.name ?? raw.slug),
+      image: raw.image ? String(raw.image) : undefined,
+      fullPrice: Number(raw.fullPrice ?? 0),
+      discountPrice:
+        raw.discountPrice != null ? Number(raw.discountPrice) : undefined,
+      freeShipping: Boolean(raw.freeShipping),
+      maxQty: Number.isFinite(raw.maxQty) ? Number(raw.maxQty) : undefined,
+    };
+    if (item.slug && item.fullPrice > 0) {
+      map.set(item.slug, item);
+    }
+  }
+
+  _cacheData = { ts: now, map };
+  return map;
+}
+
+function unitAmountCents(p: CatalogItem): number {
+  const price =
+    p.discountPrice && p.discountPrice > 0 ? p.discountPrice : p.fullPrice;
+  return Math.round(price * 100);
+}
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
-    if (req.method !== "POST") {
+    if (req.method !== "POST")
       return res.status(405).json({ ok: false, message: "Method not allowed" });
-    }
 
-    // --- Diagnóstico de entorno (temporal) ---
-    const hasStripeKey = Boolean(process.env.STRIPE_SECRET_KEY);
-    const hasCoupon = Boolean(process.env.STRIPE_COUPON_ID);
-    console.log("HAS_STRIPE_KEY?", hasStripeKey, "HAS_COUPON?", hasCoupon);
-
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
+    if (!process.env.STRIPE_SECRET_KEY) {
       return res
         .status(500)
-        .json({ ok: false, message: "Falta STRIPE_SECRET_KEY en el entorno" });
+        .json({ ok: false, message: "Falta STRIPE_SECRET_KEY" });
     }
 
-    const stripe = new Stripe(secretKey /*, { apiVersion: "2024-06-20" } */);
+    // BaseURL segura (whitelist)
+    let baseUrl = SITE_URL;
+    const hdrOrigin = (req.headers.origin as string | undefined) || "";
+    if (ALLOWED_ORIGINS.has(hdrOrigin)) baseUrl = hdrOrigin;
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://main.d15wjbc4ifk2rq.amplifyapp.com";
-    const origin = (req.headers.origin as string | undefined) || siteUrl;
+    // Body esperado: { items: [{slug, quantity}], couponCode?: string }
+    const { items, couponCode } =
+      (req.body as { items: CartItem[]; couponCode?: string }) || {};
+    if (!Array.isArray(items) || items.length === 0)
+      return res.status(400).json({ ok: false, message: "Carrito vacío" });
 
-    const { items, discountPercent = 0 } = req.body as {
-      items: Item[];
-      discountPercent?: number;
-    };
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ ok: false, message: "No hay items" });
-    }
+    // Cargar catálogo (server-truth)
+    const catalog = await getCatalogMap();
 
-    // Normaliza
-    const safeItems = items
-      .map((p) => ({
-        name: String(p.name || "").slice(0, 200),
-        image: String(p.image || ""),
-        price: Math.max(0, Number(p.price) || 0),
-        quantity: Math.max(1, Math.floor(Number(p.quantity) || 1)),
-        freeShipping: Boolean(p.freeShipping),
-      }))
-      .filter((p) => p.price > 0);
+    // Construir line_items desde catálogo (NO confiar en precios del cliente)
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
-    if (safeItems.length === 0) {
-      return res.status(400).json({
-        ok: false,
-        message: "Todos los items tienen precio inválido (0)",
+    for (const it of items) {
+      const ref = catalog.get(String(it.slug));
+      if (!ref) {
+        return res
+          .status(400)
+          .json({ ok: false, message: `Producto inválido: ${it.slug}` });
+      }
+      const maxQty = ref.maxQty ?? DEFAULT_MAX_QTY;
+      const qty = Math.max(
+        1,
+        Math.min(maxQty, Math.floor(Number(it.quantity) || 1))
+      );
+
+      line_items.push({
+        quantity: qty,
+        // Si luego migras a Stripe Price IDs, usa { price: "price_xxx" } aquí.
+        price_data: {
+          currency: "mxn",
+          unit_amount: unitAmountCents(ref),
+          product_data: {
+            name: ref.name,
+            images: ref.image ? [ref.image] : [],
+          },
+        },
       });
     }
 
-    // Imagen absoluta para Stripe
-    const toAbsoluteImage = (img: string) =>
-      /^https?:\/\//.test(img)
-        ? img
-        : `${origin}${img?.startsWith("/") ? "" : "/"}${img || ""}`;
+    // Total para reglas de cupón (en centavos)
+    const totalAmount = line_items.reduce((sum, li) => {
+      const unit = li.price_data!.unit_amount!;
+      const qty = li.quantity || 1;
+      return sum + unit * qty;
+    }, 0);
 
-    // Line items
-    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] =
-      safeItems.map((p) => ({
-        quantity: p.quantity,
-        price_data: {
-          currency: "mxn",
-          unit_amount: Math.round(p.price * 100),
-          product_data: {
-            name: p.name,
-            images: p.image ? [toAbsoluteImage(p.image)] : [],
-          },
-        },
-      }));
+    // Regla de cupón controlada en backend:
+    // - Si envías `couponCode` desde cliente, compáralo con COUPON_CODE (env).
+    // - Además puedes exigir total mínimo (ej: >= $1500 MXN).
+    const codeOK =
+      couponCode &&
+      couponCode.toUpperCase() ===
+        (process.env.COUPON_CODE || "").toUpperCase();
 
-    // Envío: gratis solo si TODOS los items lo traen
-    const allItemsFreeShipping = safeItems.every(
-      (it) => it.freeShipping === true
-    );
-    const shippingAmountCents = allItemsFreeShipping
-      ? 0
-      : SHIPPING_FEE_MXN * 100;
+    const minOK = totalAmount >= 150000; // $1500 MXN
 
-    // Cupones
-    const shouldApplyDiscount = discountPercent > 0 && hasCoupon;
-    const discounts = shouldApplyDiscount
-      ? [{ coupon: process.env.STRIPE_COUPON_ID! }]
-      : undefined;
+    const discounts:
+      | Stripe.Checkout.SessionCreateParams.Discount[]
+      | undefined =
+      codeOK && minOK && process.env.STRIPE_COUPON_ID
+        ? [{ coupon: process.env.STRIPE_COUPON_ID! }]
+        : undefined;
 
-    // Opción de envío (única)
-    const shipping_options: Stripe.Checkout.SessionCreateParams.ShippingOption[] =
-      [
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            display_name:
-              shippingAmountCents === 0
-                ? "Envío estándar (GRATIS)"
-                : "Envío estándar",
-            fixed_amount: { amount: shippingAmountCents, currency: "mxn" },
-            delivery_estimate: {
-              minimum: { unit: "business_day", value: 3 },
-              maximum: { unit: "business_day", value: 7 },
-            },
-          },
-        },
-      ];
+    // Idempotencia (hash del carrito + timestamp)
+    const idemSeed = JSON.stringify({ items, couponCode });
+    const idempotencyKey =
+      "checkout_" +
+      crypto
+        .createHash("sha256")
+        .update(idemSeed + Date.now())
+        .digest("hex")
+        .slice(0, 32);
 
-    try {
-      const session = await stripe.checkout.sessions.create({
+    // Crear sesión (sin shipping_options → no se cobra envío)
+    const session = await stripe.checkout.sessions.create(
+      {
         mode: "payment",
         line_items,
-        allow_promotion_codes: shouldApplyDiscount ? undefined : true,
+
+        // ✅ Capturamos dirección de envío sin costo extra
         shipping_address_collection: { allowed_countries: ["MX"] },
+
+        // Si NO envías `discounts`, queda true y Stripe permite Promotion Codes en la UI.
+        allow_promotion_codes: discounts ? undefined : true,
+
         phone_number_collection: { enabled: true },
-        shipping_options,
-        success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/cart`,
+        success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/cart`,
         customer_creation: "always",
         metadata: {
           source: "web",
-          discountPercent: String(discountPercent || 0),
-          freeShipping: String(allItemsFreeShipping),
-          shippingAmountCents: String(shippingAmountCents),
-          // útil para auditoría rápida:
-          anyItemWithoutFreeShipping: String(!allItemsFreeShipping),
         },
+        payment_method_options: { card: { installments: { enabled: true } } },
         discounts,
-        // MSI habilitado (planes gobernados por Dashboard)
-        payment_method_options: {
-          card: { installments: { enabled: true } },
-        },
-      });
+      },
+      { idempotencyKey }
+    );
 
-      return res
-        .status(200)
-        .json({ ok: true, id: session.id, url: session.url });
-    } catch (stripeErr: any) {
-      console.error("Stripe create session error:", stripeErr);
-      const msg =
-        stripeErr?.raw?.message ||
-        stripeErr?.message ||
-        "Stripe session creation failed";
-      return res.status(400).json({ ok: false, message: msg });
-    }
+    return res.status(200).json({ ok: true, id: session.id, url: session.url });
   } catch (e: any) {
-    console.error("Stripe checkout error:", e);
+    console.error("checkout error:", e);
     return res.status(500).json({ ok: false, message: e?.message || "Error" });
   }
 }

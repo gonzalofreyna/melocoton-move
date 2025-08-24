@@ -1,3 +1,4 @@
+// context/CartContext.tsx
 import {
   createContext,
   useContext,
@@ -6,9 +7,10 @@ import {
   useEffect,
 } from "react";
 
-type CartItem = {
+export type CartItem = {
+  slug: string; // 👈 clave del producto para el checkout seguro
   name: string;
-  price: number;
+  price: number; // usado solo para mostrar en UI (no confiamos en él en el server)
   image: string;
   quantity: number;
   freeShipping?: boolean;
@@ -20,10 +22,10 @@ type CartContextType = {
   cart: CartItem[];
   cartCount: number;
   addToCart: (item: Omit<CartItem, "quantity">) => void;
-  removeFromCart: (name: string) => void;
-  increment: (name: string) => void;
-  decrement: (name: string) => void;
-  updateQuantity: (name: string, quantity: number) => void;
+  removeFromCart: (slug: string) => void;
+  increment: (slug: string) => void;
+  decrement: (slug: string) => void;
+  updateQuantity: (slug: string, quantity: number) => void;
   clearCart: () => void;
   /** true solo si TODOS los productos del carrito tienen freeShipping:true */
   allItemsFreeShipping: boolean;
@@ -87,22 +89,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ? Math.max(0, Math.floor(item.maxStock))
           : undefined;
 
-      // si el stock es 0, no agregamos
       if (maxStock === 0) return prev;
 
-      const existing = prev.find((p) => p.name === item.name);
+      const existing = prev.find((p) => p.slug === item.slug);
       if (existing) {
         const nextQty = clampToStock(existing.quantity + 1, existing.maxStock);
         if (nextQty === existing.quantity) {
-          // ya en tope, no cambiamos
           return prev;
         }
         return prev.map((p) =>
-          p.name === item.name ? { ...p, quantity: nextQty } : p
+          p.slug === item.slug ? { ...p, quantity: nextQty } : p
         );
       }
 
-      // nuevo item: inicia en 1 (o 0 si maxStock=0, pero ya hicimos el early return)
       return [
         ...prev,
         {
@@ -115,34 +114,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const removeFromCart = (name: string) =>
-    setCart((prev) => prev.filter((i) => i.name !== name));
+  const removeFromCart = (slug: string) =>
+    setCart((prev) => prev.filter((i) => i.slug !== slug));
 
-  const increment = (name: string) =>
+  const increment = (slug: string) =>
     setCart((prev) =>
       prev.map((i) => {
-        if (i.name !== name) return i;
+        if (i.slug !== slug) return i;
         const nextQty = clampToStock(i.quantity + 1, i.maxStock);
         return nextQty === i.quantity ? i : { ...i, quantity: nextQty };
       })
     );
 
-  const decrement = (name: string) =>
+  const decrement = (slug: string) =>
     setCart((prev) =>
       prev
         .map((i) => {
-          if (i.name !== name) return i;
+          if (i.slug !== slug) return i;
           const nextQty = Math.max(0, i.quantity - 1);
           return { ...i, quantity: nextQty };
         })
         .filter((i) => i.quantity > 0)
     );
 
-  const updateQuantity = (name: string, q: number) => {
+  const updateQuantity = (slug: string, q: number) => {
     setCart((prev) =>
       prev
         .map((i) => {
-          if (i.name !== name) return i;
+          if (i.slug !== slug) return i;
           const nextQty = clampToStock(q, i.maxStock);
           return { ...i, quantity: nextQty };
         })
