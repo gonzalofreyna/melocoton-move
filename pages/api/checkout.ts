@@ -1,4 +1,3 @@
-// pages/api/checkout.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import crypto from "crypto";
@@ -8,7 +7,7 @@ import crypto from "crypto";
  * - Calcula precios en el servidor (ignora montos del cliente).
  * - Whitelist de dominios para success/cancel (anti open-redirect).
  * - Idempotencia para evitar sesiones duplicadas.
- * - Aplica cupón SOLO si (couponCode === COUPON_CODE) y (total >= MIN).
+ * - Aplica cupón SOLO si (couponCode === COUPON_CODE) **sin mínimo**.
  * - Captura dirección de envío SIN cobrar costo de envío (sin shipping_options).
  */
 
@@ -26,7 +25,7 @@ type CartItem = { slug: string; quantity: number };
 
 const DEFAULT_MAX_QTY = 10;
 
-// Si TS marca error por versión, usa apiVersion: null (usa la de tu cuenta)
+// Usa la versión por defecto de tu cuenta (evita conflictos de TS)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: null });
 
 // URL del catálogo (S3/CloudFront)
@@ -38,16 +37,11 @@ const CATALOG_URL =
 const ALLOWED_ORIGINS = new Set<string>([
   "https://www.melocotonmove.com",
   "https://melocotonmove.com",
-  // agrega tu preview si lo necesitas:
-  // "https://main.d15wjbc4ifk2rq.amplifyapp.com",
+  // "https://main.d15wjbc4ifk2rq.amplifyapp.com", // si lo necesitas
 ]);
 const SITE_URL = "https://www.melocotonmove.com";
 
-// Mínimo para que aplique el cupón (centavos MXN). Por defecto $500 MXN.
-const MIN_COUPON_SUBTOTAL_CENTS =
-  Number(process.env.MIN_COUPON_SUBTOTAL_CENTS ?? 30000) || 30000;
-
-// Cache simple en memoria para el catálogo
+// Cache en memoria para el catálogo
 let _cacheData: { ts: number; map: Map<string, CatalogItem> } | null = null;
 const CACHE_MS = 60_000; // 60s
 
@@ -145,25 +139,16 @@ export default async function handler(
       });
     }
 
-    // Total (centavos) para reglas del cupón
-    const totalAmount = line_items.reduce((sum, li) => {
-      const unit = li.price_data!.unit_amount!;
-      const qty = li.quantity || 1;
-      return sum + unit * qty;
-    }, 0);
-
-    // Validación del cupón (texto ↔︎ COUPON_CODE), y mínimo
+    // Validación del cupón (texto ↔︎ COUPON_CODE), **sin mínimo**
     const codeOK =
       couponCode &&
       couponCode.toUpperCase() ===
         (process.env.COUPON_CODE || "").toUpperCase();
 
-    const minOK = totalAmount >= MIN_COUPON_SUBTOTAL_CENTS;
-
     const discounts:
       | Stripe.Checkout.SessionCreateParams.Discount[]
       | undefined =
-      codeOK && minOK && process.env.STRIPE_COUPON_ID
+      codeOK && process.env.STRIPE_COUPON_ID
         ? [{ coupon: process.env.STRIPE_COUPON_ID! }]
         : undefined;
 
