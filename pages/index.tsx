@@ -10,6 +10,7 @@ import "swiper/css/pagination";
 
 import { useAppConfig } from "../context/ConfigContext";
 import { resolveImage } from "../lib/resolveImage";
+import PromoModal from "../components/PromoModal"; // 👈 usar solo en Home
 
 export default function Home() {
   // 1) Hooks SIEMPRE primero y en el mismo orden
@@ -57,6 +58,9 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center text-center bg-gray-50">
+      {/* Popup de promociones SOLO en Home (controlado desde config.promoModal) */}
+      <PromoModal />
+
       {/* HERO PRINCIPAL: solo desde AC (si falta algo, no se muestra) */}
       {showHero && heroBgUrl && (
         <section

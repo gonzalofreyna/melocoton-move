@@ -38,6 +38,33 @@ export type NavItem = {
   category?: string; // si kind = "category"
 };
 
+// 👇 Promo Modal (nuevo)
+export type PromoModalCountdownConfig = {
+  enabled: boolean;
+  /** ISO 8601 recomendado, ej: "2025-09-15T10:00:00-06:00" */
+  launchAt: string;
+  /** Texto a mostrar cuando el contador llega a 0 */
+  afterText?: string;
+  /** Si true, muestra afterText al expirar; si false, oculta el bloque */
+  showWhenExpired?: boolean;
+};
+
+export type PromoModalConfig = {
+  enabled: boolean;
+  title?: string;
+  text?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  image?: string; // URL relativa o absoluta
+  imageAlt?: string;
+  imageLink?: string | null;
+  secondaryText?: string;
+  secondaryLink?: string;
+  frequency?: "once" | "daily" | "always";
+  storageKey?: string;
+  countdown?: PromoModalCountdownConfig; // 👈 soporte para countdown
+};
+
 export type AppConfig = {
   version: number;
   updatedAt: string;
@@ -108,6 +135,9 @@ export type AppConfig = {
     primary?: NavItem[];
     quickFilters?: NavItem[];
   };
+
+  // 👇 Promo Modal (opcional)
+  promoModal?: PromoModalConfig;
 };
 
 const CONFIG_URL =
@@ -120,7 +150,7 @@ export async function fetchConfig(): Promise<AppConfig> {
 
   const raw = (await res.json()) as AppConfig;
 
-  // ===== Normalización SOLO para instagramStrip (respeta el resto tal cual)
+  // ===== Utilidades de normalización
   const base = (raw.assets?.baseUrl || "").replace(/\/+$/, "");
   const isHttp = (u?: string) => !!u && /^https?:\/\//i.test(u);
   const abs = (u?: string) => {
@@ -130,6 +160,7 @@ export async function fetchConfig(): Promise<AppConfig> {
     return `${base}${u.startsWith("/") ? "" : "/"}${u}`;
   };
 
+  // ===== Normalización SOLO para instagramStrip (respeta el resto tal cual)
   let instagramStrip: InstagramStripConfig | undefined = raw.instagramStrip;
   if (instagramStrip) {
     instagramStrip = {
@@ -160,6 +191,12 @@ export async function fetchConfig(): Promise<AppConfig> {
     };
   }
 
+  // ===== Normalización para promoModal.image (nuevo)
+  let promoModal: PromoModalConfig | undefined = raw.promoModal;
+  if (promoModal?.image) {
+    promoModal = { ...promoModal, image: abs(promoModal.image) };
+  }
+
   // Navegación: se respeta tal cual venga del AC (sin tocarla)
   const navigation = raw.navigation;
 
@@ -167,5 +204,6 @@ export async function fetchConfig(): Promise<AppConfig> {
     ...raw,
     instagramStrip,
     navigation,
+    promoModal,
   };
 }

@@ -15,14 +15,6 @@ type Props = {
   items?: MediaItem[]; // mezcla de imágenes y videos
 };
 
-const DEFAULT_IMAGES: string[] = [
-  "/images/weightedring.jpeg",
-  "/images/weights.jpeg",
-  "/images/bola.jpeg",
-  "/images/bandas.jpeg",
-  "/images/bolsa.jpeg",
-];
-
 export default function InstagramStrip({
   username = "melocoton.move",
   url = "https://www.instagram.com/stories/melocoton.move/",
@@ -30,8 +22,24 @@ export default function InstagramStrip({
   items,
 }: Props) {
   // Backwards compatible: si recibimos 'images', las convertimos a items
+  const fromImages: MediaItem[] = Array.isArray(images)
+    ? images.filter(Boolean).map((src) => ({ type: "image" as const, src }))
+    : [];
+
   const media: MediaItem[] =
-    items ?? (images ?? DEFAULT_IMAGES).map((src) => ({ type: "image", src }));
+    Array.isArray(items) && items.length
+      ? items
+          .filter((it) => Boolean(it && it.src))
+          .map((it) => ({
+            type: it.type === "video" ? "video" : "image",
+            src: it.src,
+            alt: it.alt,
+            poster: it.poster,
+          }))
+      : fromImages;
+
+  // Si no hay nada que mostrar, no renderizamos la sección
+  if (!media.length) return null;
 
   return (
     <section className="bg-[#F7EFE9]">
@@ -80,7 +88,6 @@ export default function InstagramStrip({
                     loop
                     playsInline
                     preload="none"
-                    // Nota: 'controls' quitado para que el click navegue al IG.
                   />
                 ) : (
                   <img
