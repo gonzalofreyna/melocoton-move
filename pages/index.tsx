@@ -12,13 +12,33 @@ import { useAppConfig } from "../context/ConfigContext";
 import { resolveImage } from "../lib/resolveImage";
 
 export default function Home() {
-  // AC desde el contexto (ya cacheado globalmente)
+  // 1) Hooks SIEMPRE primero y en el mismo orden
   const { config, loading: configLoading } = useAppConfig();
 
-  // Evita render hasta que el AC esté listo
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await fetchProducts();
+        if (mounted) setProducts(data);
+      } catch (e) {
+        console.error("Error cargando productos", e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // 2) Corta el render DESPUÉS de declarar hooks
   if (configLoading) return null;
 
-  // HERO: solo si el flag está activo y hay imagen
+  // 3) Lee y deriva valores del AC con optional chaining
   const showHero =
     !!config?.featureFlags?.showHero && !!config?.hero?.desktopImage;
 
@@ -30,25 +50,9 @@ export default function Home() {
   const heroOverlayEnabled = !!config?.hero?.overlay?.enabled;
   const heroOverlayOpacity = config?.hero?.overlay?.opacity ?? 0;
 
-  // Textos del HERO desde el AC (sin fallback local)
   const heroTitle = config?.hero?.title || null;
   const heroParagraph = config?.hero?.alt || null; // p = alt, como pediste
 
-  // Productos (tu fetch actual desde S3)
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await fetchProducts();
-        setProducts(data);
-      } catch (e) {
-        console.error("Error cargando productos", e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
   const featuredProducts = products.filter((p) => p.featured);
 
   return (
@@ -82,7 +86,6 @@ export default function Home() {
               <p className="text-lg mb-8 leading-relaxed">{heroParagraph}</p>
             )}
 
-            {/* CTA: si luego quieres leerla del AC (hero.cta), la conectamos aquí */}
             <a
               href="/products"
               className="bg-brand-beige text-brand-blue font-semibold px-8 py-4 rounded-xl hover:bg-white transition-transform transform hover:scale-105 shadow-md"
@@ -131,7 +134,6 @@ export default function Home() {
         Array.isArray(config?.puntosDeVenta) &&
         config.puntosDeVenta.length > 0 && (
           <section className="py-20 px-6 bg-gray-50 w-full">
-            {/* Título desde AC */}
             {config?.puntosDeVentaHeader?.title && (
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
@@ -144,7 +146,6 @@ export default function Home() {
               </motion.h2>
             )}
 
-            {/* Subtítulo desde AC */}
             {config?.puntosDeVentaHeader?.subtitle && (
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
@@ -182,7 +183,7 @@ export default function Home() {
                     className="flex flex-col items-center"
                   >
                     <img
-                      src={punto.logo} // Si algún logo fuera relativo, usar resolveImage(punto.logo)
+                      src={punto.logo}
                       alt={punto.estado}
                       className="h-16 w-auto mb-4 object-contain transition-transform duration-300 hover:scale-110"
                     />
@@ -279,7 +280,6 @@ export default function Home() {
             )})`,
           }}
         >
-          {/* Overlay dinámico */}
           <div
             className="absolute inset-0 bg-black"
             style={{ opacity: config.finalCTA.overlayOpacity }}
