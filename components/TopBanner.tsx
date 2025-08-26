@@ -1,3 +1,4 @@
+// TopBanner.tsx
 import {
   motion,
   AnimatePresence,
@@ -43,13 +44,13 @@ export default function TopBanner() {
   if (loading || !visible || !enabled || !text) return null;
 
   const Content = () => (
-    <div className="flex items-center gap-8 pr-8">
+    <div className="flex items-center gap-4 sm:gap-8 pr-4 sm:pr-8 whitespace-nowrap">
       {href ? (
-        <a href={href} className="underline underline-offset-2">
+        <a href={href} className="inline-block underline underline-offset-2">
           {text}
         </a>
       ) : (
-        <span>{text}</span>
+        <span className="inline-block">{text}</span>
       )}
     </div>
   );
@@ -61,17 +62,17 @@ export default function TopBanner() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.4 }}
-        className="fixed top-0 left-0 w-full bg-brand-blue text-white z-50"
+        className="fixed top-0 left-0 w-full bg-brand-blue text-white z-50 min-h-[36px] sm:min-h-0"
       >
         <div className="relative mx-auto max-w-screen-2xl">
           {/* Fader sutil en bordes */}
           <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-brand-blue to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-brand-blue to-transparent" />
 
-          <div className="overflow-hidden py-2 text-center text-sm font-medium">
+          <div className="overflow-hidden py-1 text-center text-[13px] sm:text-sm leading-[1.35] font-medium">
             {/* Pista: dos copias para loop perfecto */}
             <motion.div
-              className="flex whitespace-nowrap w-[200%]" // 2x ancho para duplicar contenido
+              className="flex whitespace-nowrap w-[200%] will-change-transform"
               animate={prefersReducedMotion ? undefined : controls}
               onMouseEnter={() => controls.stop()}
               onMouseLeave={() =>
