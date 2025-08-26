@@ -100,6 +100,79 @@ export default function Home() {
         </section>
       )}
 
+      {/* CATEGORÍAS (desde AC) */}
+      <section className="py-20 px-6 bg-white w-full">
+        <h2 className="text-3xl font-bold text-brand-blue mb-12">Categorías</h2>
+        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+          {config?.categories?.map((cat, idx) => (
+            <motion.a
+              key={idx}
+              href={cat.href}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: idx * 0.1 }}
+              className="relative rounded-2xl overflow-hidden group shadow-md"
+            >
+              <img
+                src={cat.image}
+                alt={cat.name}
+                className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors duration-500 flex items-center justify-center">
+                <span className="text-white text-xl font-semibold opacity-90">
+                  {cat.name}
+                </span>
+              </div>
+            </motion.a>
+          ))}
+        </div>
+      </section>
+      {/* PRODUCTOS DESTACADOS */}
+      <section className="py-20 px-6 bg-gray-50 w-full">
+        <h2 className="text-3xl font-bold text-brand-blue mb-12">Destacados</h2>
+
+        {loading ? (
+          <p className="text-gray-500">Cargando productos…</p>
+        ) : featuredProducts.length === 0 ? (
+          <p className="text-gray-500">No hay productos destacados.</p>
+        ) : (
+          <>
+            <Swiper
+              className="max-w-6xl mx-auto custom-swiper"
+              modules={[Autoplay, Pagination]}
+              spaceBetween={20}
+              slidesPerView={1}
+              loop={true}
+              autoplay={{ delay: 3500, disableOnInteraction: false }}
+              breakpoints={{
+                640: { slidesPerView: 1 },
+                768: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+              }}
+              pagination={{ clickable: true }}
+            >
+              {featuredProducts.map((product, idx) => (
+                <SwiperSlide key={product.slug ?? idx}>
+                  <ProductCard
+                    product={product}
+                    offerBadge={config.offerBadge}
+                    featureFlags={config.featureFlags}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            <a
+              href="/products"
+              className="mt-12 inline-block bg-brand-blue text-white font-semibold px-8 py-4 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-transform transform hover:scale-105 shadow-md"
+            >
+              Ver Todo
+            </a>
+          </>
+        )}
+      </section>
+
       {/* BENEFICIOS (desde AC) */}
       {config?.featureFlags?.showBenefits && config?.benefits?.enabled && (
         <section className="py-20 px-6 bg-white w-full">
@@ -200,80 +273,6 @@ export default function Home() {
             </Swiper>
           </section>
         )}
-
-      {/* CATEGORÍAS (desde AC) */}
-      <section className="py-20 px-6 bg-gray-50 w-full">
-        <h2 className="text-3xl font-bold text-brand-blue mb-12">Categorías</h2>
-        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
-          {config?.categories?.map((cat, idx) => (
-            <motion.a
-              key={idx}
-              href={cat.href}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: idx * 0.1 }}
-              className="relative rounded-2xl overflow-hidden group shadow-md"
-            >
-              <img
-                src={cat.image}
-                alt={cat.name}
-                className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors duration-500 flex items-center justify-center">
-                <span className="text-white text-xl font-semibold opacity-90">
-                  {cat.name}
-                </span>
-              </div>
-            </motion.a>
-          ))}
-        </div>
-      </section>
-
-      {/* PRODUCTOS DESTACADOS */}
-      <section className="py-20 px-6 bg-white w-full">
-        <h2 className="text-3xl font-bold text-brand-blue mb-12">Destacados</h2>
-
-        {loading ? (
-          <p className="text-gray-500">Cargando productos…</p>
-        ) : featuredProducts.length === 0 ? (
-          <p className="text-gray-500">No hay productos destacados.</p>
-        ) : (
-          <>
-            <Swiper
-              className="max-w-6xl mx-auto custom-swiper"
-              modules={[Autoplay, Pagination]}
-              spaceBetween={20}
-              slidesPerView={1}
-              loop={true}
-              autoplay={{ delay: 3500, disableOnInteraction: false }}
-              breakpoints={{
-                640: { slidesPerView: 1 },
-                768: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 },
-              }}
-              pagination={{ clickable: true }}
-            >
-              {featuredProducts.map((product, idx) => (
-                <SwiperSlide key={product.slug ?? idx}>
-                  <ProductCard
-                    product={product}
-                    offerBadge={config.offerBadge}
-                    featureFlags={config.featureFlags}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-
-            <a
-              href="/products"
-              className="mt-12 inline-block bg-brand-blue text-white font-semibold px-8 py-4 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-transform transform hover:scale-105 shadow-md"
-            >
-              Ver Todo
-            </a>
-          </>
-        )}
-      </section>
 
       {config?.featureFlags?.showFinalCTA && config?.finalCTA?.enabled && (
         <section
