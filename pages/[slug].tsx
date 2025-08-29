@@ -480,8 +480,8 @@ export default function ProductDetail() {
                     )}
                     {product.returnDays && (
                       <p>
-                        Devoluciones fáciles dentro de {product.returnDays}{" "}
-                        días.
+                        Recibe el producto que esperabas o te devolvemos tu
+                        dinero.
                       </p>
                     )}
                     {product.warrantyMonths && (
