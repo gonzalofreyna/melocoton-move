@@ -40,12 +40,16 @@ export type Product = {
   related?: string[];
 };
 
-const S3_JSON_URL =
-  process.env.NEXT_PUBLIC_PRODUCTS_JSON_URL ||
-  "https://melocoton-move-assets.s3.amazonaws.com/products.json";
+// Debe estar definida en .env.local
+// NEXT_PUBLIC_API_PRODUCTS_URL=https://<api-id>.execute-api.<region>.amazonaws.com/api/products
+const API_PRODUCTS_URL = process.env.NEXT_PUBLIC_API_PRODUCTS_URL!;
+if (!API_PRODUCTS_URL) {
+  // Por si alguien olvida la env var en build
+  throw new Error("Falta NEXT_PUBLIC_API_PRODUCTS_URL");
+}
 
 export async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch(S3_JSON_URL, { cache: "no-store" });
+  const res = await fetch(API_PRODUCTS_URL, { cache: "no-store" });
   if (!res.ok) throw new Error(`Error cargando productos: ${res.status}`);
 
   const raw = await res.json();
@@ -68,7 +72,6 @@ export async function fetchProducts(): Promise<Product[]> {
   const toGallery = (img: string, g: any): string[] => {
     const main = toStr(img);
     const arr = toStrArr(g);
-    // Ponemos image como primera si no está, y deduplicamos preservando orden
     const merged = main ? [main, ...arr] : arr;
     const seen = new Set<string>();
     return merged.filter((u) => {
@@ -96,7 +99,6 @@ export async function fetchProducts(): Promise<Product[]> {
     const description = toStr(p?.description) || "";
 
     return {
-      // básicos
       name,
       slug,
       image,
@@ -110,8 +112,6 @@ export async function fetchProducts(): Promise<Product[]> {
       category,
       featured,
       description,
-
-      // flags y logística
       freeShipping: p?.freeShipping === true,
       stock: toInt(p?.stock),
       weightGrams: toNum(p?.weightGrams),
@@ -136,8 +136,6 @@ export async function fetchProducts(): Promise<Product[]> {
               maxBusinessDays: Number(p.shippingEstimate.maxBusinessDays),
             }
           : undefined,
-
-      // marca / sku / atributos
       brand: toStr(p?.brand),
       sku: toStr(p?.sku),
       materials: toStrArr(p?.materials),
@@ -146,8 +144,6 @@ export async function fetchProducts(): Promise<Product[]> {
       whatsIncluded: toStrArr(p?.whatsIncluded),
       returnDays: toInt(p?.returnDays),
       warrantyMonths: toInt(p?.warrantyMonths),
-
-      // meta
       tags: toStrArr(p?.tags),
       related: toStrArr(p?.related),
     };

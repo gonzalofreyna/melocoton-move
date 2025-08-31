@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import crypto from "crypto";
 
 /**
- * - Lee catálogo desde S3 (server-truth).
+ * - Lee catálogo desde tu API Gateway (server-truth).
  * - Calcula precios en el servidor (ignora montos del cliente).
  * - Whitelist de dominios para success/cancel (anti open-redirect).
  * - Idempotencia para evitar sesiones duplicadas.
@@ -29,10 +29,11 @@ const DEFAULT_MAX_QTY = 10;
 // Usa la versión por defecto de tu cuenta (evita conflictos de TS)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: null });
 
-// URL del catálogo (S3/CloudFront)
+/** 🔗 URL del catálogo (API Gateway) */
 const CATALOG_URL =
-  process.env.PRODUCT_CATALOG_URL ||
-  "https://melocoton-move-assets.s3.us-east-1.amazonaws.com/products.json";
+  process.env.API_PRODUCTS_URL || // var de servidor (Amplify)
+  process.env.NEXT_PUBLIC_API_PRODUCTS_URL || // fallback del build
+  "https://ily1a9bb17.execute-api.us-east-1.amazonaws.com/api/products"; // tu endpoint
 
 // Whitelist de orígenes permitidos
 const ALLOWED_ORIGINS = new Set<string>([
@@ -46,13 +47,25 @@ const SITE_URL = "https://www.melocotonmove.com";
 let _cacheData: { ts: number; map: Map<string, CatalogItem> } | null = null;
 const CACHE_MS = 60_000; // 60s
 
+async function fetchJson(url: string) {
+  let lastErr: unknown;
+  for (let i = 0; i < 2; i++) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
+
 async function getCatalogMap(): Promise<Map<string, CatalogItem>> {
   const now = Date.now();
   if (_cacheData && now - _cacheData.ts < CACHE_MS) return _cacheData.map;
 
-  const resp = await fetch(CATALOG_URL, { cache: "no-store" });
-  if (!resp.ok) throw new Error(`No pude leer catálogo: ${resp.status}`);
-  const list = (await resp.json()) as any[];
+  const list = (await fetchJson(CATALOG_URL)) as any[];
 
   const map = new Map<string, CatalogItem>();
   for (const raw of list) {
@@ -112,6 +125,7 @@ export default async function handler(
     console.log("couponCode recibido:", couponCode);
     console.log("COUPON_CODE esperado:", process.env.COUPON_CODE);
     console.log("STRIPE_COUPON_ID:", process.env.STRIPE_COUPON_ID);
+    console.log("CATALOG_URL:", CATALOG_URL);
 
     // Cargar catálogo
     const catalog = await getCatalogMap();

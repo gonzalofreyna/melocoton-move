@@ -13,7 +13,6 @@ export type OfferBadgeConfig = {
   position: "top-left" | "top-right" | "bottom-left" | "bottom-right";
 };
 
-// 👇 Instagram strip
 export type InstagramMediaItem = {
   type: "image" | "video";
   src: string;
@@ -29,23 +28,18 @@ export type InstagramStripConfig = {
   items: InstagramMediaItem[];
 };
 
-// 👇 Navegación configurable
 export type NavItem = {
   label: string;
   enabled?: boolean;
   kind?: "link" | "category" | "onSale" | "popular" | "freeShipping";
-  href?: string; // si kind = "link"
-  category?: string; // si kind = "category"
+  href?: string;
+  category?: string;
 };
 
-// 👇 Promo Modal (nuevo)
 export type PromoModalCountdownConfig = {
   enabled: boolean;
-  /** ISO 8601 recomendado, ej: "2025-09-15T10:00:00-06:00" */
-  launchAt: string;
-  /** Texto a mostrar cuando el contador llega a 0 */
+  launchAt: string; // ISO 8601 recomendado
   afterText?: string;
-  /** Si true, muestra afterText al expirar; si false, oculta el bloque */
   showWhenExpired?: boolean;
 };
 
@@ -55,14 +49,14 @@ export type PromoModalConfig = {
   text?: string;
   buttonText?: string;
   buttonLink?: string;
-  image?: string; // URL relativa o absoluta
+  image?: string;
   imageAlt?: string;
   imageLink?: string | null;
   secondaryText?: string;
   secondaryLink?: string;
   frequency?: "once" | "daily" | "always";
   storageKey?: string;
-  countdown?: PromoModalCountdownConfig; // 👈 soporte para countdown
+  countdown?: PromoModalCountdownConfig;
 };
 
 export type AppConfig = {
@@ -70,7 +64,6 @@ export type AppConfig = {
   updatedAt: string;
 
   topBanner: { text: string; enabled: boolean; link: string | null };
-
   assets: { baseUrl: string };
 
   hero: {
@@ -102,7 +95,6 @@ export type AppConfig = {
     buttonLink: string;
   };
 
-  // Páginas legales
   termsAndConditions: { title: string; sections: InfoSection[] };
   returnPolicy: { title: string; sections: InfoSection[] };
   privacyPolicy: { title: string; sections: InfoSection[] };
@@ -120,32 +112,22 @@ export type AppConfig = {
   };
 
   ui: { brandName: string; themeColor: string };
-
-  // Categorías
   categories: { name: string; image: string; href: string }[];
-
-  // Badge de oferta
   offerBadge: OfferBadgeConfig;
 
-  // Instagram (opcional)
   instagramStrip?: InstagramStripConfig;
-
-  // 👇 Navegación (opcional)
-  navigation?: {
-    primary?: NavItem[];
-    quickFilters?: NavItem[];
-  };
-
-  // 👇 Promo Modal (opcional)
+  navigation?: { primary?: NavItem[]; quickFilters?: NavItem[] };
   promoModal?: PromoModalConfig;
 };
 
-const CONFIG_URL =
-  process.env.NEXT_PUBLIC_CONFIG_URL ||
-  "https://melocoton-move-assets.s3.us-east-1.amazonaws.com/config.json";
+// ✅ Solo API (sin fallback a S3)
+const API_CONFIG_URL = process.env.NEXT_PUBLIC_API_CONFIG_URL!;
+if (!API_CONFIG_URL) {
+  throw new Error("Falta NEXT_PUBLIC_API_CONFIG_URL");
+}
 
 export async function fetchConfig(): Promise<AppConfig> {
-  const res = await fetch(CONFIG_URL, { cache: "no-store" });
+  const res = await fetch(API_CONFIG_URL, { cache: "no-store" });
   if (!res.ok) throw new Error(`Error cargando config: ${res.status}`);
 
   const raw = (await res.json()) as AppConfig;
@@ -160,7 +142,7 @@ export async function fetchConfig(): Promise<AppConfig> {
     return `${base}${u.startsWith("/") ? "" : "/"}${u}`;
   };
 
-  // ===== Normalización SOLO para instagramStrip (respeta el resto tal cual)
+  // ===== Normalización SOLO para instagramStrip
   let instagramStrip: InstagramStripConfig | undefined = raw.instagramStrip;
   if (instagramStrip) {
     instagramStrip = {
@@ -191,13 +173,12 @@ export async function fetchConfig(): Promise<AppConfig> {
     };
   }
 
-  // ===== Normalización para promoModal.image (nuevo)
+  // ===== Normalización para promoModal.image
   let promoModal: PromoModalConfig | undefined = raw.promoModal;
   if (promoModal?.image) {
     promoModal = { ...promoModal, image: abs(promoModal.image) };
   }
 
-  // Navegación: se respeta tal cual venga del AC (sin tocarla)
   const navigation = raw.navigation;
 
   return {
