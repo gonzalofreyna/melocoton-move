@@ -120,13 +120,6 @@ export default async function handler(
       return res.status(400).json({ ok: false, message: "Carrito vacío" });
     }
 
-    // 🔎 Log de diagnóstico
-    console.log("=== CHECKOUT DEBUG ===");
-    console.log("couponCode recibido:", couponCode);
-    console.log("COUPON_CODE esperado:", process.env.COUPON_CODE);
-    console.log("STRIPE_COUPON_ID:", process.env.STRIPE_COUPON_ID);
-    console.log("CATALOG_URL:", CATALOG_URL);
-
     // Cargar catálogo
     const catalog = await getCatalogMap();
 
@@ -165,8 +158,6 @@ export default async function handler(
       couponCode.toUpperCase() ===
         (process.env.COUPON_CODE || "").toUpperCase();
 
-    console.log("codeOK:", codeOK);
-
     const discounts:
       | Stripe.Checkout.SessionCreateParams.Discount[]
       | undefined =
@@ -201,8 +192,6 @@ export default async function handler(
       },
       { idempotencyKey }
     );
-
-    console.log("Checkout session creada:", session.id);
 
     return res.status(200).json({ ok: true, id: session.id, url: session.url });
   } catch (e: any) {
