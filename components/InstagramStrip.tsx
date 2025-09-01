@@ -17,7 +17,7 @@ type Props = {
 
 export default function InstagramStrip({
   username = "melocoton.move",
-  url = "https://www.instagram.com/stories/melocoton.move/",
+  url = "https://www.instagram.com/melocoton.move/",
   images,
   items,
 }: Props) {

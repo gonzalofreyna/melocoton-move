@@ -59,6 +59,30 @@ export type PromoModalConfig = {
   countdown?: PromoModalCountdownConfig;
 };
 
+/** ========= NUEVO: Tipos para eventos ========= */
+export type EventBadge = string | { label: string };
+
+export type EventItem = {
+  id?: string | number;
+  title: string;
+  artist?: string;
+  date: string; // ISO
+  city: string;
+  venue: string;
+  time?: string;
+  image: string; // puede ser relativa; se normaliza con assets.baseUrl
+  href?: string;
+  badges?: EventBadge[];
+};
+
+export type EventsConfig = {
+  enabled: boolean;
+  header?: { title?: string; subtitle?: string };
+  seeAll?: { enabled?: boolean; href?: string; label?: string };
+  items: EventItem[];
+};
+/** ============================================= */
+
 export type AppConfig = {
   version: number;
   updatedAt: string;
@@ -118,6 +142,9 @@ export type AppConfig = {
   instagramStrip?: InstagramStripConfig;
   navigation?: { primary?: NavItem[]; quickFilters?: NavItem[] };
   promoModal?: PromoModalConfig;
+
+  /** 👇 NUEVO: sección de eventos */
+  events?: EventsConfig;
 };
 
 // ✅ Solo API (sin fallback a S3)
@@ -179,6 +206,28 @@ export async function fetchConfig(): Promise<AppConfig> {
     promoModal = { ...promoModal, image: abs(promoModal.image) };
   }
 
+  // ===== NUEVO: Normalización para events (imgs relativas -> absolutas)
+  let events = raw.events;
+  if (events?.items?.length) {
+    events = {
+      ...events,
+      items: events.items
+        .map((it, i) => ({
+          id: it.id ?? i,
+          title: it.title,
+          artist: it.artist,
+          date: it.date,
+          city: it.city,
+          venue: it.venue,
+          time: it.time,
+          image: abs(it.image), // 👈 importante
+          href: it.href,
+          badges: Array.isArray(it.badges) ? it.badges : [],
+        }))
+        .filter((it) => !!it.title && !!it.date && !!it.image),
+    };
+  }
+
   const navigation = raw.navigation;
 
   return {
@@ -186,5 +235,6 @@ export async function fetchConfig(): Promise<AppConfig> {
     instagramStrip,
     navigation,
     promoModal,
+    events, // 👈 incluye eventos normalizados
   };
 }

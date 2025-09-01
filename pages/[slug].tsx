@@ -473,11 +473,15 @@ export default function ProductDetail() {
                   <div className="mt-3 space-y-2 text-sm text-gray-700">
                     {product.shippingEstimate && (
                       <p>
-                        Entrega estimada:{" "}
+                        Entrega estimada de equipos personalizados:{" "}
                         {product.shippingEstimate.minBusinessDays}–
                         {product.shippingEstimate.maxBusinessDays} días hábiles.
                       </p>
                     )}
+                    <p>
+                      Entrega estimada de equipos en stock: 5-10 días hábiles.
+                    </p>
+                    <p>Pregunta por las entregas sin costo en CDMX y GDL.</p>
                     {product.returnDays && (
                       <p>
                         Recibe el producto que esperabas o te devolvemos tu

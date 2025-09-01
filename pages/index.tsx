@@ -12,6 +12,9 @@ import { useAppConfig } from "../context/ConfigContext";
 import { resolveImage } from "../lib/resolveImage";
 import PromoModal from "../components/PromoModal"; // 👈 usar solo en Home
 
+// 👇 NUEVO
+import { EventosFromConfig } from "../components/EventosCarousel";
+
 export default function Home() {
   // 1) Hooks SIEMPRE primero y en el mismo orden
   const { config, loading: configLoading } = useAppConfig();
@@ -128,6 +131,7 @@ export default function Home() {
           ))}
         </div>
       </section>
+
       {/* PRODUCTOS DESTACADOS */}
       <section className="py-20 px-6 bg-gray-50 w-full">
         <h2 className="text-3xl font-bold text-brand-blue mb-12">Destacados</h2>
@@ -273,6 +277,8 @@ export default function Home() {
             </Swiper>
           </section>
         )}
+      {/* 👉 Eventos (desde AC) — ABAJO DEL CTA */}
+      <EventosFromConfig className="w-full py-20 px-6 bg-white" />
 
       {config?.featureFlags?.showFinalCTA && config?.finalCTA?.enabled && (
         <section

@@ -13,6 +13,9 @@ import { ConfigProvider, useAppConfig } from "../context/ConfigContext";
 // Franja Instagram (acepta imágenes y videos)
 import InstagramStrip from "../components/InstagramStrip";
 
+// 👇 Nuevo: carrito flotante
+import FloatingCart from "../components/FloatingCart";
+
 // Componente interno para poder usar el hook dentro del Provider
 function AppShell({ Component, pageProps }: AppProps) {
   const { config } = useAppConfig(); // 👈 CORREGIDO
@@ -67,6 +70,9 @@ function AppShell({ Component, pageProps }: AppProps) {
         )}
 
         <Footer />
+
+        {/* 👉 Carrito flotante global (se oculta automáticamente en /cart) */}
+        <FloatingCart />
       </div>
     </>
   );
