@@ -1,6 +1,7 @@
 // pages/cart.tsx
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
+import FreeShippingBadge from "../components/FreeShippingBadge";
 
 export default function CartPage() {
   const {
@@ -147,15 +148,7 @@ export default function CartPage() {
                       {item.name}
                     </h3>
 
-                    {item.freeShipping ? (
-                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
-                        Envío gratis
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
-                        No incluye envío gratis
-                      </span>
-                    )}
+                    <FreeShippingBadge free={!!item.freeShipping} />
                   </div>
 
                   <p className="text-gray-700 text-sm">
@@ -163,7 +156,7 @@ export default function CartPage() {
                   </p>
 
                   {/* Controles de cantidad */}
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
                     <button
                       aria-label={`Disminuir cantidad de ${item.name}`}
                       onClick={() => decrement(item.slug)}

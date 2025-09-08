@@ -10,9 +10,10 @@ import "swiper/css/pagination";
 
 import { useAppConfig } from "../context/ConfigContext";
 import { resolveImage } from "../lib/resolveImage";
-import PromoModal from "../components/PromoModal"; // 👈 usar solo en Home
+import PromoModal from "../components/PromoModal";
 
 // 👇 NUEVO
+import OpeningStudioSection from "../components/OpeningStudioSection";
 import { EventosFromConfig } from "../components/EventosCarousel";
 
 export default function Home() {
@@ -55,16 +56,16 @@ export default function Home() {
   const heroOverlayOpacity = config?.hero?.overlay?.opacity ?? 0;
 
   const heroTitle = config?.hero?.title || null;
-  const heroParagraph = config?.hero?.alt || null; // p = alt, como pediste
+  const heroParagraph = config?.hero?.alt || null;
 
   const featuredProducts = products.filter((p) => p.featured);
 
   return (
     <main className="flex flex-col items-center text-center bg-gray-50">
-      {/* Popup de promociones SOLO en Home (controlado desde config.promoModal) */}
+      {/* Popup de promociones SOLO en Home */}
       <PromoModal />
 
-      {/* HERO PRINCIPAL: solo desde AC (si falta algo, no se muestra) */}
+      {/* HERO PRINCIPAL */}
       {showHero && heroBgUrl && (
         <section
           className="relative w-full h-screen bg-cover bg-center flex items-center justify-center"
@@ -103,8 +104,24 @@ export default function Home() {
         </section>
       )}
 
+      {/* 👇 NUEVO: OPENING STUDIO — debajo del HERO */}
+      {config?.featureFlags?.showOpeningStudio &&
+        config?.openingStudio?.enabled && (
+          <OpeningStudioSection
+            className="py-20"
+            image={config.openingStudio.image}
+            title={config.openingStudio.title}
+            description={config.openingStudio.description}
+            buttonText={config.openingStudio.buttonText}
+            // fallback garantizado a /products?category=reformer desde fetchConfig
+            buttonHref={
+              config.openingStudio.buttonHref || "/products?category=reformer"
+            }
+          />
+        )}
+
       {/* CATEGORÍAS (desde AC) */}
-      <section className="py-20 px-6 bg-white w-full">
+      <section className="py-20 px-6 bg-gray-50 w-full">
         <h2 className="text-3xl font-bold text-brand-blue mb-12">Categorías</h2>
         <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
           {config?.categories?.map((cat, idx) => (
@@ -133,7 +150,7 @@ export default function Home() {
       </section>
 
       {/* PRODUCTOS DESTACADOS */}
-      <section className="py-20 px-6 bg-gray-50 w-full">
+      <section className="py-20 px-6 bg-white w-full">
         <h2 className="text-3xl font-bold text-brand-blue mb-12">Destacados</h2>
 
         {loading ? (
@@ -179,7 +196,7 @@ export default function Home() {
 
       {/* BENEFICIOS (desde AC) */}
       {config?.featureFlags?.showBenefits && config?.benefits?.enabled && (
-        <section className="py-20 px-6 bg-white w-full">
+        <section className="py-20 px-6 bg-gray-50 w-full">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -214,7 +231,7 @@ export default function Home() {
       {config?.featureFlags?.showPuntosDeVenta &&
         Array.isArray(config?.puntosDeVenta) &&
         config.puntosDeVenta.length > 0 && (
-          <section className="py-20 px-6 bg-gray-50 w-full">
+          <section className="py-20 px-6 bg-white w-full">
             {config?.puntosDeVentaHeader?.title && (
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
@@ -277,8 +294,9 @@ export default function Home() {
             </Swiper>
           </section>
         )}
+
       {/* 👉 Eventos (desde AC) — ABAJO DEL CTA */}
-      <EventosFromConfig className="w-full py-20 px-6 bg-white" />
+      <EventosFromConfig className="w-full py-20 px-6 bg-gray-50" />
 
       {config?.featureFlags?.showFinalCTA && config?.finalCTA?.enabled && (
         <section

@@ -59,7 +59,7 @@ export type PromoModalConfig = {
   countdown?: PromoModalCountdownConfig;
 };
 
-/** ========= NUEVO: Tipos para eventos ========= */
+/** ========= Tipos para eventos ========= */
 export type EventBadge = string | { label: string };
 
 export type EventItem = {
@@ -81,7 +81,18 @@ export type EventsConfig = {
   seeAll?: { enabled?: boolean; href?: string; label?: string };
   items: EventItem[];
 };
-/** ============================================= */
+/** ===================================== */
+
+/** ========= NUEVO: Opening Studio ========= */
+export type OpeningStudioConfig = {
+  enabled: boolean;
+  image: string; // relativa o absoluta
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonHref?: string; // default: /products?category=reformer
+};
+/** ======================================== */
 
 export type AppConfig = {
   version: number;
@@ -133,6 +144,8 @@ export type AppConfig = {
     showReturnPolicy: boolean;
     showPrivacyPolicy: boolean;
     showOfferBadge: boolean;
+    /** 👇 NUEVO */
+    showOpeningStudio?: boolean;
   };
 
   ui: { brandName: string; themeColor: string };
@@ -143,8 +156,11 @@ export type AppConfig = {
   navigation?: { primary?: NavItem[]; quickFilters?: NavItem[] };
   promoModal?: PromoModalConfig;
 
-  /** 👇 NUEVO: sección de eventos */
+  /** Sección de eventos */
   events?: EventsConfig;
+
+  /** 👇 NUEVO: sección Opening Studio */
+  openingStudio?: OpeningStudioConfig;
 };
 
 // ✅ Solo API (sin fallback a S3)
@@ -206,7 +222,17 @@ export async function fetchConfig(): Promise<AppConfig> {
     promoModal = { ...promoModal, image: abs(promoModal.image) };
   }
 
-  // ===== NUEVO: Normalización para events (imgs relativas -> absolutas)
+  // ===== NUEVO: Normalización para openingStudio
+  let openingStudio = raw.openingStudio;
+  if (openingStudio?.image) {
+    openingStudio = {
+      ...openingStudio,
+      image: abs(openingStudio.image),
+      buttonHref: openingStudio.buttonHref || "/products?category=reformer",
+    };
+  }
+
+  // ===== Normalización para events (imgs relativas -> absolutas)
   let events = raw.events;
   if (events?.items?.length) {
     events = {
@@ -220,7 +246,7 @@ export async function fetchConfig(): Promise<AppConfig> {
           city: it.city,
           venue: it.venue,
           time: it.time,
-          image: abs(it.image), // 👈 importante
+          image: abs(it.image),
           href: it.href,
           badges: Array.isArray(it.badges) ? it.badges : [],
         }))
@@ -235,6 +261,7 @@ export async function fetchConfig(): Promise<AppConfig> {
     instagramStrip,
     navigation,
     promoModal,
-    events, // 👈 incluye eventos normalizados
+    events,
+    openingStudio, // 👈 incluye Opening Studio normalizado
   };
 }
