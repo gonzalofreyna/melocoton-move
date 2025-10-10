@@ -1,15 +1,13 @@
-// pages/api/checkout.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import crypto from "crypto";
 
 /**
- * - Lee catálogo desde tu API Gateway (server-truth).
- * - Calcula precios en el servidor (ignora montos del cliente).
- * - Whitelist de dominios para success/cancel (anti open-redirect).
- * - Idempotencia para evitar sesiones duplicadas.
- * - Aplica cupón SOLO si (couponCode === COUPON_CODE) **sin mínimo**.
- * - Captura dirección de envío SIN cobrar costo de envío (sin shipping_options).
+ * Checkout seguro para Melocotón Move:
+ * - Calcula precios en servidor (valida con catálogo real)
+ * - Aplica cupón solo si coincide con COUPON_CODE
+ * - Idempotente, evita sesiones duplicadas
+ * - Redirige a success o home (ya no existe /cart)
  */
 
 type CatalogItem = {
@@ -25,27 +23,21 @@ type CatalogItem = {
 type CartItem = { slug: string; quantity: number };
 
 const DEFAULT_MAX_QTY = 10;
-
-// Usa la versión por defecto de tu cuenta (evita conflictos de TS)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: null });
 
-/** 🔗 URL del catálogo (API Gateway) */
 const CATALOG_URL =
-  process.env.API_PRODUCTS_URL || // var de servidor (Amplify)
-  process.env.NEXT_PUBLIC_API_PRODUCTS_URL || // fallback del build
-  "https://ily1a9bb17.execute-api.us-east-1.amazonaws.com/api/products"; // tu endpoint
+  process.env.API_PRODUCTS_URL ||
+  process.env.NEXT_PUBLIC_API_PRODUCTS_URL ||
+  "https://ily1a9bb17.execute-api.us-east-1.amazonaws.com/api/products";
 
-// Whitelist de orígenes permitidos
 const ALLOWED_ORIGINS = new Set<string>([
   "https://www.melocotonmove.com",
   "https://melocotonmove.com",
-  // "https://main.d15wjbc4ifk2rq.amplifyapp.com", // si lo necesitas
 ]);
 const SITE_URL = "https://www.melocotonmove.com";
 
-// Cache en memoria para el catálogo
 let _cacheData: { ts: number; map: Map<string, CatalogItem> } | null = null;
-const CACHE_MS = 60_000; // 60s
+const CACHE_MS = 60_000;
 
 async function fetchJson(url: string) {
   let lastErr: unknown;
@@ -66,8 +58,8 @@ async function getCatalogMap(): Promise<Map<string, CatalogItem>> {
   if (_cacheData && now - _cacheData.ts < CACHE_MS) return _cacheData.map;
 
   const list = (await fetchJson(CATALOG_URL)) as any[];
-
   const map = new Map<string, CatalogItem>();
+
   for (const raw of list) {
     const item: CatalogItem = {
       slug: String(raw.slug),
@@ -79,9 +71,7 @@ async function getCatalogMap(): Promise<Map<string, CatalogItem>> {
       freeShipping: Boolean(raw.freeShipping),
       maxQty: Number.isFinite(raw.maxQty) ? Number(raw.maxQty) : undefined,
     };
-    if (item.slug && item.fullPrice > 0) {
-      map.set(item.slug, item);
-    }
+    if (item.slug && item.fullPrice > 0) map.set(item.slug, item);
   }
 
   _cacheData = { ts: now, map };
@@ -108,24 +98,28 @@ export default async function handler(
         .json({ ok: false, message: "Falta STRIPE_SECRET_KEY" });
     }
 
-    // BaseURL segura (whitelist)
     let baseUrl = SITE_URL;
     const hdrOrigin = (req.headers.origin as string | undefined) || "";
     if (ALLOWED_ORIGINS.has(hdrOrigin)) baseUrl = hdrOrigin;
 
-    // Body: { items: [{slug, quantity}], couponCode?: string }
-    const { items, couponCode } =
-      (req.body as { items: CartItem[]; couponCode?: string }) || {};
+    // ✅ Acepta ambas variantes: coupon o couponCode
+    const { items, coupon, couponCode } =
+      (req.body as {
+        items: CartItem[];
+        coupon?: string;
+        couponCode?: string;
+      }) || {};
+    const codeInput = (coupon || couponCode || "").toUpperCase();
+
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ ok: false, message: "Carrito vacío" });
     }
 
-    // Cargar catálogo
+    // Cargar catálogo real
     const catalog = await getCatalogMap();
 
-    // Construcción de line_items confiando SOLO en el catálogo
+    // Validar y construir line_items desde servidor
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-
     for (const it of items) {
       const ref = catalog.get(String(it.slug));
       if (!ref) {
@@ -133,6 +127,7 @@ export default async function handler(
           .status(400)
           .json({ ok: false, message: `Producto inválido: ${it.slug}` });
       }
+
       const maxQty = ref.maxQty ?? DEFAULT_MAX_QTY;
       const qty = Math.max(
         1,
@@ -152,11 +147,9 @@ export default async function handler(
       });
     }
 
-    // Validación del cupón (texto ↔︎ COUPON_CODE), **sin mínimo**
+    // ✅ Validación del cupón (sin mínimo)
     const codeOK =
-      couponCode &&
-      couponCode.toUpperCase() ===
-        (process.env.COUPON_CODE || "").toUpperCase();
+      codeInput && codeInput === (process.env.COUPON_CODE || "").toUpperCase();
 
     const discounts:
       | Stripe.Checkout.SessionCreateParams.Discount[]
@@ -166,7 +159,7 @@ export default async function handler(
         : undefined;
 
     // Idempotencia
-    const idemSeed = JSON.stringify({ items, couponCode });
+    const idemSeed = JSON.stringify({ items, codeInput });
     const idempotencyKey =
       "checkout_" +
       crypto
@@ -175,7 +168,7 @@ export default async function handler(
         .digest("hex")
         .slice(0, 32);
 
-    // Crear sesión
+    // Crear sesión Stripe
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
@@ -184,7 +177,7 @@ export default async function handler(
         allow_promotion_codes: discounts ? undefined : true,
         phone_number_collection: { enabled: true },
         success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/cart`,
+        cancel_url: `${baseUrl}/`,
         customer_creation: "always",
         metadata: { source: "web" },
         payment_method_options: { card: { installments: { enabled: true } } },

@@ -1,20 +1,22 @@
-// context/CartContext.tsx
+"use client";
+
 import {
   createContext,
   useContext,
   useState,
   ReactNode,
   useEffect,
+  useCallback,
 } from "react";
+import { usePathname } from "next/navigation"; // 👈 agregado
 
 export type CartItem = {
-  slug: string; // 👈 clave del producto para el checkout seguro
+  slug: string;
   name: string;
-  price: number; // usado solo para mostrar en UI (no confiamos en él en el server)
+  price: number;
   image: string;
   quantity: number;
   freeShipping?: boolean;
-  /** stock máximo permitido para este ítem */
   maxStock?: number;
 };
 
@@ -27,10 +29,13 @@ type CartContextType = {
   decrement: (slug: string) => void;
   updateQuantity: (slug: string, quantity: number) => void;
   clearCart: () => void;
-  /** true solo si TODOS los productos del carrito tienen freeShipping:true */
   allItemsFreeShipping: boolean;
-  /** true si existe al menos un producto con freeShipping:false (o undefined) */
   hasAnyNonFreeShipping: boolean;
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
+  toggleCart: () => void;
+  subtotal: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -40,13 +45,15 @@ function clampToStock(qty: number, maxStock?: number) {
   if (typeof maxStock === "number" && Number.isFinite(maxStock)) {
     return Math.min(q, Math.max(0, Math.floor(maxStock)));
   }
-  return q; // sin límite si no hay stock definido
+  return q;
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname(); // 👈 aquí detectamos la ruta actual
 
-  // cargar del localStorage
+  // ⛳ Cargar carrito desde localStorage
   useEffect(() => {
     try {
       const raw =
@@ -71,7 +78,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
-  // guardar en localStorage
+  // 💾 Guardar carrito en localStorage
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
@@ -80,7 +87,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [cart]);
 
+  // 🚀 Limpia automáticamente el carrito al entrar a /success
+  useEffect(() => {
+    if (pathname === "/success") {
+      setCart([]);
+      localStorage.removeItem("cart");
+      setIsOpen(false);
+    }
+  }, [pathname]);
+
+  // 📊 Derivados
   const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  // ⚙️ Acciones
+  const openCart = useCallback(() => setIsOpen(true), []);
+  const closeCart = useCallback(() => setIsOpen(false), []);
+  const toggleCart = useCallback(() => setIsOpen((p) => !p), []);
 
   const addToCart = (item: Omit<CartItem, "quantity">) => {
     setCart((prev) => {
@@ -94,9 +117,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const existing = prev.find((p) => p.slug === item.slug);
       if (existing) {
         const nextQty = clampToStock(existing.quantity + 1, existing.maxStock);
-        if (nextQty === existing.quantity) {
-          return prev;
-        }
+        if (nextQty === existing.quantity) return prev;
         return prev.map((p) =>
           p.slug === item.slug ? { ...p, quantity: nextQty } : p
         );
@@ -112,6 +133,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         },
       ];
     });
+
+    setIsOpen(true); // abrir MiniCart al agregar
   };
 
   const removeFromCart = (slug: string) =>
@@ -151,7 +174,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setCart([]);
 
-  // Selectors envío
+  // 🚚 Selectores de envío
   const allItemsFreeShipping =
     cart.length > 0 && cart.every((i) => i.freeShipping === true);
 
@@ -171,6 +194,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         allItemsFreeShipping,
         hasAnyNonFreeShipping,
+        isOpen,
+        openCart,
+        closeCart,
+        toggleCart,
+        subtotal,
       }}
     >
       {children}

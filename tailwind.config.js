@@ -15,7 +15,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["'Poiret One'", "sans-serif"],
+        sans: ["'Poppins'", "sans-serif"],
       },
     },
   },

@@ -2,7 +2,6 @@
 import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
-  // URL del sitio (ajústala en tu .env si quieres)
   const SITE_URL = (
     process.env.NEXT_PUBLIC_SITE_URL ||
     "https://main.d15wjbc4ifk2rq.amplifyapp.com"
@@ -14,10 +13,6 @@ export default function Document() {
     name: "Melocotón Move",
     url: SITE_URL,
     logo: `${SITE_URL}/images/logomelocoton.png`,
-    sameAs: [
-      // añade tus redes si quieres
-      // "https://www.instagram.com/tu_marca"
-    ],
   };
 
   const webLd = {
@@ -43,11 +38,11 @@ export default function Document() {
           crossOrigin=""
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap"
           rel="stylesheet"
         />
 
-        {/* JSON-LD global (no poner <title> aquí) */}
+        {/* JSON-LD global */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}

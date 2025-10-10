@@ -10,18 +10,21 @@ import Head from "next/head";
 import { CartProvider } from "../context/CartContext";
 import { ConfigProvider, useAppConfig } from "../context/ConfigContext";
 
-// Franja Instagram (acepta imágenes y videos)
+// Franja Instagram
 import InstagramStrip from "../components/InstagramStrip";
 
-// 👇 Nuevo: carrito flotante
+// Carrito flotante (icono)
 import FloatingCart from "../components/FloatingCart";
 
-// Componente interno para poder usar el hook dentro del Provider
+// 🧩 Nuevo: drawer lateral del carrito
+import MiniCart from "../components/MiniCart";
+
+import MobileNavbar from "../components/MobileNavbar";
+
 function AppShell({ Component, pageProps }: AppProps) {
-  const { config } = useAppConfig(); // 👈 CORREGIDO
+  const { config } = useAppConfig();
   const ig = config?.instagramStrip;
 
-  // Fallback opcional desde ENV si no hay sección en el AC
   const IG_USER =
     process.env.NEXT_PUBLIC_IG_USERNAME?.trim() || "melocoton.move";
   const IG_URL =
@@ -31,22 +34,17 @@ function AppShell({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        {/* Viewport global */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-        {/* Favicon SVG principal */}
         <link
           rel="icon"
           href="/images/logomelocoton.svg"
           type="image/svg+xml"
         />
-        {/* Respaldo PNG */}
         <link
           rel="alternate icon"
           href="/images/logomelocoton.png"
           type="image/png"
         />
-        {/* <link rel="apple-touch-icon" href="/images/logomelocoton.png" /> */}
       </Head>
 
       <div className="flex flex-col min-h-screen">
@@ -57,7 +55,6 @@ function AppShell({ Component, pageProps }: AppProps) {
           <Component {...pageProps} />
         </main>
 
-        {/* 👇 Siempre arriba del Footer — sale del AC si existe y está enabled */}
         {ig?.enabled ? (
           <InstagramStrip
             username={ig.username}
@@ -65,14 +62,14 @@ function AppShell({ Component, pageProps }: AppProps) {
             items={ig.items}
           />
         ) : (
-          // Fallback mínimo (sin items) si aún no configuras la sección en el AC
           <InstagramStrip username={IG_USER} url={IG_URL} />
         )}
 
         <Footer />
 
-        {/* 👉 Carrito flotante global (se oculta automáticamente en /cart) */}
-        <FloatingCart />
+        {/* 🧩 Drawer lateral del carrito */}
+        <MiniCart />
+        <MobileNavbar />
       </div>
     </>
   );

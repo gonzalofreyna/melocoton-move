@@ -24,12 +24,12 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
 
   const visible = useScrollVisibility();
-  const { cartCount } = useCart();
+  const { cartCount, toggleCart } = useCart();
   const router = useRouter();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Cargar productos para sugerencias
+  // 🔄 Cargar productos para sugerencias
   useEffect(() => {
     (async () => {
       try {
@@ -43,14 +43,14 @@ export default function Header() {
     })();
   }, []);
 
-  // Cerrar drawer al navegar de ruta
+  // 🧭 Cerrar drawer al navegar
   useEffect(() => {
     const handleRoute = () => setDrawerOpen(false);
     router.events.on("routeChangeStart", handleRoute);
     return () => router.events.off("routeChangeStart", handleRoute);
   }, [router.events]);
 
-  // Cerrar drawer con Escape
+  // ⌨️ Cerrar con Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -99,7 +99,7 @@ export default function Header() {
             transition={{ duration: 0.4 }}
             className="fixed top-8 left-0 w-full z-40 bg-white shadow-md grid grid-cols-3 items-center px-4 md:px-6 py-3 gap-2"
           >
-            {/* Columna izquierda: botón hamburguesa */}
+            {/* 🍑 Columna izquierda: menú móvil */}
             <div className="flex items-center">
               <button
                 className="text-brand-blue focus:outline-none"
@@ -116,7 +116,7 @@ export default function Header() {
               </button>
             </div>
 
-            {/* Columna central: Logo */}
+            {/* 🩷 Logo central */}
             <div className="flex justify-center">
               <Link
                 href="/"
@@ -131,9 +131,9 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Columna derecha: Búsqueda desktop + contacto + carrito */}
+            {/* 🔍 Columna derecha: búsqueda y acciones */}
             <div className="flex justify-end items-center space-x-4 text-brand-blue relative min-w-0">
-              {/* Búsqueda desktop (≥900px) */}
+              {/* 🔎 Búsqueda desktop */}
               <div className="relative hidden min-[900px]:block w-[220px] lg:w-[280px] xl:w-[320px] flex-shrink-0">
                 <input
                   ref={inputRef}
@@ -197,25 +197,27 @@ export default function Header() {
                 )}
               </div>
 
-              {/* Contacto */}
+              {/* 👤 Contacto */}
               <Link href="/contact" aria-label="Contacto">
                 <UserIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
               </Link>
 
-              {/* Carrito con badge */}
-              <div className="relative">
-                <Link href="/cart" aria-label="Carrito">
-                  <ShoppingCartIcon className="h-7 w-7" />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-brand-beige text-brand-blue text-xs font-bold rounded-full px-2 py-0.5">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
-              </div>
+              {/* 🛒 Carrito */}
+              <button
+                onClick={toggleCart}
+                aria-label="Abrir carrito"
+                className="relative"
+              >
+                <ShoppingCartIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-brand-beige text-brand-blue text-xs font-bold rounded-full px-2 py-0.5">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
             </div>
 
-            {/* Buscador mobile (≤899px) */}
+            {/* 📱 Buscador móvil con sugerencias */}
             <div className="min-[900px]:hidden col-span-3 px-2 mt-2">
               <div className="relative">
                 <input
@@ -239,13 +241,48 @@ export default function Header() {
                 >
                   <MagnifyingGlassIcon className="h-5 w-5 text-gray-500" />
                 </button>
+
+                {/* ✅ Sugerencias también visibles en móvil */}
+                {showSuggestions && searchTerm && (
+                  <div className="absolute z-50 top-full left-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-md w-full text-left max-h-[45vh] overflow-y-auto">
+                    {loading ? (
+                      <p className="px-4 py-2 text-sm text-gray-500">
+                        Cargando…
+                      </p>
+                    ) : filteredSuggestions.length > 0 ? (
+                      filteredSuggestions.map((item) => (
+                        <button
+                          key={item.slug}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            router.push(
+                              `/products?search=${encodeURIComponent(
+                                item.name
+                              )}`
+                            );
+                            setSearchTerm("");
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+                          type="button"
+                        >
+                          {item.name}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="px-4 py-2 text-sm text-gray-500">
+                        Sin resultados
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </motion.header>
         )}
       </AnimatePresence>
 
-      {/* Drawer del menú (siempre montado al final para cubrir toda la pantalla) */}
+      {/* 📂 Drawer menú móvil */}
       <MobileMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   );

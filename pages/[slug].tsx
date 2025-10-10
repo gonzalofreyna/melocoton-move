@@ -1,5 +1,5 @@
 // pages/product-detail.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -9,6 +9,8 @@ import type { Product } from "../lib/fetchProducts";
 import { resolveImage } from "../lib/resolveImage";
 import { fetchConfig } from "../lib/fetchConfig";
 import type { OfferBadgeConfig, AppConfig } from "../lib/fetchConfig";
+import { motion } from "framer-motion";
+import type React from "react";
 
 function normalizeBool(v: unknown): boolean {
   return v === true || v === "true" || v === 1 || v === "1";
@@ -26,7 +28,6 @@ export default function ProductDetail() {
   >(null);
   const [loading, setLoading] = useState(true);
 
-  // Estado declarado siempre (evita error de hooks)
   const [mainUrl, setMainUrl] = useState<string>("");
 
   useEffect(() => {
@@ -57,11 +58,68 @@ export default function ProductDetail() {
     return allProducts.find((p) => p.slug.toLowerCase() === s);
   }, [slug, allProducts]);
 
-  // Cuando cambie de producto, fija la principal
   useEffect(() => {
     if (product?.image) setMainUrl(resolveImage(product.image));
   }, [product?.image, product?.slug]);
 
+  // ===== Galería base
+  const mainImgFixed = product?.image ? resolveImage(product.image) : "";
+  const galleryArr =
+    product?.gallery?.map((u) => resolveImage(u)).filter(Boolean) ?? [];
+  const allThumbs = Array.from(new Set([mainImgFixed, ...galleryArr]));
+  const effectiveMainUrl = mainUrl || mainImgFixed;
+
+  // ===== Carrusel (refs y límites) — colocado antes de cualquier return
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [dragLimits, setDragLimits] = useState<{ left: number; right: number }>(
+    {
+      left: 0,
+      right: 0,
+    }
+  );
+
+  useEffect(() => {
+    const update = () => {
+      const track = trackRef.current;
+      const container = containerRef.current;
+      if (!track || !container) return;
+
+      const isDesktop = window.innerWidth >= 1024;
+      const maxDrag = Math.max(0, track.scrollWidth - container.clientWidth);
+
+      if (isDesktop) {
+        // En escritorio: drag normal pero recalculado con scrollLeft real
+        const scrollLeft = container.scrollLeft;
+        const leftLimit = -maxDrag - scrollLeft - 20; // pequeño margen
+        const rightLimit = scrollLeft + 20;
+
+        setDragLimits({ left: leftLimit, right: rightLimit });
+
+        // Forzar que empiece exactamente en la primera imagen
+        if (scrollLeft > 0) {
+          container.scrollTo({ left: 0, behavior: "instant" });
+        }
+
+        return;
+      }
+
+      // En móvil/tablet: comportamiento normal
+      setDragLimits({ left: -maxDrag, right: 0 });
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [allThumbs.length]);
+
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.currentTarget.scrollLeft += e.deltaY;
+    }
+  };
+
+  // ===== Returns condicionales después de todos los hooks
   if (loading || !slug)
     return <p className="text-center py-20">Cargando producto…</p>;
   if (!product)
@@ -77,12 +135,10 @@ export default function ProductDetail() {
     Number((disc as number).toFixed(2)) < Number(full.toFixed(2));
   const finalPrice = hasValidDiscount ? (disc as number) : full;
 
-  // Dimensiones
   const dims =
     product.dimensionsCm &&
     `${product.dimensionsCm.w}×${product.dimensionsCm.l}×${product.dimensionsCm.h} cm`;
 
-  // Stock UI
   const stock = product.stock;
   const stockLabel =
     stock == null
@@ -100,14 +156,6 @@ export default function ProductDetail() {
       : stock <= 5
       ? "bg-yellow-100 text-yellow-800"
       : "bg-green-100 text-green-700";
-
-  // ===== Galería
-  const mainImgFixed = resolveImage(product.image); // principal del producto
-  const galleryArr = (product.gallery ?? [])
-    .map((u) => resolveImage(u))
-    .filter(Boolean);
-  const allThumbs = Array.from(new Set([mainImgFixed, ...galleryArr])); // incluye principal
-  const effectiveMainUrl = mainUrl || mainImgFixed;
 
   // ====== SEO
   const SITE_URL = (
@@ -157,7 +205,7 @@ export default function ProductDetail() {
     ],
   };
 
-  // ===== Helpers UI (badge oferta existente)
+  // ===== Helpers UI
   const shouldShowBadge =
     featureFlags?.showOfferBadge === true &&
     (offerBadge?.enabled as boolean) === true &&
@@ -223,7 +271,6 @@ export default function ProductDetail() {
     </div>
   ) : null;
 
-  // Relacionados
   const relatedSlugs = product.related ?? [];
   const related = relatedSlugs
     .map((s) => allProducts.find((p) => p.slug === s))
@@ -231,7 +278,6 @@ export default function ProductDetail() {
 
   return (
     <>
-      {/* ===== SEO Head ===== */}
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
@@ -252,25 +298,24 @@ export default function ProductDetail() {
         />
       </Head>
 
-      {/* ===== Página ===== */}
-      <main className="max-w-6xl mx-auto px-6 py-16">
-        {/* 👉 items-start asegura alineación superior entre columnas */}
-        <div className="grid md:grid-cols-2 gap-10 items-start">
-          {/* Galería */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          {/* ===== Galería ===== */}
+          {/* ===== Galería ===== */}
           <div className="space-y-4">
-            {/* Imagen principal */}
-            <div className="relative bg-white rounded-2xl p-6 shadow-md flex items-center justify-center">
+            <div className="relative bg-white rounded-2xl p-4 sm:p-6 shadow-md flex items-center justify-center">
               {BadgeOverlay}
-
-              <img
+              <motion.img
+                key={effectiveMainUrl}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
                 src={effectiveMainUrl}
                 alt={`${product.name} - imagen principal`}
-                className="max-h-[420px] object-contain"
+                className="w-full max-h-[320px] sm:max-h-[420px] object-contain"
                 loading="eager"
                 decoding="async"
               />
-
-              {/* Franja "Envío gratis" */}
               {product.freeShipping === true && (
                 <div className="absolute inset-x-0 bottom-0">
                   <div className="bg-gradient-to-t from-black/55 to-transparent">
@@ -282,40 +327,134 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Miniaturas grandes (≈50% de la grande) */}
+            {/* ===== Carrusel ===== */}
             {allThumbs.length > 0 && (
-              <div className="grid grid-cols-2 gap-4">
-                {allThumbs.map((url, i) => {
-                  const isActive = url === effectiveMainUrl;
-                  return (
-                    <button
-                      key={url + i}
-                      onClick={() => setMainUrl(url)}
-                      type="button"
-                      className={`relative aspect-[4/3] bg-white rounded-2xl p-4 shadow-md flex items-center justify-center hover:shadow-lg hover:scale-[1.01] transition ${
-                        isActive ? "ring-2 ring-brand-blue" : ""
-                      }`}
-                      aria-label={`Ver imagen ${i + 1} de ${product.name}`}
-                      aria-pressed={isActive}
-                    >
-                      <img
-                        src={url}
-                        alt={`${product.name} - miniatura ${i + 1}`}
-                        className="max-h-[210px] max-w-full object-contain"
-                        loading="lazy"
-                        decoding="async"
+              <div className="mt-4">
+                <div
+                  ref={containerRef}
+                  className="relative overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth max-w-full"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                  <motion.div
+                    ref={trackRef}
+                    className="flex gap-3 cursor-grab active:cursor-grabbing sm:justify-start min-w-max"
+                    style={{ touchAction: "pan-y" }}
+                    drag={
+                      typeof window !== "undefined" && window.innerWidth < 1024
+                        ? "x"
+                        : false
+                    }
+                    dragConstraints={dragLimits}
+                    dragElastic={0.08}
+                    dragMomentum={
+                      typeof window !== "undefined" && window.innerWidth < 1024
+                    }
+                    dragTransition={{ power: 0.2, timeConstant: 300 }}
+                    onWheel={onWheel}
+                  >
+                    {allThumbs.map((url, i) => {
+                      const isActive = url === effectiveMainUrl;
+                      return (
+                        <button
+                          key={url + i}
+                          onClick={() => setMainUrl(url)}
+                          type="button"
+                          className={`snap-start shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl border ${
+                            isActive
+                              ? "border-brand-blue ring-2 ring-brand-blue/20"
+                              : "border-gray-200"
+                          } bg-white overflow-hidden transition-transform duration-200 hover:scale-105`}
+                          aria-label={`Ver imagen ${i + 1} de ${product.name}`}
+                          aria-pressed={isActive}
+                        >
+                          <img
+                            src={url}
+                            alt={`${product.name} - miniatura ${i + 1}`}
+                            className="w-full h-full object-contain"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                </div>
+
+                {/* Indicadores */}
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  {allThumbs.map((url, i) => {
+                    const isActive = url === effectiveMainUrl;
+                    return (
+                      <span
+                        key={"dot-" + i}
+                        className={`inline-block w-2 h-2 rounded-full transition-colors ${
+                          isActive ? "bg-brand-blue" : "bg-gray-300"
+                        }`}
                       />
-                    </button>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
+
+            {/* ===== Precio, colores y botón debajo de la galería ===== */}
+            <div className="flex flex-col space-y-4 pt-2">
+              {!!product.colors?.length && (
+                <div className="flex items-center gap-2">
+                  {product.colors.map((color, idx) => (
+                    <span
+                      key={idx}
+                      className="w-6 h-6 rounded-full border border-gray-300"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div>
+                {hasValidDiscount ? (
+                  <>
+                    <p className="text-brand-blue font-bold text-2xl">
+                      {(disc as number).toFixed(2)} MXN
+                    </p>
+                    <p className="text-gray-400 line-through">
+                      {full.toFixed(2)} MXN
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-brand-beige font-bold text-2xl">
+                    {full.toFixed(2)} MXN
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={() =>
+                  addToCart({
+                    slug: product.slug,
+                    name: product.name,
+                    image: resolveImage(product.image),
+                    price: finalPrice,
+                    freeShipping: product.freeShipping === true,
+                    maxStock:
+                      typeof product.stock === "number"
+                        ? product.stock
+                        : undefined,
+                  })
+                }
+                disabled={stock != null && stock <= 0}
+                className="bg-brand-blue text-white py-3 px-6 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-colors disabled:opacity-50"
+              >
+                Agregar al carrito
+              </button>
+            </div>
           </div>
 
-          {/* Detalles */}
+          {/* ===== Detalles ===== */}
           <div className="flex flex-col space-y-5 self-start">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-brand-blue">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-brand-blue">
                 {product.name}
               </h1>
               {stockLabel && (
@@ -328,71 +467,11 @@ export default function ProductDetail() {
             </div>
 
             {product.description && (
-              <p className="text-gray-600 whitespace-pre-line">
+              <p className="text-gray-600 whitespace-pre-line text-sm sm:text-base">
                 {product.description}
               </p>
             )}
 
-            {!!product.colors?.length && (
-              <div className="flex items-center gap-2 mt-1">
-                {product.colors.map((color, idx) => (
-                  <span
-                    key={idx}
-                    className="w-6 h-6 rounded-full border border-gray-300"
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Precio */}
-            <div>
-              {hasValidDiscount ? (
-                <>
-                  <p className="text-brand-blue font-bold text-2xl">
-                    {(disc as number).toFixed(2)} MXN
-                  </p>
-                  <p className="text-gray-400 line-through">
-                    {full.toFixed(2)} MXN
-                  </p>
-                </>
-              ) : (
-                <p className="text-brand-beige font-bold text-2xl">
-                  {full.toFixed(2)} MXN
-                </p>
-              )}
-            </div>
-
-            {/* CTA */}
-            <button
-              onClick={() =>
-                addToCart({
-                  slug: product.slug, // 👈 necesario
-                  name: product.name,
-                  image: resolveImage(product.image),
-                  price: finalPrice,
-                  freeShipping: product.freeShipping === true,
-                  maxStock:
-                    typeof product.stock === "number"
-                      ? product.stock
-                      : undefined,
-                })
-              }
-              disabled={stock != null && stock <= 0}
-              className="bg-brand-blue text-white py-3 px-6 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-colors disabled:opacity-50"
-              title={
-                stock != null && stock <= 0
-                  ? "Producto agotado"
-                  : typeof stock === "number"
-                  ? `Stock disponible: ${stock}`
-                  : undefined
-              }
-            >
-              Agregar al carrito
-            </button>
-
-            {/* Highlights */}
             {Array.isArray(product.highlights) &&
               product.highlights.length > 0 && (
                 <ul className="mt-2 grid sm:grid-cols-2 gap-2 text-sm text-gray-700">
@@ -514,13 +593,13 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Relacionados */}
+        {/* ===== Relacionados ===== */}
         {related.length > 0 && (
           <section className="mt-14">
-            <h2 className="text-xl font-semibold text-brand-blue mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-brand-blue mb-4">
               También te puede gustar
             </h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
               {related.map((p) => {
                 const price = p.discountPrice ?? p.fullPrice;
                 return (
@@ -536,7 +615,7 @@ export default function ProductDetail() {
                         className="max-h-full max-w-full object-contain"
                       />
                     </div>
-                    <div className="p-3">
+                    <div className="p-3 text-center sm:text-left">
                       <p className="font-medium text-brand-blue">{p.name}</p>
                       <p className="text-sm text-gray-600">
                         ${price.toFixed(2)} MXN

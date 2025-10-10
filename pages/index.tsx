@@ -15,6 +15,10 @@ import PromoModal from "../components/PromoModal";
 // 👇 NUEVO
 import OpeningStudioSection from "../components/OpeningStudioSection";
 import { EventosFromConfig } from "../components/EventosCarousel";
+import PuntosDeVentaSection from "../components/PuntosDeVentaSection";
+import CategoriasSection from "../components/CategoriasSection";
+import AboutUsHero from "../components/AboutUsHero";
+import FeaturedProductsSection from "../components/FeaturedProductsSection";
 
 export default function Home() {
   // 1) Hooks SIEMPRE primero y en el mismo orden
@@ -104,199 +108,29 @@ export default function Home() {
         </section>
       )}
 
-      {/* 👇 NUEVO: OPENING STUDIO — debajo del HERO */}
-      {config?.featureFlags?.showOpeningStudio &&
-        config?.openingStudio?.enabled && (
-          <OpeningStudioSection
-            className="py-20"
-            image={config.openingStudio.image}
-            title={config.openingStudio.title}
-            description={config.openingStudio.description}
-            buttonText={config.openingStudio.buttonText}
-            // fallback garantizado a /products?category=reformer desde fetchConfig
-            buttonHref={
-              config.openingStudio.buttonHref || "/products?category=reformer"
-            }
-          />
-        )}
-
-      {/* CATEGORÍAS (desde AC) */}
-      <section className="py-20 px-6 bg-gray-50 w-full">
-        <h2 className="text-3xl font-bold text-brand-blue mb-12">Categorías</h2>
-        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
-          {config?.categories?.map((cat, idx) => (
-            <motion.a
-              key={idx}
-              href={cat.href}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: idx * 0.1 }}
-              className="relative rounded-2xl overflow-hidden group shadow-md"
-            >
-              <img
-                src={cat.image}
-                alt={cat.name}
-                className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors duration-500 flex items-center justify-center">
-                <span className="text-white text-xl font-semibold opacity-90">
-                  {cat.name}
-                </span>
-              </div>
-            </motion.a>
-          ))}
-        </div>
-      </section>
-
-      {/* PRODUCTOS DESTACADOS */}
-      <section className="py-20 px-6 bg-white w-full">
-        <h2 className="text-3xl font-bold text-brand-blue mb-12">Destacados</h2>
-
-        {loading ? (
-          <p className="text-gray-500">Cargando productos…</p>
-        ) : featuredProducts.length === 0 ? (
-          <p className="text-gray-500">No hay productos destacados.</p>
-        ) : (
-          <>
-            <Swiper
-              className="max-w-6xl mx-auto custom-swiper"
-              modules={[Autoplay, Pagination]}
-              spaceBetween={20}
-              slidesPerView={1}
-              loop={true}
-              autoplay={{ delay: 3500, disableOnInteraction: false }}
-              breakpoints={{
-                640: { slidesPerView: 1 },
-                768: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 },
-              }}
-              pagination={{ clickable: true }}
-            >
-              {featuredProducts.map((product, idx) => (
-                <SwiperSlide key={product.slug ?? idx}>
-                  <ProductCard
-                    product={product}
-                    offerBadge={config.offerBadge}
-                    featureFlags={config.featureFlags}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-
-            <a
-              href="/products"
-              className="mt-12 inline-block bg-brand-blue text-white font-semibold px-8 py-4 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-transform transform hover:scale-105 shadow-md"
-            >
-              Ver Todo
-            </a>
-          </>
-        )}
-      </section>
-
-      {/* BENEFICIOS (desde AC) */}
-      {config?.featureFlags?.showBenefits && config?.benefits?.enabled && (
-        <section className="py-20 px-6 bg-gray-50 w-full">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl font-bold text-brand-blue mb-12"
-          >
-            {config.benefits.header}
-          </motion.h2>
-
-          <div className="grid gap-8 grid-cols-1 sm:grid-cols-3 max-w-6xl mx-auto">
-            {config.benefits.items.map((benefit, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.2 }}
-                className="bg-gray-50 rounded-xl shadow-md p-6 hover:shadow-xl transition-shadow"
-              >
-                <h3 className="text-xl font-bold text-brand-beige mb-2">
-                  {benefit.title}
-                </h3>
-                <p className="text-gray-600">{benefit.text}</p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
+      {config?.categories && (
+        <CategoriasSection title="Categorías" categories={config.categories} />
       )}
 
-      {/* PUNTOS DE VENTA (desde AC) */}
+      <AboutUsHero />
+
+      <FeaturedProductsSection
+        featuredProducts={featuredProducts}
+        loading={loading}
+        config={config}
+      />
+
       {config?.featureFlags?.showPuntosDeVenta &&
         Array.isArray(config?.puntosDeVenta) &&
         config.puntosDeVenta.length > 0 && (
-          <section className="py-20 px-6 bg-white w-full">
-            {config?.puntosDeVentaHeader?.title && (
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="text-3xl font-bold text-brand-blue mb-3"
-              >
-                {config.puntosDeVentaHeader.title}
-              </motion.h2>
-            )}
-
-            {config?.puntosDeVentaHeader?.subtitle && (
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="text-gray-600 mb-12"
-              >
-                {config.puntosDeVentaHeader.subtitle}
-              </motion.p>
-            )}
-
-            <Swiper
-              modules={[Autoplay]}
-              spaceBetween={30}
-              slidesPerView={2}
-              breakpoints={{
-                640: { slidesPerView: 3 },
-                1024: { slidesPerView: 5 },
-              }}
-              autoplay={{ delay: 2500, disableOnInteraction: false }}
-              loop={true}
-              className="max-w-6xl mx-auto"
-            >
-              {config.puntosDeVenta.map((punto, idx) => (
-                <SwiperSlide
-                  key={`${punto.estado}-${idx}`}
-                  className="flex flex-col items-center"
-                >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: idx * 0.05 }}
-                    className="flex flex-col items-center"
-                  >
-                    <img
-                      src={punto.logo}
-                      alt={punto.estado}
-                      className="h-16 w-auto mb-4 object-contain transition-transform duration-300 hover:scale-110"
-                    />
-                    <p className="text-brand-blue font-semibold">
-                      {punto.estado}
-                    </p>
-                  </motion.div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </section>
+          <PuntosDeVentaSection
+            header={config?.puntosDeVentaHeader}
+            puntos={config.puntosDeVenta}
+          />
         )}
 
       {/* 👉 Eventos (desde AC) — ABAJO DEL CTA */}
-      <EventosFromConfig className="w-full py-20 px-6 bg-gray-50" />
+      <EventosFromConfig className="w-full py-20 px-6 bg-white" />
 
       {config?.featureFlags?.showFinalCTA && config?.finalCTA?.enabled && (
         <section

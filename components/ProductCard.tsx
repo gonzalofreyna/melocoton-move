@@ -53,7 +53,7 @@ export default function ProductCard({
   const handleAddToCart = () => {
     if (isOut) return;
     addToCart({
-      slug: product.slug, // 👈 necesario para checkout seguro
+      slug: product.slug,
       name: product.name,
       image: img,
       price: finalPrice,
@@ -66,7 +66,7 @@ export default function ProductCard({
     <div className="relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-transform transform hover:scale-105">
       {shouldShowBadge && <OfferBadge cfg={offerBadge} />}
 
-      {/* Imagen + overlay integrado */}
+      {/* Imagen */}
       <div className="relative">
         <Link href={`/${product.slug}`} aria-label={`Ir a ${product.name}`}>
           <div className="w-full aspect-square flex items-center justify-center bg-white cursor-pointer">
@@ -80,20 +80,18 @@ export default function ProductCard({
           </div>
         </Link>
 
-        {/* Franja: Envío gratis */}
+        {/* Franja de envío */}
         {product.freeShipping === true && (
           <div className="absolute inset-x-0 bottom-0">
             <div className="bg-black/30 backdrop-blur-[2px]">
               <div className="px-3 py-2 text-center text-white text-[12px] tracking-wide">
-                <span className="inline-flex items-center font-medium">
-                  Envío gratis
-                </span>
+                Envío gratis
               </div>
             </div>
           </div>
         )}
 
-        {/* Overlay: Agotado */}
+        {/* Overlay agotado */}
         {isOut && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
             <span className="px-3 py-1.5 text-sm rounded-full bg-red-600 text-white font-semibold shadow">
@@ -103,51 +101,58 @@ export default function ProductCard({
         )}
       </div>
 
+      {/* Info del producto */}
       <div className="p-4 text-center">
-        <div className="flex items-start justify-center gap-2 mb-1">
-          <h3 className="text-lg font-semibold text-brand-blue">
+        {/* Nombre y stock */}
+        <div className="mb-3">
+          {/* Nombre del producto */}
+          <h3 className="text-base sm:text-lg font-semibold text-brand-blue leading-snug mb-1">
             {product.name}
           </h3>
+
+          {/* Stock Badge — debajo del nombre, antes de los colores */}
           {stockLabel && (
             <span
-              className={`text-[11px] px-2 py-0.5 rounded-full border ${stockClass}`}
+              className={`inline-block text-[11px] px-2 py-0.5 rounded-full border ${stockClass}`}
             >
               {stockLabel}
             </span>
           )}
         </div>
 
+        {/* Colores */}
         {product.colors && product.colors.length > 0 && (
           <div className="flex justify-center space-x-2 mt-2">
             {product.colors.map((color, idx) => (
               <div
                 key={idx}
-                className="w-5 h-5 rounded-full border border-gray-300"
+                className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-gray-300"
                 style={{ backgroundColor: color }}
               />
             ))}
           </div>
         )}
 
+        {/* Precios */}
         <div className="mt-2">
           {typeof product.discountPrice === "number" ? (
             <>
-              <p className="text-brand-blue font-bold text-lg">
+              <p className="text-brand-blue font-bold text-base sm:text-lg">
                 ${product.discountPrice.toFixed(2)} MXN
               </p>
-              <p className="text-gray-400 line-through text-sm">
+              <p className="text-gray-400 line-through text-xs sm:text-sm">
                 ${product.fullPrice.toFixed(2)} MXN
               </p>
             </>
           ) : (
-            <p className="text-brand-beige font-bold text-lg">
+            <p className="text-brand-beige font-bold text-base sm:text-lg">
               ${product.fullPrice.toFixed(2)} MXN
             </p>
           )}
         </div>
 
         {/* Botones */}
-        <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="mt-3 flex items-center justify-between gap-3">
           <button
             onClick={handleAddToCart}
             disabled={isOut}
@@ -160,7 +165,7 @@ export default function ProductCard({
 
           <Link
             href={`/${product.slug}`}
-            className="flex-1 text-center text-sm text-brand-blue border border-brand-blue py-2 rounded-xl hover:bg-brand-blue hover:text-white transition-colors"
+            className="flex-1 text-center text-xs sm:text-sm text-brand-blue border border-brand-blue py-2 rounded-xl hover:bg-brand-blue hover:text-white transition-colors"
           >
             Detalles
           </Link>

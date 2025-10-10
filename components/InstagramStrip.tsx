@@ -1,18 +1,19 @@
+"use client";
+
 import React from "react";
 
 type MediaItem = {
   type: "image" | "video";
-  src: string; // URL de la imagen o del video (mp4/webm)
-  alt?: string; // texto accesible
-  poster?: string; // thumbnail para el <video>
+  src: string;
+  alt?: string;
+  poster?: string;
 };
 
 type Props = {
   username?: string;
   url?: string;
-  /** Compat: si pasas 'images' seguirá funcionando (se convierten a items tipo 'image') */
   images?: string[];
-  items?: MediaItem[]; // mezcla de imágenes y videos
+  items?: MediaItem[];
 };
 
 export default function InstagramStrip({
@@ -21,7 +22,6 @@ export default function InstagramStrip({
   images,
   items,
 }: Props) {
-  // Backwards compatible: si recibimos 'images', las convertimos a items
   const fromImages: MediaItem[] = Array.isArray(images)
     ? images.filter(Boolean).map((src) => ({ type: "image" as const, src }))
     : [];
@@ -38,11 +38,10 @@ export default function InstagramStrip({
           }))
       : fromImages;
 
-  // Si no hay nada que mostrar, no renderizamos la sección
   if (!media.length) return null;
 
   return (
-    <section className="bg-[#F7EFE9]">
+    <section className="bg-brand-blue">
       <div className="max-w-6xl mx-auto px-6 py-10">
         {/* Cabecera */}
         <div className="flex items-center justify-between mb-6">
@@ -66,8 +65,45 @@ export default function InstagramStrip({
           </a>
         </div>
 
-        {/* Grid de medios (imágenes / videos) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+        {/* 📱 Scroll horizontal en móvil */}
+        <div className="md:hidden overflow-x-auto flex gap-4 pb-4 scrollbar-hide snap-x snap-mandatory">
+          {media.map((item, i) => (
+            <a
+              key={item.src + i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-none w-48 snap-start rounded-2xl overflow-hidden bg-white shadow hover:shadow-lg transition"
+              aria-label={`Abrir Instagram: item ${i + 1}`}
+            >
+              <div className="aspect-square">
+                {item.type === "video" ? (
+                  <video
+                    className="w-full h-full object-cover"
+                    src={item.src}
+                    poster={item.poster}
+                    muted
+                    autoPlay
+                    loop
+                    playsInline
+                    preload="none"
+                  />
+                ) : (
+                  <img
+                    src={item.src}
+                    alt={item.alt || `Instagram preview ${i + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {/* 💻 Grid normal para desktop */}
+        <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
           {media.map((item, i) => (
             <a
               key={(item.src || "") + i}

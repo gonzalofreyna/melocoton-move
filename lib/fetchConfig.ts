@@ -149,7 +149,7 @@ export type AppConfig = {
   };
 
   ui: { brandName: string; themeColor: string };
-  categories: { name: string; image: string; href: string }[];
+  categories: { name: string; image: string; href: string; overlay?: string }[]; // ✅ actualizado
   offerBadge: OfferBadgeConfig;
 
   instagramStrip?: InstagramStripConfig;
@@ -254,10 +254,20 @@ export async function fetchConfig(): Promise<AppConfig> {
     };
   }
 
+  // ===== NUEVO: Normalización para categories (imgs relativas -> absolutas)
+  const categories = Array.isArray(raw.categories)
+    ? raw.categories.map((cat) => ({
+        ...cat,
+        image: abs(cat.image),
+        overlay: abs(cat.overlay),
+      }))
+    : [];
+
   const navigation = raw.navigation;
 
   return {
     ...raw,
+    categories, // ✅ categorías con overlay normalizado
     instagramStrip,
     navigation,
     promoModal,
