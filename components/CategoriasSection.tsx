@@ -44,10 +44,15 @@ export default function CategoriasSection({
           sm:grid-cols-2
           lg:grid-cols-3
           overflow-x-auto
+          overflow-y-hidden        // 👈 elimina scroll vertical
           sm:overflow-visible
           pb-4
           scrollbar-hide
         "
+        style={{
+          WebkitOverflowScrolling: "touch", // 👈 mejora arrastre en iOS
+          touchAction: "pan-x", // 👈 bloquea desplazamiento vertical
+        }}
       >
         {categories.map((cat, idx) => {
           const overlaySrc = cat.overlay || "/images/hover-overlay.svg";
@@ -59,6 +64,10 @@ export default function CategoriasSection({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
+              whileTap={{
+                scale: 0.97,
+                transition: { type: "spring", stiffness: 300, damping: 20 },
+              }} // 👈 animación táctil suave
               className="
                 flex-shrink-0
                 w-[70%]
@@ -82,7 +91,7 @@ export default function CategoriasSection({
                   rounded-3xl
                   overflow-hidden
                   shadow-lg
-                  hover:shadow-xl
+                  sm:hover:shadow-xl  // ✅ hover solo en desktop
                   transition-all
                   duration-700
                   ease-out
@@ -98,7 +107,7 @@ export default function CategoriasSection({
                     rounded-3xl
                     transition-transform
                     duration-700
-                    group-hover:scale-105
+                    sm:hover:scale-105  // ✅ hover solo en desktop
                   "
                 />
 
@@ -107,7 +116,7 @@ export default function CategoriasSection({
                   className="
                     absolute inset-0 flex items-center justify-center
                     bg-black/0
-                    hover:bg-black/20
+                    sm:hover:bg-black/20  // ✅ hover solo desktop
                     transition-all duration-700
                   "
                 >
@@ -115,7 +124,7 @@ export default function CategoriasSection({
                     src={overlaySrc}
                     alt={`${cat.name} overlay`}
                     className="
-                      opacity-0 hover:opacity-90
+                      opacity-0 sm:hover:opacity-90  // ✅ hover solo desktop
                       w-[70%] h-[70%] lg:w-[85%] lg:h-[85%]
                       transition-all duration-700 ease-out
                       filter brightness-[300%] saturate-150

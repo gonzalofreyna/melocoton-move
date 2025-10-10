@@ -15,6 +15,7 @@ import { useRouter } from "next/router";
 import { fetchProducts } from "../lib/fetchProducts";
 import type { Product } from "../lib/fetchProducts";
 import MobileMenu from "./MobileMenu";
+import DesktopNav from "./DesktopNav";
 
 export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -99,10 +100,11 @@ export default function Header() {
             transition={{ duration: 0.4 }}
             className="fixed top-8 left-0 w-full z-40 bg-white shadow-md grid grid-cols-3 items-center px-4 md:px-6 py-3 gap-2"
           >
-            {/* 🍑 Columna izquierda: menú móvil */}
+            {/* 🍑 Columna izquierda: navegación */}
             <div className="flex items-center">
+              {/* 🔹 Menú hamburguesa solo visible hasta 1024px */}
               <button
-                className="text-brand-blue focus:outline-none"
+                className="text-brand-blue focus:outline-none lg:hidden"
                 onClick={() => setDrawerOpen((v) => !v)}
                 aria-label={drawerOpen ? "Cerrar menú" : "Abrir menú"}
                 aria-haspopup="dialog"
@@ -114,6 +116,11 @@ export default function Header() {
                   <Bars3Icon className="h-8 w-8" />
                 )}
               </button>
+
+              {/* 🔹 Menú horizontal (solo en escritorio, desde 1024px) */}
+              <div className="hidden lg:flex ml-6">
+                <DesktopNav />
+              </div>
             </div>
 
             {/* 🩷 Logo central */}
@@ -229,10 +236,11 @@ export default function Header() {
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Buscar..."
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring focus:border-brand-blue"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:ring focus:border-brand-blue" // 👈 evita el zoom en iPhone
                   aria-label="Buscar productos"
                   autoComplete="off"
                 />
+
                 <button
                   onClick={handleSearch}
                   aria-label="Buscar"

@@ -332,24 +332,26 @@ export default function ProductDetail() {
               <div className="mt-4">
                 <div
                   ref={containerRef}
-                  className="relative overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth max-w-full"
+                  className="relative overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide scroll-smooth max-w-full"
                   style={{ WebkitOverflowScrolling: "touch" }}
                 >
                   <motion.div
                     ref={trackRef}
                     className="flex gap-3 cursor-grab active:cursor-grabbing sm:justify-start min-w-max"
-                    style={{ touchAction: "pan-y" }}
+                    style={{ touchAction: "pan-x" }}
                     drag={
                       typeof window !== "undefined" && window.innerWidth < 1024
                         ? "x"
                         : false
                     }
+                    dragPropagation={false}
                     dragConstraints={dragLimits}
-                    dragElastic={0.08}
+                    dragElastic={0.05}
                     dragMomentum={
                       typeof window !== "undefined" && window.innerWidth < 1024
                     }
                     dragTransition={{ power: 0.2, timeConstant: 300 }}
+                    whileTap={{ cursor: "grabbing" }}
                     onWheel={onWheel}
                   >
                     {allThumbs.map((url, i) => {

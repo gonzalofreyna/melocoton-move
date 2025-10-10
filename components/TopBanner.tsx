@@ -7,7 +7,7 @@ import {
 } from "framer-motion";
 import { useEffect, useMemo } from "react";
 import { useScrollVisibility } from "../hooks/useScrollVisibility";
-import { useAppConfig } from "../context/ConfigContext"; // <-- leemos el AC del contexto
+import { useAppConfig } from "../context/ConfigContext";
 
 export default function TopBanner() {
   const visible = useScrollVisibility();
@@ -15,38 +15,37 @@ export default function TopBanner() {
   const controls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
 
-  // Lee valores del config SIEMPRE antes de cualquier return, para no romper el orden de hooks
+  // Lee valores del config antes del render
   const text = (config?.topBanner?.text ?? "").trim();
   const href = config?.topBanner?.link ?? null;
   const enabled =
     !!config?.featureFlags?.showTopBanner && !!config?.topBanner?.enabled;
 
-  // Calcular duración (seg) de forma estable, sin condicionar hooks
+  // Duración de la animación según longitud del texto
   const duration = useMemo(() => {
     const base = Math.max(8, Math.min(30, Math.round((text.length / 30) * 10)));
     return base;
   }, [text]);
 
-  // Iniciar/pausar animación SIEMPRE desde un hook no condicional
+  // Control de animación
   useEffect(() => {
-    // Si no hay texto, no está habilitado, o reduce-motion, no animar
     if (loading || !enabled || !text || prefersReducedMotion) return;
     controls.start({
       x: ["0%", "-50%"],
       transition: { ease: "linear", duration, repeat: Infinity },
     });
-    return () => {
-      controls.stop();
-    };
+    return () => controls.stop();
   }, [controls, duration, enabled, loading, prefersReducedMotion, text]);
 
-  // A partir de aquí sí podemos cortar el render
   if (loading || !visible || !enabled || !text) return null;
 
   const Content = () => (
-    <div className="flex items-center gap-4 sm:gap-8 pr-4 sm:pr-8 whitespace-nowrap">
+    <div className="flex items-center justify-center gap-4 sm:gap-8 pr-4 sm:pr-8 whitespace-nowrap">
       {href ? (
-        <a href={href} className="inline-block underline underline-offset-2">
+        <a
+          href={href}
+          className="inline-block underline underline-offset-2 hover:opacity-90 transition-opacity"
+        >
           {text}
         </a>
       ) : (
@@ -65,32 +64,40 @@ export default function TopBanner() {
         className="fixed top-0 left-0 w-full bg-brand-blue text-white z-50 min-h-[36px] sm:min-h-0"
       >
         <div className="relative mx-auto max-w-screen-2xl">
-          {/* Fader sutil en bordes */}
+          {/* 🎨 Faders sutiles en bordes */}
           <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-brand-blue to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-brand-blue to-transparent" />
 
-          <div className="overflow-hidden py-1 text-center text-[13px] sm:text-sm leading-[1.35] font-medium">
-            {/* Pista: dos copias para loop perfecto */}
-            <motion.div
-              className="flex whitespace-nowrap w-[200%] will-change-transform"
-              animate={prefersReducedMotion ? undefined : controls}
-              onMouseEnter={() => controls.stop()}
-              onMouseLeave={() =>
-                controls.start({
-                  x: ["0%", "-50%"],
-                  transition: { ease: "linear", duration, repeat: Infinity },
-                })
-              }
-            >
-              <div className="flex w-1/2 justify-center">
-                <Content />
-              </div>
-              <div className="flex w-1/2 justify-center">
-                <Content />
-              </div>
-            </motion.div>
+          {/* 🧭 Contenido principal */}
+          <div className="overflow-hidden flex items-center justify-center text-center text-[13px] sm:text-sm leading-[1.35] font-medium h-[36px] sm:h-auto">
+            {/* 🔁 Marquee animado solo en móvil */}
+            <div className="w-full sm:hidden">
+              <motion.div
+                className="flex whitespace-nowrap w-[200%] will-change-transform"
+                animate={prefersReducedMotion ? undefined : controls}
+                onMouseEnter={() => controls.stop()}
+                onMouseLeave={() =>
+                  controls.start({
+                    x: ["0%", "-50%"],
+                    transition: { ease: "linear", duration, repeat: Infinity },
+                  })
+                }
+              >
+                <div className="flex w-1/2 justify-center">
+                  <Content />
+                </div>
+                <div className="flex w-1/2 justify-center">
+                  <Content />
+                </div>
+              </motion.div>
+            </div>
 
-            {/* Modo reduce-motion: sin animación, mostramos una sola vez */}
+            {/* 🖥️ Texto estático centrado en escritorio */}
+            <div className="hidden sm:flex justify-center items-center w-full">
+              <Content />
+            </div>
+
+            {/* ♿ Modo sin animación (reduce-motion) */}
             {prefersReducedMotion && (
               <div className="inline-flex items-center gap-2">
                 <Content />

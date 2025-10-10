@@ -38,7 +38,7 @@ export type NavItem = {
 
 export type PromoModalCountdownConfig = {
   enabled: boolean;
-  launchAt: string; // ISO 8601 recomendado
+  launchAt: string;
   afterText?: string;
   showWhenExpired?: boolean;
 };
@@ -66,11 +66,11 @@ export type EventItem = {
   id?: string | number;
   title: string;
   artist?: string;
-  date: string; // ISO
+  date: string;
   city: string;
   venue: string;
   time?: string;
-  image: string; // puede ser relativa; se normaliza con assets.baseUrl
+  image: string;
   href?: string;
   badges?: EventBadge[];
 };
@@ -86,13 +86,27 @@ export type EventsConfig = {
 /** ========= NUEVO: Opening Studio ========= */
 export type OpeningStudioConfig = {
   enabled: boolean;
-  image: string; // relativa o absoluta
+  image: string;
   title: string;
   description: string;
   buttonText: string;
-  buttonHref?: string; // default: /products?category=reformer
+  buttonHref?: string;
 };
 /** ======================================== */
+
+/** ========= NUEVO: Hero Slides ========= */
+export type HeroSlide = {
+  type: "image" | "video";
+  desktopImage?: string;
+  mobileImage?: string;
+  videoUrl?: string;
+  title?: string;
+  paragraph?: string;
+  alt?: string;
+  overlay?: { enabled?: boolean; opacity?: number };
+  cta?: { text?: string; href?: string; enabled?: boolean };
+};
+/** ===================================== */
 
 export type AppConfig = {
   version: number;
@@ -101,15 +115,8 @@ export type AppConfig = {
   topBanner: { text: string; enabled: boolean; link: string | null };
   assets: { baseUrl: string };
 
-  hero: {
-    desktopImage: string;
-    mobileImage: string;
-    title: string;
-    alt: string;
-    focalPoint: { x: number; y: number };
-    overlay: { enabled: boolean; opacity: number };
-    cta: { text: string; href: string; enabled: boolean };
-  };
+  /** 👇 Reemplaza el antiguo hero */
+  heroSlides?: HeroSlide[];
 
   puntosDeVentaHeader: { title: string; subtitle: string };
   puntosDeVenta: { estado: string; logo: string }[];
@@ -144,22 +151,17 @@ export type AppConfig = {
     showReturnPolicy: boolean;
     showPrivacyPolicy: boolean;
     showOfferBadge: boolean;
-    /** 👇 NUEVO */
     showOpeningStudio?: boolean;
   };
 
   ui: { brandName: string; themeColor: string };
-  categories: { name: string; image: string; href: string; overlay?: string }[]; // ✅ actualizado
+  categories: { name: string; image: string; href: string; overlay?: string }[];
   offerBadge: OfferBadgeConfig;
 
   instagramStrip?: InstagramStripConfig;
   navigation?: { primary?: NavItem[]; quickFilters?: NavItem[] };
   promoModal?: PromoModalConfig;
-
-  /** Sección de eventos */
   events?: EventsConfig;
-
-  /** 👇 NUEVO: sección Opening Studio */
   openingStudio?: OpeningStudioConfig;
 };
 
@@ -175,7 +177,7 @@ export async function fetchConfig(): Promise<AppConfig> {
 
   const raw = (await res.json()) as AppConfig;
 
-  // ===== Utilidades de normalización
+  // ===== Utilidades
   const base = (raw.assets?.baseUrl || "").replace(/\/+$/, "");
   const isHttp = (u?: string) => !!u && /^https?:\/\//i.test(u);
   const abs = (u?: string) => {
@@ -222,7 +224,17 @@ export async function fetchConfig(): Promise<AppConfig> {
     promoModal = { ...promoModal, image: abs(promoModal.image) };
   }
 
-  // ===== NUEVO: Normalización para openingStudio
+  // ===== NUEVO: Normalización para heroSlides
+  let heroSlides: HeroSlide[] | undefined = Array.isArray(raw.heroSlides)
+    ? raw.heroSlides.map((s) => ({
+        ...s,
+        desktopImage: s.desktopImage ? abs(s.desktopImage) : undefined,
+        mobileImage: s.mobileImage ? abs(s.mobileImage) : undefined,
+        videoUrl: s.videoUrl ? abs(s.videoUrl) : undefined,
+      }))
+    : undefined;
+
+  // ===== Normalización para openingStudio
   let openingStudio = raw.openingStudio;
   if (openingStudio?.image) {
     openingStudio = {
@@ -232,7 +244,7 @@ export async function fetchConfig(): Promise<AppConfig> {
     };
   }
 
-  // ===== Normalización para events (imgs relativas -> absolutas)
+  // ===== Normalización para events
   let events = raw.events;
   if (events?.items?.length) {
     events = {
@@ -254,7 +266,7 @@ export async function fetchConfig(): Promise<AppConfig> {
     };
   }
 
-  // ===== NUEVO: Normalización para categories (imgs relativas -> absolutas)
+  // ===== Normalización para categories
   const categories = Array.isArray(raw.categories)
     ? raw.categories.map((cat) => ({
         ...cat,
@@ -267,11 +279,12 @@ export async function fetchConfig(): Promise<AppConfig> {
 
   return {
     ...raw,
-    categories, // ✅ categorías con overlay normalizado
+    heroSlides, // 👈 nuevo hero dinámico
+    categories,
     instagramStrip,
     navigation,
     promoModal,
     events,
-    openingStudio, // 👈 incluye Opening Studio normalizado
+    openingStudio,
   };
 }
