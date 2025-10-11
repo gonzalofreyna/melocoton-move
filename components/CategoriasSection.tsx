@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 type Categoria = {
   name: string;
@@ -57,34 +58,36 @@ export default function CategoriasSection({
         {categories.map((cat, idx) => {
           const overlaySrc = cat.overlay || "/images/hover-overlay.svg";
           return (
-            <motion.a
+            <Link
               key={idx}
               href={cat.href}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: idx * 0.1 }}
-              whileTap={{
-                scale: 0.97,
-                transition: { type: "spring", stiffness: 300, damping: 20 },
-              }} // 👈 animación táctil suave
               className="
-                flex-shrink-0
-                w-[70%]
-                sm:w-auto
-                flex
-                flex-col
-                items-center
-                cursor-pointer
-                mx-auto
-                transition-transform
-                duration-700
-                ease-out
-              "
+    flex-shrink-0
+    w-[70%]
+    sm:w-auto
+    flex
+    flex-col
+    items-center
+    cursor-pointer
+    mx-auto
+    transition-transform
+    duration-700
+    ease-out
+  "
             >
-              {/* 📸 Imagen cuadrada con overlay */}
-              <div
-                className="
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                whileTap={{
+                  scale: 0.97,
+                  transition: { type: "spring", stiffness: 300, damping: 20 },
+                }}
+              >
+                {/* 📸 Imagen cuadrada con overlay */}
+                <div
+                  className="
                   relative
                   w-full
                   aspect-square
@@ -96,11 +99,11 @@ export default function CategoriasSection({
                   duration-700
                   ease-out
                 "
-              >
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="
+                >
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="
                     w-full
                     h-full
                     object-cover
@@ -109,35 +112,36 @@ export default function CategoriasSection({
                     duration-700
                     sm:hover:scale-105  // ✅ hover solo en desktop
                   "
-                />
+                  />
 
-                {/* Overlay blanco brillante */}
-                <div
-                  className="
+                  {/* Overlay blanco brillante */}
+                  <div
+                    className="
                     absolute inset-0 flex items-center justify-center
                     bg-black/0
                     sm:hover:bg-black/20  // ✅ hover solo desktop
                     transition-all duration-700
                   "
-                >
-                  <img
-                    src={overlaySrc}
-                    alt={`${cat.name} overlay`}
-                    className="
+                  >
+                    <img
+                      src={overlaySrc}
+                      alt={`${cat.name} overlay`}
+                      className="
                       opacity-0 sm:hover:opacity-90  // ✅ hover solo desktop
                       w-[70%] h-[70%] lg:w-[85%] lg:h-[85%]
                       transition-all duration-700 ease-out
                       filter brightness-[300%] saturate-150
                     "
-                  />
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* 🏷️ Nombre debajo */}
-              <p className="mt-5 text-base sm:text-lg font-semibold text-brand-blue text-center">
-                {cat.name}
-              </p>
-            </motion.a>
+                {/* 🏷️ Nombre debajo */}
+                <p className="mt-5 text-base sm:text-lg font-semibold text-brand-blue text-center">
+                  {cat.name}
+                </p>
+              </motion.div>
+            </Link>
           );
         })}
       </div>

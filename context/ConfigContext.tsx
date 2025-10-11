@@ -1,51 +1,76 @@
 // context/ConfigContext.tsx
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  ReactNode,
+} from "react";
 import type { AppConfig } from "../lib/fetchConfig";
 import { fetchConfig } from "../lib/fetchConfig";
 
-type State = {
+/** ===== Tipado del contexto ===== */
+type ConfigContextType = {
   config: AppConfig | null;
   loading: boolean;
   error: string | null;
+  refresh: () => Promise<void>;
 };
 
-const ConfigContext = createContext<State>({
+const ConfigContext = createContext<ConfigContextType>({
   config: null,
   loading: true,
   error: null,
+  refresh: async () => {},
 });
 
-export function ConfigProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<State>({
-    config: null,
-    loading: true,
-    error: null,
-  });
+/** ===== Provider principal ===== */
+export function ConfigProvider({ children }: { children: ReactNode }) {
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ⚡ Evita doble fetch con React.StrictMode
+  const loadedOnce = useRef(false);
+
+  const loadConfig = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchConfig();
+      setConfig(data);
+    } catch (e: any) {
+      console.error("Error cargando configuración:", e);
+      setError(e?.message || "Error al cargar configuración");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const cfg = await fetchConfig();
-        if (!cancelled) setState({ config: cfg, loading: false, error: null });
-      } catch (e: any) {
-        if (!cancelled)
-          setState({
-            config: null,
-            loading: false,
-            error: e?.message || "CONFIG_ERROR",
-          });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    if (!loadedOnce.current) {
+      loadedOnce.current = true;
+      loadConfig();
+    }
   }, []);
 
   return (
-    <ConfigContext.Provider value={state}>{children}</ConfigContext.Provider>
+    <ConfigContext.Provider
+      value={{
+        config,
+        loading,
+        error,
+        refresh: loadConfig,
+      }}
+    >
+      {children}
+    </ConfigContext.Provider>
   );
 }
 
-export const useAppConfig = () => useContext(ConfigContext);
+/** ===== Hook de acceso ===== */
+export function useAppConfig() {
+  return useContext(ConfigContext);
+}

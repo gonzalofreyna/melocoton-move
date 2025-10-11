@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import OpeningStudioSection from "../components/OpeningStudioSection";
 import { useAppConfig } from "../context/ConfigContext";
+import Link from "next/link";
 
 export default function AboutUs() {
   const { config, loading: configLoading } = useAppConfig();
@@ -45,18 +46,21 @@ export default function AboutUs() {
                 {config.openingStudio.description}
               </motion.p>
 
-              <motion.a
+              <Link
                 href={
                   config.openingStudio.buttonHref ||
                   "/products?category=reformer"
                 }
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.2, delay: 0.4 }}
-                className="bg-brand-beige text-brand-blue px-6 py-3 rounded-xl font-semibold hover:bg-white hover:text-brand-blue transition-colors shadow-lg"
+                className="inline-block bg-brand-beige text-brand-blue px-6 py-3 rounded-xl font-semibold hover:bg-white hover:text-brand-blue transition-colors shadow-lg"
               >
-                {config.openingStudio.buttonText}
-              </motion.a>
+                <motion.span
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1.2, delay: 0.4 }}
+                >
+                  {config.openingStudio.buttonText}
+                </motion.span>
+              </Link>
             </div>
           </section>
         )}

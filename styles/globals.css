@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @import "swiper/css";
 @import "swiper/css/pagination";
 @import "swiper/css/navigation";
@@ -8,6 +9,26 @@
 body {
   @apply font-sans;
 }
+
 .custom-swiper .swiper-pagination {
   display: none;
+}
+
+/* 🌈 Animación sutil tipo Bala */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background: linear-gradient(270deg, #fbc2eb, #d8c7f9, #a6c1ee, #fbc2eb);
+  background-size: 300% 300%;
+  animation: gradientShift 10s ease-in-out infinite;
 }

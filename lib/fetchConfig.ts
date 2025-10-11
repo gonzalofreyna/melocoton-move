@@ -1,4 +1,6 @@
 // lib/fetchConfig.ts
+
+/** ========= Tipos base ========= */
 export type InfoSection = { title: string; content: string };
 
 export type OfferBadgeConfig = {
@@ -81,7 +83,6 @@ export type EventsConfig = {
   seeAll?: { enabled?: boolean; href?: string; label?: string };
   items: EventItem[];
 };
-/** ===================================== */
 
 /** ========= NUEVO: Opening Studio ========= */
 export type OpeningStudioConfig = {
@@ -92,7 +93,6 @@ export type OpeningStudioConfig = {
   buttonText: string;
   buttonHref?: string;
 };
-/** ======================================== */
 
 /** ========= NUEVO: Hero Slides ========= */
 export type HeroSlide = {
@@ -106,8 +106,8 @@ export type HeroSlide = {
   overlay?: { enabled?: boolean; opacity?: number };
   cta?: { text?: string; href?: string; enabled?: boolean };
 };
-/** ===================================== */
 
+/** ========= Config principal ========= */
 export type AppConfig = {
   version: number;
   updatedAt: string;
@@ -115,7 +115,6 @@ export type AppConfig = {
   topBanner: { text: string; enabled: boolean; link: string | null };
   assets: { baseUrl: string };
 
-  /** 👇 Reemplaza el antiguo hero */
   heroSlides?: HeroSlide[];
 
   puntosDeVentaHeader: { title: string; subtitle: string };
@@ -165,126 +164,148 @@ export type AppConfig = {
   openingStudio?: OpeningStudioConfig;
 };
 
-// ✅ Solo API (sin fallback a S3)
+/** ========= Fetch principal ========= */
+
+// ✅ URL desde .env.local
 const API_CONFIG_URL = process.env.NEXT_PUBLIC_API_CONFIG_URL!;
 if (!API_CONFIG_URL) {
   throw new Error("Falta NEXT_PUBLIC_API_CONFIG_URL");
 }
 
+// ⚡️ Cache en memoria y dedupe
+let cache: AppConfig | null = null;
+let inFlight: Promise<AppConfig> | null = null;
+// 🕒 Valor que cambia cada 30 minutos → invalida caché automáticamente
+const VERSION_KEY = Math.floor(Date.now() / (30 * 60 * 1000));
+
 export async function fetchConfig(): Promise<AppConfig> {
-  const res = await fetch(API_CONFIG_URL, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Error cargando config: ${res.status}`);
+  if (cache) return cache;
+  if (inFlight) return inFlight;
 
-  const raw = (await res.json()) as AppConfig;
+  inFlight = (async () => {
+    const url = `${API_CONFIG_URL}?v=${VERSION_KEY}`;
+    console.log("♻️ Fetching config from", url);
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Error cargando config: ${res.status}`);
 
-  // ===== Utilidades
-  const base = (raw.assets?.baseUrl || "").replace(/\/+$/, "");
-  const isHttp = (u?: string) => !!u && /^https?:\/\//i.test(u);
-  const abs = (u?: string) => {
-    if (!u) return u;
-    if (isHttp(u)) return u;
-    if (!base) return u;
-    return `${base}${u.startsWith("/") ? "" : "/"}${u}`;
-  };
+    const raw = (await res.json()) as AppConfig;
 
-  // ===== Normalización SOLO para instagramStrip
-  let instagramStrip: InstagramStripConfig | undefined = raw.instagramStrip;
-  if (instagramStrip) {
-    instagramStrip = {
-      enabled: !!instagramStrip.enabled,
-      username: instagramStrip.username,
-      url:
-        instagramStrip.url ||
-        (instagramStrip.username
-          ? `https://instagram.com/${instagramStrip.username}`
-          : undefined),
-      items: Array.isArray(instagramStrip.items)
-        ? (instagramStrip.items
-            .map((it) => {
-              const type: "image" | "video" =
-                it?.type === "video" ? "video" : "image";
-              const src = abs(it?.src);
-              if (!src) return null;
-              return {
-                type,
-                src,
-                poster: abs(it?.poster),
-                href: it?.href ?? undefined,
-                alt: it?.alt ?? undefined,
-              } as InstagramMediaItem;
-            })
-            .filter(Boolean) as InstagramMediaItem[])
-        : [],
+    // ===== Utilidades
+    const base = (raw.assets?.baseUrl || "").replace(/\/+$/, "");
+    const isHttp = (u?: string) => !!u && /^https?:\/\//i.test(u);
+    const abs = (u?: string) => {
+      if (!u) return u;
+      if (isHttp(u)) return u;
+      if (!base) return u;
+      return `${base}${u.startsWith("/") ? "" : "/"}${u}`;
     };
-  }
 
-  // ===== Normalización para promoModal.image
-  let promoModal: PromoModalConfig | undefined = raw.promoModal;
-  if (promoModal?.image) {
-    promoModal = { ...promoModal, image: abs(promoModal.image) };
-  }
+    // ===== Normalización de instagramStrip
+    let instagramStrip: InstagramStripConfig | undefined = raw.instagramStrip;
+    if (instagramStrip) {
+      instagramStrip = {
+        enabled: !!instagramStrip.enabled,
+        username: instagramStrip.username,
+        url:
+          instagramStrip.url ||
+          (instagramStrip.username
+            ? `https://instagram.com/${instagramStrip.username}`
+            : undefined),
+        items: Array.isArray(instagramStrip.items)
+          ? (instagramStrip.items
+              .map((it) => {
+                const type: "image" | "video" =
+                  it?.type === "video" ? "video" : "image";
+                const src = abs(it?.src);
+                if (!src) return null;
+                return {
+                  type,
+                  src,
+                  poster: abs(it?.poster),
+                  href: it?.href ?? undefined,
+                  alt: it?.alt ?? undefined,
+                } as InstagramMediaItem;
+              })
+              .filter(Boolean) as InstagramMediaItem[])
+          : [],
+      };
+    }
 
-  // ===== NUEVO: Normalización para heroSlides
-  let heroSlides: HeroSlide[] | undefined = Array.isArray(raw.heroSlides)
-    ? raw.heroSlides.map((s) => ({
-        ...s,
-        desktopImage: s.desktopImage ? abs(s.desktopImage) : undefined,
-        mobileImage: s.mobileImage ? abs(s.mobileImage) : undefined,
-        videoUrl: s.videoUrl ? abs(s.videoUrl) : undefined,
-      }))
-    : undefined;
+    // ===== Normalización de promoModal
+    let promoModal: PromoModalConfig | undefined = raw.promoModal;
+    if (promoModal?.image) {
+      promoModal = { ...promoModal, image: abs(promoModal.image) };
+    }
 
-  // ===== Normalización para openingStudio
-  let openingStudio = raw.openingStudio;
-  if (openingStudio?.image) {
-    openingStudio = {
-      ...openingStudio,
-      image: abs(openingStudio.image),
-      buttonHref: openingStudio.buttonHref || "/products?category=reformer",
-    };
-  }
-
-  // ===== Normalización para events
-  let events = raw.events;
-  if (events?.items?.length) {
-    events = {
-      ...events,
-      items: events.items
-        .map((it, i) => ({
-          id: it.id ?? i,
-          title: it.title,
-          artist: it.artist,
-          date: it.date,
-          city: it.city,
-          venue: it.venue,
-          time: it.time,
-          image: abs(it.image),
-          href: it.href,
-          badges: Array.isArray(it.badges) ? it.badges : [],
+    // ===== Normalización de heroSlides
+    let heroSlides: HeroSlide[] | undefined = Array.isArray(raw.heroSlides)
+      ? raw.heroSlides.map((s) => ({
+          ...s,
+          desktopImage: s.desktopImage ? abs(s.desktopImage) : undefined,
+          mobileImage: s.mobileImage ? abs(s.mobileImage) : undefined,
+          videoUrl: s.videoUrl ? abs(s.videoUrl) : undefined,
         }))
-        .filter((it) => !!it.title && !!it.date && !!it.image),
+      : undefined;
+
+    // ===== Normalización de openingStudio
+    let openingStudio = raw.openingStudio;
+    if (openingStudio?.image) {
+      openingStudio = {
+        ...openingStudio,
+        image: abs(openingStudio.image),
+        buttonHref: openingStudio.buttonHref || "/products?category=reformer",
+      };
+    }
+
+    // ===== Normalización de events
+    let events = raw.events;
+    if (events?.items?.length) {
+      events = {
+        ...events,
+        items: events.items
+          .map((it, i) => ({
+            id: it.id ?? i,
+            title: it.title,
+            artist: it.artist,
+            date: it.date,
+            city: it.city,
+            venue: it.venue,
+            time: it.time,
+            image: abs(it.image),
+            href: it.href,
+            badges: Array.isArray(it.badges) ? it.badges : [],
+          }))
+          .filter((it) => !!it.title && !!it.date && !!it.image),
+      };
+    }
+
+    // ===== Normalización de categories
+    const categories = Array.isArray(raw.categories)
+      ? raw.categories.map((cat) => ({
+          ...cat,
+          image: abs(cat.image),
+          overlay: abs(cat.overlay),
+        }))
+      : [];
+
+    const navigation = raw.navigation;
+
+    // ===== Resultado final
+    const normalized: AppConfig = {
+      ...raw,
+      heroSlides,
+      categories,
+      instagramStrip,
+      navigation,
+      promoModal,
+      events,
+      openingStudio,
     };
-  }
 
-  // ===== Normalización para categories
-  const categories = Array.isArray(raw.categories)
-    ? raw.categories.map((cat) => ({
-        ...cat,
-        image: abs(cat.image),
-        overlay: abs(cat.overlay),
-      }))
-    : [];
+    cache = normalized;
+    inFlight = null;
+    return normalized;
+  })();
 
-  const navigation = raw.navigation;
-
-  return {
-    ...raw,
-    heroSlides, // 👈 nuevo hero dinámico
-    categories,
-    instagramStrip,
-    navigation,
-    promoModal,
-    events,
-    openingStudio,
-  };
+  return inFlight;
 }

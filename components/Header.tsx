@@ -16,6 +16,7 @@ import { fetchProducts } from "../lib/fetchProducts";
 import type { Product } from "../lib/fetchProducts";
 import MobileMenu from "./MobileMenu";
 import DesktopNav from "./DesktopNav";
+import Logo from "../components/Logo";
 
 export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);

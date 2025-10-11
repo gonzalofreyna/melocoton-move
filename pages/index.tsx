@@ -1,11 +1,10 @@
 // pages/index.tsx
-import { useEffect, useState } from "react";
-import { fetchProducts } from "../lib/fetchProducts";
-import type { Product } from "../lib/fetchProducts";
 import "swiper/css";
 import "swiper/css/pagination";
 
 import { useAppConfig } from "../context/ConfigContext";
+import { useProducts } from "../context/ProductsContext";
+
 import PromoModal from "../components/PromoModal";
 import OpeningStudioSection from "../components/OpeningStudioSection";
 import { EventosFromConfig } from "../components/EventosCarousel";
@@ -13,31 +12,12 @@ import PuntosDeVentaSection from "../components/PuntosDeVentaSection";
 import CategoriasSection from "../components/CategoriasSection";
 import AboutUsHero from "../components/AboutUsHero";
 import FeaturedProductsSection from "../components/FeaturedProductsSection";
-
-// 👇 NUEVO Hero dinámico
 import HeroSection from "../components/HeroSection";
+import Link from "next/link";
 
 export default function Home() {
   const { config, loading: configLoading } = useAppConfig();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const data = await fetchProducts();
-        if (mounted) setProducts(data);
-      } catch (e) {
-        console.error("Error cargando productos", e);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { products, loading: productsLoading, error } = useProducts();
 
   if (configLoading) return null;
 
@@ -45,8 +25,6 @@ export default function Home() {
     !!config?.featureFlags?.showHero &&
     Array.isArray(config?.heroSlides) &&
     config.heroSlides.length > 0;
-
-  const featuredProducts = products.filter((p) => p.featured);
 
   return (
     <main className="flex flex-col items-center text-center bg-gray-50">
@@ -65,11 +43,7 @@ export default function Home() {
       <AboutUsHero />
 
       {/* Productos destacados */}
-      <FeaturedProductsSection
-        featuredProducts={featuredProducts}
-        loading={loading}
-        config={config}
-      />
+      <FeaturedProductsSection />
 
       {/* Puntos de venta */}
       {config?.featureFlags?.showPuntosDeVenta &&
@@ -101,12 +75,12 @@ export default function Home() {
               {config.finalCTA.title}
             </h2>
             <p className="mb-8 text-lg">{config.finalCTA.description}</p>
-            <a
+            <Link
               href={config.finalCTA.buttonLink}
-              className="bg-brand-beige text-brand-blue font-semibold px-8 py-4 rounded-xl hover:bg-white transition-transform transform hover:scale-105 shadow-md"
+              className="inline-block bg-brand-beige text-brand-blue font-semibold px-8 py-4 rounded-xl hover:bg-white transition-transform transform hover:scale-105 shadow-md"
             >
               {config.finalCTA.buttonText}
-            </a>
+            </Link>
           </div>
         </section>
       )}

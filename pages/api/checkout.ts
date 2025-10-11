@@ -162,11 +162,7 @@ export default async function handler(
     const idemSeed = JSON.stringify({ items, codeInput });
     const idempotencyKey =
       "checkout_" +
-      crypto
-        .createHash("sha256")
-        .update(idemSeed + Date.now())
-        .digest("hex")
-        .slice(0, 32);
+      crypto.createHash("sha256").update(idemSeed).digest("hex").slice(0, 32);
 
     // Crear sesión Stripe
     const session = await stripe.checkout.sessions.create(

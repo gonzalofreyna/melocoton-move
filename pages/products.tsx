@@ -1,41 +1,22 @@
 // pages/products.tsx
 import { useRouter } from "next/router";
+import { useMemo } from "react";
 import ProductCard from "../components/ProductCard";
-import { fetchProducts } from "../lib/fetchProducts";
-import { useEffect, useState, useMemo } from "react";
-import type { Product } from "../lib/fetchProducts";
-import { fetchConfig } from "../lib/fetchConfig";
-import type { AppConfig } from "../lib/fetchConfig";
+import { useProducts } from "../context/ProductsContext";
+import { useAppConfig } from "../context/ConfigContext";
 
 export default function ProductsPage() {
   const router = useRouter();
   const { category, search, onSale, popular, freeShipping, sort } =
     router.query;
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<null | string>(null);
+  const {
+    products,
+    loading: productsLoading,
+    error: productsError,
+  } = useProducts();
 
-  const [config, setConfig] = useState<AppConfig | null>(null);
-  const [configLoading, setConfigLoading] = useState(true);
-  const [configErr, setConfigErr] = useState<null | string>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [data, cfg] = await Promise.all([fetchProducts(), fetchConfig()]);
-        setProducts(data);
-        setConfig(cfg);
-      } catch (e) {
-        setErr((prev) => prev ?? "No se pudieron cargar los productos.");
-        setConfigErr((prev) => prev ?? "No se pudo cargar la configuración.");
-        console.error(e);
-      } finally {
-        setLoading(false);
-        setConfigLoading(false);
-      }
-    })();
-  }, []);
+  const { config, loading: configLoading, error: configError } = useAppConfig();
 
   const q = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
@@ -110,8 +91,8 @@ export default function ProductsPage() {
     ? cap(categoryString)
     : "Nuestros Productos";
 
-  const isLoading = loading || configLoading;
-  const anyError = err || configErr;
+  const isLoading = productsLoading || configLoading;
+  const anyError = productsError || configError;
 
   return (
     <main className="flex flex-col items-center px-6 py-16 bg-gray-50 min-h-screen">
@@ -122,8 +103,8 @@ export default function ProductsPage() {
       {isLoading && <p className="text-gray-500">Cargando productos…</p>}
       {anyError && !isLoading && (
         <div className="text-center space-y-2">
-          {err && <p className="text-red-600">{err}</p>}
-          {configErr && <p className="text-red-600">{configErr}</p>}
+          {productsError && <p className="text-red-600">{productsError}</p>}
+          {configError && <p className="text-red-600">{configError}</p>}
         </div>
       )}
 

@@ -4,59 +4,43 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
-import { fetchProducts } from "../lib/fetchProducts";
+
 import type { Product } from "../lib/fetchProducts";
 import { resolveImage } from "../lib/resolveImage";
-import { fetchConfig } from "../lib/fetchConfig";
-import type { OfferBadgeConfig, AppConfig } from "../lib/fetchConfig";
+import { useProducts } from "../context/ProductsContext";
+import { useAppConfig } from "../context/ConfigContext";
+
 import { motion } from "framer-motion";
 import type React from "react";
-
-function normalizeBool(v: unknown): boolean {
-  return v === true || v === "true" || v === 1 || v === "1";
-}
 
 export default function ProductDetail() {
   const router = useRouter();
   const { slug } = router.query;
   const { addToCart } = useCart();
 
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [offerBadge, setOfferBadge] = useState<OfferBadgeConfig | null>(null);
-  const [featureFlags, setFeatureFlags] = useState<
-    AppConfig["featureFlags"] | null
-  >(null);
-  const [loading, setLoading] = useState(true);
+  const { products, loading: productsLoading } = useProducts();
+  const { config, loading: configLoading } = useAppConfig();
+
+  // Normaliza el flag showOfferBadge si existe
+  const featureFlags = config
+    ? {
+        ...config.featureFlags,
+        showOfferBadge: config.featureFlags?.showOfferBadge === true,
+      }
+    : null;
+
+  const offerBadge = config?.offerBadge ?? null;
+
+  // Loading global para este componente
+  const loading = productsLoading || configLoading;
 
   const [mainUrl, setMainUrl] = useState<string>("");
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [productsData, cfg] = await Promise.all([
-          fetchProducts(),
-          fetchConfig(),
-        ]);
-        const flags = {
-          ...cfg.featureFlags,
-          showOfferBadge: normalizeBool(cfg.featureFlags?.showOfferBadge),
-        };
-        setAllProducts(productsData);
-        setOfferBadge(cfg.offerBadge ?? null);
-        setFeatureFlags(flags);
-      } catch (e) {
-        console.error("Error cargando datos en ProductDetail", e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
   const product = useMemo(() => {
-    if (!slug || !Array.isArray(allProducts)) return undefined;
+    if (!slug || !products?.length) return undefined;
     const s = String(slug).toLowerCase();
-    return allProducts.find((p) => p.slug.toLowerCase() === s);
-  }, [slug, allProducts]);
+    return products.find((p) => p.slug.toLowerCase() === s);
+  }, [slug, products]);
 
   useEffect(() => {
     if (product?.image) setMainUrl(resolveImage(product.image));
@@ -122,6 +106,7 @@ export default function ProductDetail() {
   // ===== Returns condicionales después de todos los hooks
   if (loading || !slug)
     return <p className="text-center py-20">Cargando producto…</p>;
+
   if (!product)
     return <p className="text-center py-20">Producto no encontrado.</p>;
 
@@ -273,7 +258,7 @@ export default function ProductDetail() {
 
   const relatedSlugs = product.related ?? [];
   const related = relatedSlugs
-    .map((s) => allProducts.find((p) => p.slug === s))
+    .map((s) => products.find((p) => p.slug === s))
     .filter(Boolean) as Product[];
 
   return (

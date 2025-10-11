@@ -49,7 +49,7 @@ export default function InstagramStrip({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-base md:text-lg font-medium tracking-wide hover:opacity-80"
+            className="text-white text-base md:text-lg font-medium tracking-wide hover:text-brand-beige"
             aria-label={`Abrir Instagram de @${username}`}
           >
             @{username}
@@ -58,7 +58,7 @@ export default function InstagramStrip({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm uppercase tracking-widest hover:opacity-80"
+            className="text-white text-sm uppercase tracking-widest hover:text-brand-beige"
             aria-label="Abrir Instagram (Follow us)"
           >
             Follow us

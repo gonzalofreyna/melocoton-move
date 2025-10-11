@@ -1,26 +1,22 @@
 // pages/_app.tsx
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
+import Head from "next/head";
+
+// 🧩 Componentes globales
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import TopBanner from "../components/TopBanner";
-import Head from "next/head";
-
-// Contextos
-import { CartProvider } from "../context/CartContext";
-import { ConfigProvider, useAppConfig } from "../context/ConfigContext";
-
-// Franja Instagram
 import InstagramStrip from "../components/InstagramStrip";
-
-// Carrito flotante (icono)
-import FloatingCart from "../components/FloatingCart";
-
-// 🧩 Nuevo: drawer lateral del carrito
 import MiniCart from "../components/MiniCart";
-
 import MobileNavbar from "../components/MobileNavbar";
 
+// 🧠 Contextos
+import { CartProvider } from "../context/CartContext";
+import { ConfigProvider, useAppConfig } from "../context/ConfigContext";
+import { ProductsProvider } from "../context/ProductsContext";
+
+/** ===== AppShell: UI principal ===== */
 function AppShell({ Component, pageProps }: AppProps) {
   const { config } = useAppConfig();
   const ig = config?.instagramStrip;
@@ -66,8 +62,6 @@ function AppShell({ Component, pageProps }: AppProps) {
         )}
 
         <Footer />
-
-        {/* 🧩 Drawer lateral del carrito */}
         <MiniCart />
         <MobileNavbar />
       </div>
@@ -75,11 +69,14 @@ function AppShell({ Component, pageProps }: AppProps) {
   );
 }
 
+/** ===== App raíz con Providers ===== */
 export default function MyApp(props: AppProps) {
   return (
     <CartProvider>
       <ConfigProvider>
-        <AppShell {...props} />
+        <ProductsProvider>
+          <AppShell {...props} />
+        </ProductsProvider>
       </ConfigProvider>
     </CartProvider>
   );

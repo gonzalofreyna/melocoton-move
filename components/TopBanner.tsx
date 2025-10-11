@@ -15,19 +15,16 @@ export default function TopBanner() {
   const controls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
 
-  // Lee valores del config antes del render
   const text = (config?.topBanner?.text ?? "").trim();
   const href = config?.topBanner?.link ?? null;
   const enabled =
     !!config?.featureFlags?.showTopBanner && !!config?.topBanner?.enabled;
 
-  // Duración de la animación según longitud del texto
   const duration = useMemo(() => {
     const base = Math.max(8, Math.min(30, Math.round((text.length / 30) * 10)));
     return base;
   }, [text]);
 
-  // Control de animación
   useEffect(() => {
     if (loading || !enabled || !text || prefersReducedMotion) return;
     controls.start({
@@ -61,16 +58,16 @@ export default function TopBanner() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.4 }}
-        className="fixed top-0 left-0 w-full bg-brand-blue text-white z-50 min-h-[36px] sm:min-h-0"
+        className="fixed top-0 left-0 w-full animate-gradient text-white z-50 min-h-[36px] sm:min-h-0"
       >
         <div className="relative mx-auto max-w-screen-2xl">
-          {/* 🎨 Faders sutiles en bordes */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-brand-blue to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-brand-blue to-transparent" />
+          {/* 🎨 Faders suaves que combinan con el gradiente */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-pink-200/40 via-purple-200/30 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-pink-200/40 via-purple-200/30 to-transparent" />
 
-          {/* 🧭 Contenido principal */}
+          {/* 🧭 Contenido */}
           <div className="overflow-hidden flex items-center justify-center text-center text-[13px] sm:text-sm leading-[1.35] font-medium h-[36px] sm:h-auto">
-            {/* 🔁 Marquee animado solo en móvil */}
+            {/* 🔁 Marquee en móvil */}
             <div className="w-full sm:hidden">
               <motion.div
                 className="flex whitespace-nowrap w-[200%] will-change-transform"
@@ -92,12 +89,12 @@ export default function TopBanner() {
               </motion.div>
             </div>
 
-            {/* 🖥️ Texto estático centrado en escritorio */}
+            {/* 🖥️ Texto estático (desktop) */}
             <div className="hidden sm:flex justify-center items-center w-full">
               <Content />
             </div>
 
-            {/* ♿ Modo sin animación (reduce-motion) */}
+            {/* ♿ Modo reduce-motion */}
             {prefersReducedMotion && (
               <div className="inline-flex items-center gap-2">
                 <Content />

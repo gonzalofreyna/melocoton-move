@@ -9,6 +9,7 @@ import "swiper/css/pagination";
 import { useState, useEffect, useMemo } from "react";
 import { resolveImage } from "../lib/resolveImage";
 import { useAppConfig } from "../context/ConfigContext";
+import Link from "next/link";
 
 type HeroSlide = {
   type: "image" | "video";
@@ -119,12 +120,12 @@ export default function HeroSection() {
                       </p>
                     )}
                     {slide.cta?.enabled && slide.cta?.text && (
-                      <a
+                      <Link
                         href={slide.cta.href || "/products"}
-                        className="bg-brand-beige text-brand-blue font-semibold px-8 py-4 rounded-xl hover:bg-white transition-transform transform hover:scale-105 shadow-md"
+                        className="inline-block bg-brand-beige text-brand-blue font-semibold px-8 py-4 rounded-xl hover:bg-white transition-transform transform hover:scale-105 shadow-md"
                       >
                         {slide.cta.text}
-                      </a>
+                      </Link>
                     )}
                   </motion.div>
                 )}
