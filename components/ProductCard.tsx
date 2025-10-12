@@ -137,7 +137,7 @@ export default function ProductCard({
         <div className="mt-2">
           {typeof product.discountPrice === "number" ? (
             <>
-              <p className="text-brand-blue font-bold text-base sm:text-lg">
+              <p className="text-brand-beige font-bold text-base sm:text-lg">
                 ${product.discountPrice.toFixed(2)} MXN
               </p>
               <p className="text-gray-400 line-through text-xs sm:text-sm">

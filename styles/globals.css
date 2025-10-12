@@ -27,8 +27,25 @@ body {
   }
 }
 
+@keyframes logoGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-logo-gradient {
+  animation: logoGradientShift 12s linear infinite;
+}
+
 .animate-gradient {
-  background: linear-gradient(270deg, #fbc2eb, #d8c7f9, #a6c1ee, #fbc2eb);
+  background: linear-gradient(270deg, #e6eef4, #c4deec, #b9b8cf, #7b7b91);
+
   background-size: 300% 300%;
   animation: gradientShift 10s ease-in-out infinite;
 }

@@ -1,18 +1,16 @@
-// components/Logo.tsx
 "use client";
 
 export default function Logo({ className = "" }) {
   return (
     <div
-      className={`relative inline-block ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden ${className}`}
       style={{
-        width: "auto",
-        height: "80px", // Ajusta si lo quieres más grande o pequeño
+        height: "auto",
       }}
     >
       {/* 🎨 Fondo animado pastel dentro del logo */}
       <div
-        className="absolute inset-0 animate-gradient"
+        className="w-full h-full max-w-[320px] aspect-[260/90] animate-logo-gradient"
         style={{
           WebkitMaskImage: "url('/images/logonice.svg')",
           WebkitMaskRepeat: "no-repeat",
@@ -23,9 +21,9 @@ export default function Logo({ className = "" }) {
           maskSize: "contain",
           maskPosition: "center",
           background:
-            "linear-gradient(270deg, #fbc2eb, #d8c7f9, #a6c1ee, #fbc2eb)",
-          backgroundSize: "300% 300%",
-          animation: "gradientShift 10s ease-in-out infinite",
+            "linear-gradient(270deg, #1a272eff,#1a272eff, #e8e7e7ff, #73accaff, #73accaff, #e8e7e7ff, #b870e5ff, #b870e5ff)",
+          backgroundSize: "400% 400%",
+          backgroundPosition: "0% 50%",
         }}
       />
     </div>

@@ -124,18 +124,14 @@ export default function Header() {
               </div>
             </div>
 
-            {/* 🩷 Logo central */}
-            <div className="flex justify-center">
+            {/* 🩷 Logo central con gradiente animado */}
+            <div className="flex justify-center items-center col-span-1 relative">
               <Link
                 href="/"
-                className="flex justify-center"
+                className="flex items-center justify-center" // 👈 quita el translate
                 aria-label="Inicio"
               >
-                <img
-                  src="/images/logoSVG.svg"
-                  alt="Melocotón Move"
-                  className="h-14 md:h-16 lg:h-20 w-auto max-h-24 hover:opacity-80 transition-opacity"
-                />
+                <Logo className="w-[240px] md:w-[300px] lg:w-[360px] h-auto hover:opacity-90 transition-opacity" />
               </Link>
             </div>
 

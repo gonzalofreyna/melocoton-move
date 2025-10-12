@@ -61,10 +61,6 @@ export default function TopBanner() {
         className="fixed top-0 left-0 w-full animate-gradient text-white z-50 min-h-[36px] sm:min-h-0"
       >
         <div className="relative mx-auto max-w-screen-2xl">
-          {/* 🎨 Faders suaves que combinan con el gradiente */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-pink-200/40 via-purple-200/30 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-pink-200/40 via-purple-200/30 to-transparent" />
-
           {/* 🧭 Contenido */}
           <div className="overflow-hidden flex items-center justify-center text-center text-[13px] sm:text-sm leading-[1.35] font-medium h-[36px] sm:h-auto">
             {/* 🔁 Marquee en móvil */}
