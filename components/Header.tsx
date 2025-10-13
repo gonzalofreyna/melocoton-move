@@ -1,4 +1,3 @@
-// components/Header.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useScrollVisibility } from "../hooks/useScrollVisibility";
@@ -17,6 +16,7 @@ import type { Product } from "../lib/fetchProducts";
 import MobileMenu from "./MobileMenu";
 import DesktopNav from "./DesktopNav";
 import Logo from "../components/Logo";
+import SearchModal from "./SearchModal"; // 👈 importa el nuevo modal
 
 export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -24,6 +24,7 @@ export default function Header() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openSearchModal, setOpenSearchModal] = useState(false); // 👈 nuevo estado
 
   const visible = useScrollVisibility();
   const { cartCount, toggleCart } = useCart();
@@ -31,7 +32,7 @@ export default function Header() {
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // 🔄 Cargar productos para sugerencias
+  // 🔄 Cargar productos para sugerencias (desktop)
   useEffect(() => {
     (async () => {
       try {
@@ -65,6 +66,16 @@ export default function Header() {
     }
     return () => document.removeEventListener("keydown", onKey);
   }, [drawerOpen, showSuggestions]);
+  // 👆 Cerrar sugerencias al hacer clic fuera del input
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSearch = () => {
     const term = searchTerm.trim();
@@ -124,11 +135,11 @@ export default function Header() {
               </div>
             </div>
 
-            {/* 🩷 Logo central con gradiente animado */}
+            {/* 🩷 Logo central */}
             <div className="flex justify-center items-center col-span-1 relative">
               <Link
                 href="/"
-                className="flex items-center justify-center" // 👈 quita el translate
+                className="flex items-center justify-center"
                 aria-label="Inicio"
               >
                 <Logo className="w-[240px] md:w-[300px] lg:w-[360px] h-auto hover:opacity-90 transition-opacity" />
@@ -163,33 +174,45 @@ export default function Header() {
                 </button>
 
                 {showSuggestions && searchTerm && (
-                  <div className="absolute z-50 top-full left-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-md w-full text-left">
+                  <div className="absolute z-50 top-full left-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-xl w-full text-left max-h-96 overflow-y-auto divide-y divide-gray-100">
                     {loading ? (
                       <p className="px-4 py-2 text-sm text-gray-500">
                         Cargando…
                       </p>
                     ) : filteredSuggestions.length > 0 ? (
-                      filteredSuggestions.map((item) => (
+                      filteredSuggestions.map((p) => (
                         <button
-                          key={item.slug}
+                          key={p.slug}
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            router.push(
-                              `/products?search=${encodeURIComponent(
-                                item.name
-                              )}`
-                            );
+                            router.push(`/${p.slug}`); // 👈 redirige directo al producto
                             setSearchTerm("");
                             setShowSuggestions(false);
                             requestAnimationFrame(() =>
                               inputRef.current?.focus()
                             );
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-                          aria-label={`Buscar ${item.name}`}
+                          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-all text-sm"
                           type="button"
+                          aria-label={`Ver ${p.name}`}
                         >
-                          {item.name}
+                          {/* 🖼️ Imagen */}
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            className="w-10 h-10 object-cover rounded-lg border border-gray-100 flex-shrink-0"
+                            loading="lazy"
+                          />
+
+                          {/* 📋 Texto */}
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="font-medium text-gray-800 truncate">
+                              {p.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              ${p.discountPrice ?? p.fullPrice}
+                            </p>
+                          </div>
                         </button>
                       ))
                     ) : (
@@ -201,16 +224,25 @@ export default function Header() {
                 )}
               </div>
 
+              {/* 🔍 Ícono búsqueda móvil */}
+              <button
+                onClick={() => setOpenSearchModal(true)}
+                className="block min-[900px]:hidden"
+                aria-label="Abrir búsqueda"
+              >
+                <MagnifyingGlassIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
+              </button>
+
               {/* 👤 Contacto */}
               <Link href="/contact" aria-label="Contacto">
                 <UserIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
               </Link>
 
-              {/* 🛒 Carrito */}
+              {/* 🛒 Carrito (solo visible en escritorio) */}
               <button
                 onClick={toggleCart}
                 aria-label="Abrir carrito"
-                className="relative"
+                className="relative hidden min-[900px]:block" // 👈 se oculta en móvil
               >
                 <ShoppingCartIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
                 {cartCount > 0 && (
@@ -220,75 +252,18 @@ export default function Header() {
                 )}
               </button>
             </div>
-
-            {/* 📱 Buscador móvil con sugerencias */}
-            <div className="min-[900px]:hidden col-span-3 px-2 mt-2">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setShowSuggestions(true);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Buscar..."
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:ring focus:border-brand-blue" // 👈 evita el zoom en iPhone
-                  aria-label="Buscar productos"
-                  autoComplete="off"
-                />
-
-                <button
-                  onClick={handleSearch}
-                  aria-label="Buscar"
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                  type="button"
-                >
-                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-500" />
-                </button>
-
-                {/* ✅ Sugerencias también visibles en móvil */}
-                {showSuggestions && searchTerm && (
-                  <div className="absolute z-50 top-full left-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-md w-full text-left max-h-[45vh] overflow-y-auto">
-                    {loading ? (
-                      <p className="px-4 py-2 text-sm text-gray-500">
-                        Cargando…
-                      </p>
-                    ) : filteredSuggestions.length > 0 ? (
-                      filteredSuggestions.map((item) => (
-                        <button
-                          key={item.slug}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            router.push(
-                              `/products?search=${encodeURIComponent(
-                                item.name
-                              )}`
-                            );
-                            setSearchTerm("");
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-                          type="button"
-                        >
-                          {item.name}
-                        </button>
-                      ))
-                    ) : (
-                      <p className="px-4 py-2 text-sm text-gray-500">
-                        Sin resultados
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
           </motion.header>
         )}
       </AnimatePresence>
 
       {/* 📂 Drawer menú móvil */}
       <MobileMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      {/* 🔍 Modal de búsqueda solo móvil */}
+      <SearchModal
+        open={openSearchModal}
+        onClose={() => setOpenSearchModal(false)}
+      />
     </>
   );
 }

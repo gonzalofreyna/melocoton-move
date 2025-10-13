@@ -51,8 +51,8 @@ export default function CategoriasSection({
           scrollbar-hide
         "
         style={{
-          WebkitOverflowScrolling: "touch", // 👈 mejora arrastre en iOS
-          touchAction: "pan-x", // 👈 bloquea desplazamiento vertical
+          WebkitOverflowScrolling: "touch", // ✅ mantiene el scroll fluido en iOS
+          touchAction: "pan-y pan-x", // ✅ permite ambos gestos (vertical y horizontal)
         }}
       >
         {categories.map((cat, idx) => {
