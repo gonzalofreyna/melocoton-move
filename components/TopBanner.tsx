@@ -1,4 +1,3 @@
-// TopBanner.tsx
 import {
   motion,
   AnimatePresence,
@@ -60,13 +59,14 @@ export default function TopBanner() {
         transition={{ duration: 0.4 }}
         className="fixed top-0 left-0 w-full animate-gradient text-white z-50 min-h-[36px] sm:min-h-0"
       >
-        <div className="relative mx-auto max-w-screen-2xl">
+        {/* 🔧 Contenedor corregido para evitar scroll lateral */}
+        <div className="relative mx-auto max-w-screen-2xl overflow-hidden">
           {/* 🧭 Contenido */}
-          <div className="overflow-hidden flex items-center justify-center text-center text-[13px] sm:text-sm leading-[1.35] font-medium h-[36px] sm:h-auto">
+          <div className="flex items-center justify-center text-center text-[13px] sm:text-sm leading-[1.35] font-medium h-[36px] sm:h-auto">
             {/* 🔁 Marquee en móvil */}
-            <div className="w-full sm:hidden">
+            <div className="w-full sm:hidden relative">
               <motion.div
-                className="flex whitespace-nowrap w-[200%] will-change-transform"
+                className="absolute left-0 top-0 flex whitespace-nowrap min-w-[200%] will-change-transform"
                 animate={prefersReducedMotion ? undefined : controls}
                 onMouseEnter={() => controls.stop()}
                 onMouseLeave={() =>

@@ -30,6 +30,24 @@ export default function Document() {
   return (
     <Html lang="es">
       <Head>
+        {/* 🖼️ Favicon */}
+        <link
+          rel="icon"
+          href="/images/logomelocoton.svg"
+          type="image/svg+xml"
+        />
+        <link
+          rel="alternate icon"
+          href="/images/logomelocoton.png"
+          type="image/png"
+        />
+
+        {/* 📱 Viewport optimizado para móviles */}
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
+
         {/* Perf de fuentes */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

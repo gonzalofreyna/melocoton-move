@@ -29,18 +29,9 @@ function AppShell({ Component, pageProps }: AppProps) {
 
   return (
     <>
+      {/* 🔹 Head se simplifica: solo cosas dinámicas o por página */}
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link
-          rel="icon"
-          href="/images/logomelocoton.svg"
-          type="image/svg+xml"
-        />
-        <link
-          rel="alternate icon"
-          href="/images/logomelocoton.png"
-          type="image/png"
-        />
+        <title>Melocotón Move</title>
       </Head>
 
       <div className="flex flex-col min-h-screen">
