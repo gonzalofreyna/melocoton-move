@@ -18,7 +18,7 @@ type SuccessProps = {
   customerEmail?: string | null;
   items?: Item[];
   shippingCost?: number | null;
-  shippingLabel?: string | null; // 🆕 agregado
+  shippingLabel?: string | null;
   shippingName?: string | null;
   shippingAddress?: string | null;
   orderId?: string | null;
@@ -53,21 +53,36 @@ export default function SuccessPage({
 
   const handleDownloadPDF = async () => {
     if (!pdfRef.current) return;
-    const html2pdf = (await import("html2pdf.js")).default;
+    const html2canvas = (await import("html2canvas")).default;
+    const { jsPDF } = await import("jspdf");
 
-    const opt = {
-      margin: [0.5, 0.5, 0.5, 0.5] as [number, number, number, number],
-      filename: `Factura-MelocotonMove-${orderId || "pedido"}.pdf`,
-      image: { type: "jpeg" as "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: {
-        unit: "in",
-        format: "letter",
-        orientation: "portrait" as "portrait",
-      },
-    };
+    const canvas = await html2canvas(pdfRef.current, { scale: 2 });
+    const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
-    html2pdf().from(pdfRef.current).set(opt).save();
+    const pdf = new jsPDF({
+      unit: "px",
+      format: [canvas.width, canvas.height],
+      orientation: "portrait",
+    });
+
+    pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
+    const pdfBlob = pdf.output("blob");
+    const url = URL.createObjectURL(pdfBlob);
+
+    // 🔍 Detectar si es dispositivo móvil
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // 📱 En móvil: abrir en nueva pestaña
+      window.open(url, "_blank");
+    } else {
+      // 💻 En escritorio: forzar descarga
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Factura-MelocotonMove-${orderId || "pedido"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   if (!ok) {
@@ -125,7 +140,7 @@ export default function SuccessPage({
         <div className="flex justify-between items-start border-b pb-4 mb-4 text-gray-600">
           <div>
             <h2 className="text-lg font-semibold text-brand-blue">
-              Melocotón.move
+              melocoton.move
             </h2>
             <p className="text-sm">Correo: {customerEmail ?? "—"}</p>
           </div>
@@ -195,7 +210,7 @@ export default function SuccessPage({
         )}
 
         <div className="text-center mt-6 text-xs text-gray-400 select-none">
-          — Melocotón.move ✨ —
+          — melocoton.move —
         </div>
       </div>
 
@@ -205,7 +220,7 @@ export default function SuccessPage({
           onClick={handleDownloadPDF}
           className="border border-brand-blue text-brand-blue px-4 py-2 rounded-lg hover:bg-brand-blue hover:text-white transition text-sm font-medium"
         >
-          Descargar factura (PDF)
+          Descargar recibo (PDF)
         </button>
         <button
           onClick={() => router.push("/")}
