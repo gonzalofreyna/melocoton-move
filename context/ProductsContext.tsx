@@ -37,6 +37,8 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       const data = await fetchProducts();
+
+      // 🆕 Ahora cada producto incluye `shippingType` y `freeShipping` normalizados.
       setProducts(data);
     } catch (e: any) {
       console.error("Error cargando productos:", e);

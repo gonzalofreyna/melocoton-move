@@ -301,15 +301,6 @@ export default function ProductDetail() {
                 loading="eager"
                 decoding="async"
               />
-              {product.freeShipping === true && (
-                <div className="absolute inset-x-0 bottom-0">
-                  <div className="bg-gradient-to-t from-black/55 to-transparent">
-                    <div className="py-2 text-center text-white text-xs md:text-sm font-medium tracking-wide">
-                      Envío gratis
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ===== Carrusel ===== */}
@@ -428,6 +419,7 @@ export default function ProductDetail() {
                       typeof product.stock === "number"
                         ? product.stock
                         : undefined,
+                    shippingType: product.shippingType || "standard", // 🧩 agregado
                   })
                 }
                 disabled={stock != null && stock <= 0}

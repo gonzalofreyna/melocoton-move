@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "../context/CartContext";
 import MiniCartItem from "./MiniCartItem";
+import { createCheckout } from "../lib/checkoutClient";
 
 const MX = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -15,8 +16,10 @@ export default function MiniCart() {
     subtotal,
     isOpen,
     closeCart,
-    allItemsFreeShipping,
-    hasAnyNonFreeShipping,
+    shippingCost,
+    shippingLabel,
+    qualifiesForFreeShipping,
+    hasCustomShipping,
   } = useCart();
 
   const [loading, setLoading] = useState(false);
@@ -26,6 +29,33 @@ export default function MiniCart() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // 🔁 Recalcular descuento si cambia el subtotal o el cupón aplicado
+  // 🔁 Recalcular descuento si cambia el subtotal, el envío o el cupón aplicado
+  useEffect(() => {
+    if (!appliedCoupon) return;
+
+    const validCode =
+      process.env.NEXT_PUBLIC_COUPON_CODE?.trim().toUpperCase() || "";
+    const percent = Number(process.env.NEXT_PUBLIC_COUPON_PERCENT) || 0;
+
+    if (appliedCoupon === validCode) {
+      // 🔹 Base: subtotal + envío (si aplica)
+      const base = subtotal + (hasCustomShipping ? 0 : shippingCost);
+      const newDiscount = (base * percent) / 100;
+      setDiscount(newDiscount);
+    }
+  }, [subtotal, shippingCost, hasCustomShipping, appliedCoupon]);
+
+  // 🧹 Limpiar cupón si el carrito queda vacío
+  useEffect(() => {
+    if (cart.length === 0) {
+      setAppliedCoupon(null);
+      setDiscount(0);
+      setMsg(null);
+      setCoupon("");
+    }
+  }, [cart]);
 
   // Cerrar con tecla Escape
   useEffect(() => {
@@ -67,7 +97,10 @@ export default function MiniCart() {
     }
 
     if (coupon.trim().toUpperCase() === validCode) {
-      const discountAmt = (subtotal * percent) / 100;
+      // 🔹 Base para el descuento: subtotal + envío (solo si no es a cotizar)
+      const base = subtotal + (hasCustomShipping ? 0 : shippingCost);
+      const discountAmt = (base * percent) / 100;
+
       setDiscount(discountAmt);
       setAppliedCoupon(validCode);
       setMsg(`Cupón aplicado: -${percent}%`);
@@ -97,23 +130,14 @@ export default function MiniCart() {
         quantity: i.quantity,
       }));
 
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items,
-          coupon: appliedCoupon ?? undefined,
-        }),
-      });
+      // ✅ Llamada al endpoint AWS (usa createCheckout de src/lib/checkoutClient)
+      const data = await createCheckout(items, appliedCoupon ?? undefined);
 
-      const data = await res.json();
-      if (!res.ok || !data?.ok)
-        throw new Error(data?.message || "Error en checkout");
-      if (data.url) {
-        window.location.href = data.url;
-        return;
+      if (!data?.ok || !data?.url) {
+        throw new Error(data?.message || "No se recibió URL de Stripe.");
       }
-      setMsg("No se recibió URL de Stripe.");
+
+      window.location.href = data.url; // 🚀 redirige al checkout de Stripe
     } catch (e: any) {
       console.error(e);
       setMsg(e?.message || "Error en checkout.");
@@ -122,7 +146,8 @@ export default function MiniCart() {
     }
   };
 
-  const total = subtotal - discount;
+  const totalBeforeDiscount = subtotal + (hasCustomShipping ? 0 : shippingCost);
+  const total = totalBeforeDiscount - discount;
 
   return (
     <>
@@ -168,7 +193,6 @@ export default function MiniCart() {
                 image={item.image}
                 price={item.price}
                 quantity={item.quantity}
-                stock={item.maxStock || 99}
                 shippingExcluded={!item.freeShipping}
               />
             ))
@@ -177,67 +201,74 @@ export default function MiniCart() {
 
         {/* Footer */}
         {cart.length > 0 && (
-          <div className="p-5 border-t space-y-3 bg-white">
-            <div className="flex justify-between text-sm">
-              <span>Subtotal:</span>
-              <span>{MX.format(subtotal)}</span>
-            </div>
-
-            {discount > 0 && (
-              <div className="flex justify-between text-sm text-green-700">
-                <span>Descuento ({appliedCoupon})</span>
-                <span>-{MX.format(discount)}</span>
+          <div className="p-5 border-t bg-white space-y-4">
+            {/* Totales */}
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-700">Subtotal</span>
+                <span>{MX.format(subtotal)}</span>
               </div>
-            )}
 
-            <div className="flex justify-between font-semibold text-brand-blue text-lg">
-              <span>Total:</span>
-              <span>{MX.format(total)}</span>
+              <div className="flex justify-between">
+                <span className="text-gray-700">Envío</span>
+                <span>
+                  {hasCustomShipping
+                    ? "A cotizar"
+                    : qualifiesForFreeShipping
+                    ? "Gratis"
+                    : MX.format(shippingCost)}
+                </span>
+              </div>
+
+              {discount > 0 && (
+                <div className="flex justify-between text-green-700 font-medium">
+                  <span>Descuento ({appliedCoupon})</span>
+                  <span>-{MX.format(discount)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center border-t pt-2 mt-2 text-base font-semibold text-brand-blue">
+                <span>Total</span>
+                <span>{MX.format(total)}</span>
+              </div>
             </div>
 
             {/* Cupón */}
-            <div className="flex gap-2 mt-3">
-              <input
-                type="text"
-                placeholder="Cupón"
-                value={coupon}
-                onChange={(e) => setCoupon(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 text-sm"
-              />
-              <button
-                onClick={handleApplyCoupon}
-                className="bg-brand-blue text-white px-3 py-2 rounded-lg text-sm hover:bg-brand-beige hover:text-brand-blue transition"
-              >
-                Aplicar
-              </button>
+            <div className="mt-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Cupón"
+                  value={coupon}
+                  onChange={(e) => setCoupon(e.target.value)}
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                />
+                <button
+                  onClick={handleApplyCoupon}
+                  className="bg-brand-blue text-white px-3 py-2 rounded-lg text-sm hover:bg-brand-beige hover:text-brand-blue transition"
+                >
+                  Aplicar
+                </button>
+              </div>
+
+              {msg && (
+                <p
+                  className={`text-sm mt-1 ${
+                    msg.includes("válido") ? "text-red-600" : "text-gray-700"
+                  }`}
+                >
+                  {msg}
+                </p>
+              )}
+
+              <p className="text-xs mt-2 text-gray-700">{shippingLabel}</p>
             </div>
 
-            {msg && (
-              <p
-                className={`text-sm ${
-                  msg.includes("válido") ? "text-red-600" : "text-gray-700"
-                }`}
-              >
-                {msg}
-              </p>
-            )}
-
-            <p className="text-xs mt-2">
-              {hasAnyNonFreeShipping ? (
-                <span className="text-yellow-800">
-                  Este pedido no incluye envío gratis.
-                </span>
-              ) : (
-                <span className="text-green-700">
-                  Envío gratis incluido 🚚✨
-                </span>
-              )}
-            </p>
-
+            {/* Botón */}
             <button
               onClick={handleCheckout}
               disabled={loading}
-              className={`w-full py-3 mt-3 rounded-xl font-semibold transition ${
+              className={`w-full py-3 mt-2 rounded-xl font-semibold transition ${
                 loading
                   ? "bg-gray-400 text-white cursor-not-allowed"
                   : "bg-brand-blue text-white hover:bg-brand-beige hover:text-brand-blue"

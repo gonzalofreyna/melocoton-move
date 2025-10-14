@@ -59,6 +59,7 @@ export default function ProductCard({
       price: finalPrice,
       freeShipping: product.freeShipping === true,
       maxStock: stock,
+      shippingType: product.shippingType || "standard", // 🧩 ✅ Agregado
     });
   };
 
@@ -79,17 +80,6 @@ export default function ProductCard({
             />
           </div>
         </Link>
-
-        {/* Franja de envío */}
-        {product.freeShipping === true && (
-          <div className="absolute inset-x-0 bottom-0">
-            <div className="bg-black/30 backdrop-blur-[2px]">
-              <div className="px-3 py-2 text-center text-white text-[12px] tracking-wide">
-                Envío gratis
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Overlay agotado */}
         {isOut && (

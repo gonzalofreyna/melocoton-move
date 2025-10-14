@@ -17,6 +17,7 @@ export type Product = {
   featured: boolean;
   description: string;
   freeShipping?: boolean;
+  shippingType?: "standard" | "custom"; // 🆕 agregado
   stock?: number;
   weightGrams?: number;
   dimensionsCm?: DimensionsCm;
@@ -113,6 +114,10 @@ export async function fetchProducts(): Promise<Product[]> {
         featured,
         description,
         freeShipping: p?.freeShipping === true,
+
+        // 🆕 Normaliza shippingType
+        shippingType: p?.shippingType === "custom" ? "custom" : "standard",
+
         stock: toInt(p?.stock),
         weightGrams: toNum(p?.weightGrams),
         dimensionsCm:

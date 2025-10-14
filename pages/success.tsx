@@ -2,7 +2,7 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import { useRef } from "react";
-import { useRouter } from "next/router"; // ✅ navegación estable
+import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
 
 type Item = {
@@ -18,6 +18,7 @@ type SuccessProps = {
   customerEmail?: string | null;
   items?: Item[];
   shippingCost?: number | null;
+  shippingLabel?: string | null; // 🆕 agregado
   shippingName?: string | null;
   shippingAddress?: string | null;
   orderId?: string | null;
@@ -31,12 +32,13 @@ export default function SuccessPage({
   customerEmail,
   items,
   shippingCost,
+  shippingLabel,
   shippingName,
   shippingAddress,
   orderId,
   errorMessage,
 }: SuccessProps) {
-  const { closeCart } = useCart(); // 👈 ya no limpiamos aquí
+  const { closeCart } = useCart();
   const pdfRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -51,7 +53,6 @@ export default function SuccessPage({
 
   const handleDownloadPDF = async () => {
     if (!pdfRef.current) return;
-
     const html2pdf = (await import("html2pdf.js")).default;
 
     const opt = {
@@ -97,7 +98,7 @@ export default function SuccessPage({
         <title>Pago exitoso</title>
       </Head>
 
-      {/* Encabezado superior */}
+      {/* Encabezado */}
       <div className="w-full max-w-md bg-gradient-to-r from-brand-beige/60 to-brand-beige/30 rounded-t-[32px] shadow-md text-center py-8 relative">
         <img
           src="/images/logomelocoton.png"
@@ -110,14 +111,13 @@ export default function SuccessPage({
         <p className="text-sm text-brand-blue/70 mt-1">
           Recibo oficial de compra ✨
         </p>
-        {/* Decorativo tipo perforado */}
         <div className="absolute -bottom-3 left-0 right-0 flex justify-between px-3">
           <div className="w-6 h-6 bg-gray-50 rounded-full shadow-inner"></div>
           <div className="w-6 h-6 bg-gray-50 rounded-full shadow-inner"></div>
         </div>
       </div>
 
-      {/* Recibo principal */}
+      {/* Recibo */}
       <div
         ref={pdfRef}
         className="w-full max-w-md bg-white rounded-b-[32px] shadow-lg border border-gray-100 p-8 relative overflow-hidden"
@@ -141,7 +141,7 @@ export default function SuccessPage({
           </div>
         </div>
 
-        {/* Tabla de productos */}
+        {/* Productos */}
         <table className="w-full text-sm text-gray-700 mb-4">
           <thead>
             <tr className="border-b text-gray-400">
@@ -165,12 +165,17 @@ export default function SuccessPage({
 
         {/* Totales */}
         <div className="text-right border-t pt-4 mt-4 text-gray-700">
-          {typeof shippingCost === "number" && (
-            <p className="text-sm mb-1">
-              Envío:{" "}
-              <span className="font-medium">{fmt(shippingCost, currency)}</span>
-            </p>
-          )}
+          <p className="text-sm mb-1">
+            Envío:{" "}
+            <span className="font-medium">
+              {shippingLabel
+                ? shippingLabel
+                : typeof shippingCost === "number"
+                ? fmt(shippingCost, currency)
+                : "Incluido en el total"}
+            </span>
+          </p>
+
           <p className="text-lg font-bold text-brand-blue mt-1">
             Total pagado: {fmt(amountTotal, currency)}
           </p>
@@ -189,7 +194,6 @@ export default function SuccessPage({
           </div>
         )}
 
-        {/* Footer decorativo */}
         <div className="text-center mt-6 text-xs text-gray-400 select-none">
           — Melocotón.move ✨ —
         </div>
@@ -258,6 +262,17 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
           .join("\n")
       : null;
 
+    // 🧠 Determinar tipo de envío
+    let shippingLabel: string | null = null;
+    if (session.shipping_cost?.amount_total === 0) {
+      shippingLabel = "Envío gratis 🚚✨";
+    } else if (session.metadata?.hasCustomShipping === "true") {
+      shippingLabel = "Incluye artículos con envío a cotizar 🚛";
+    } else if (session.shipping_cost?.amount_total) {
+      const cost = (session.shipping_cost.amount_total / 100).toFixed(0);
+      shippingLabel = `Costo de envío: $${cost}`;
+    }
+
     return {
       props: {
         ok: true,
@@ -266,6 +281,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
         customerEmail: session.customer_details?.email ?? null,
         items: lineItems,
         shippingCost: session.shipping_cost?.amount_total ?? null,
+        shippingLabel,
         shippingName,
         shippingAddress,
         orderId:

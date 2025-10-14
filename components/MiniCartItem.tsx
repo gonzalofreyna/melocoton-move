@@ -12,7 +12,7 @@ type MiniCartItemProps = {
   image: string;
   price: number;
   quantity: number;
-  stock: number;
+  stock?: number; // ✅ opcional
   shippingExcluded?: boolean;
 };
 
@@ -33,6 +33,9 @@ export default function MiniCartItem({
       currency: "MXN",
       minimumFractionDigits: 2,
     }).format(value);
+
+  // ✅ Máximo seguro (si no hay stock definido, deja crecer libremente)
+  const maxQuantity = stock ?? 99;
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -64,7 +67,7 @@ export default function MiniCartItem({
             </span>
           )}
 
-          {/* Precio */}
+          {/* Precio unitario */}
           <p className="text-gray-700 text-sm sm:text-base mt-1">
             {fmtCurrency(price)}
           </p>
@@ -86,11 +89,11 @@ export default function MiniCartItem({
             </span>
             <button
               onClick={() =>
-                updateQuantity(slug, Math.min(quantity + 1, stock))
+                updateQuantity(slug, Math.min(quantity + 1, maxQuantity))
               }
               className="w-8 h-8 text-lg font-semibold text-gray-600 hover:bg-gray-100 transition"
               aria-label="Aumentar cantidad"
-              disabled={quantity >= stock}
+              disabled={quantity >= maxQuantity}
             >
               +
             </button>
@@ -101,9 +104,6 @@ export default function MiniCartItem({
             {fmtCurrency(price * quantity)}
           </p>
         </div>
-
-        {/* Stock */}
-        <p className="mt-1 text-xs text-gray-500">Stock: {stock}</p>
       </div>
 
       {/* Eliminar */}

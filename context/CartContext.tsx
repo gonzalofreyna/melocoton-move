@@ -18,6 +18,7 @@ export type CartItem = {
   quantity: number;
   freeShipping?: boolean;
   maxStock?: number;
+  shippingType?: "standard" | "custom";
 };
 
 type CartContextType = {
@@ -30,12 +31,15 @@ type CartContextType = {
   updateQuantity: (slug: string, quantity: number) => void;
   clearCart: () => void;
   allItemsFreeShipping: boolean;
-  hasAnyNonFreeShipping: boolean;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
   subtotal: number;
+  qualifiesForFreeShipping: boolean;
+  shippingCost: number;
+  shippingLabel: string;
+  hasCustomShipping: boolean;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -69,6 +73,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             return {
               ...i,
               freeShipping: i.freeShipping === true,
+              shippingType: i.shippingType === "custom" ? "custom" : "standard",
               maxStock,
               quantity: clampToStock(i.quantity, maxStock),
             };
@@ -89,7 +94,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // 🚀 Limpia automáticamente el carrito al entrar a /success
   useEffect(() => {
-    if (pathname === "/success") {
+    if (typeof window === "undefined") return;
+
+    const isSuccessPage = pathname === "/success";
+    const hasStripeSession = window.location.search.includes("session_id=");
+
+    // ✅ Solo limpia si Stripe realmente devolvió un session_id de pago exitoso
+    if (isSuccessPage && hasStripeSession) {
       setCart([]);
       localStorage.removeItem("cart");
       setIsOpen(false);
@@ -99,6 +110,60 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // 📊 Derivados
   const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  const FREE_SHIPPING_MIN_TOTAL = Number(
+    process.env.NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL ?? 499
+  );
+
+  const FIXED_SHIPPING_FEE = Number(
+    process.env.NEXT_PUBLIC_FIXED_SHIPPING_FEE ?? 149
+  );
+
+  // Verifica si hay productos con envío especial
+  const hasCustomShipping = cart.some((i) => i.shippingType === "custom");
+
+  // Verifica si todos los productos aplican para free shipping
+  const allItemsFreeShipping =
+    cart.length > 0 && cart.every((i) => i.freeShipping === true);
+
+  // Calcula si califica para envío gratis
+  const qualifiesForFreeShipping =
+    allItemsFreeShipping &&
+    subtotal >= FREE_SHIPPING_MIN_TOTAL &&
+    !hasCustomShipping;
+
+  // Determina el costo de envío y el mensaje
+  let shippingCost = 0;
+  let shippingLabel = "";
+
+  // 🚛 Prioridad 1: Si hay productos con envío a cotizar
+  if (hasCustomShipping) {
+    shippingCost = 0;
+    shippingLabel = "Incluye artículos con envío a cotizar 🚛";
+  }
+  // 🚚 Prioridad 2: Si todos califican para envío gratis
+  else if (qualifiesForFreeShipping) {
+    shippingCost = 0;
+    shippingLabel = "Envío gratis 🚚✨";
+  }
+  // 💸 Prioridad 3: Si el subtotal no alcanza el mínimo
+  else if (subtotal > 0 && subtotal < FREE_SHIPPING_MIN_TOTAL) {
+    const remaining = FREE_SHIPPING_MIN_TOTAL - subtotal;
+    shippingCost = FIXED_SHIPPING_FEE;
+    shippingLabel = `Te faltan $${remaining.toFixed(
+      0
+    )} para obtener envío gratis 💸`;
+  }
+  // 📦 Prioridad 4: Caso general (subtotal >= mínimo pero sin free shipping)
+  else if (subtotal >= FREE_SHIPPING_MIN_TOTAL) {
+    shippingCost = FIXED_SHIPPING_FEE;
+    shippingLabel = `Costo de envío fijo: $${FIXED_SHIPPING_FEE}`;
+  }
+  // 🧹 Limpia etiquetas si el carrito está vacío
+  if (cart.length === 0) {
+    shippingCost = 0;
+    shippingLabel = "";
+  }
 
   // ⚙️ Acciones
   const openCart = useCallback(() => setIsOpen(true), []);
@@ -128,6 +193,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         {
           ...item,
           freeShipping: item.freeShipping === true,
+          shippingType: item.shippingType || "standard",
           maxStock,
           quantity: clampToStock(1, maxStock),
         },
@@ -174,13 +240,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setCart([]);
 
-  // 🚚 Selectores de envío
-  const allItemsFreeShipping =
-    cart.length > 0 && cart.every((i) => i.freeShipping === true);
-
-  const hasAnyNonFreeShipping =
-    cart.length > 0 && cart.some((i) => i.freeShipping !== true);
-
   return (
     <CartContext.Provider
       value={{
@@ -193,12 +252,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         clearCart,
         allItemsFreeShipping,
-        hasAnyNonFreeShipping,
         isOpen,
         openCart,
         closeCart,
         toggleCart,
         subtotal,
+        qualifiesForFreeShipping,
+        shippingCost,
+        shippingLabel,
+        hasCustomShipping,
       }}
     >
       {children}
