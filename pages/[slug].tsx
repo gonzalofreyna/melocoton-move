@@ -314,19 +314,14 @@ export default function ProductDetail() {
                   <motion.div
                     ref={trackRef}
                     className="flex gap-3 cursor-grab active:cursor-grabbing sm:justify-start min-w-max"
-                    style={{ touchAction: "pan-x" }}
-                    drag={
-                      typeof window !== "undefined" && window.innerWidth < 1024
-                        ? "x"
-                        : false
+                    style={
+                      {
+                        touchAction: "pan-x",
+                        userSelect: "none",
+                        // @ts-ignore
+                        WebkitUserDrag: "none",
+                      } as React.CSSProperties
                     }
-                    dragPropagation={false}
-                    dragConstraints={dragLimits}
-                    dragElastic={0.05}
-                    dragMomentum={
-                      typeof window !== "undefined" && window.innerWidth < 1024
-                    }
-                    dragTransition={{ power: 0.2, timeConstant: 300 }}
                     whileTap={{ cursor: "grabbing" }}
                     onWheel={onWheel}
                   >

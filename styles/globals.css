@@ -49,3 +49,13 @@ body {
   background-size: 300% 300%;
   animation: gradientShift 10s ease-in-out infinite;
 }
+
+/* Oculta scrollbars horizontales y verticales de cualquier contenedor */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE y Edge antiguos */
+  scrollbar-width: none; /* Firefox */
+}
