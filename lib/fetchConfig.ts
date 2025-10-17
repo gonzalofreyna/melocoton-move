@@ -112,7 +112,15 @@ export type AppConfig = {
   version: number;
   updatedAt: string;
 
-  topBanner: { text: string; enabled: boolean; link: string | null };
+  topBanner: {
+    /** 🆕 Nuevo formato: múltiples mensajes */
+    messages?: string[];
+    /** Compatibilidad con la versión anterior */
+    text?: string;
+    enabled: boolean;
+    link?: string | null;
+  };
+
   assets: { baseUrl: string };
 
   heroSlides?: HeroSlide[];
@@ -289,10 +297,24 @@ export async function fetchConfig(): Promise<AppConfig> {
       : [];
 
     const navigation = raw.navigation;
+    // ===== Normalización de topBanner (para soportar mensajes múltiples)
+    const topBanner = raw.topBanner
+      ? {
+          ...raw.topBanner,
+          messages:
+            Array.isArray(raw.topBanner.messages) &&
+            raw.topBanner.messages.length > 0
+              ? raw.topBanner.messages
+              : raw.topBanner.text
+              ? [raw.topBanner.text]
+              : [],
+        }
+      : undefined;
 
     // ===== Resultado final
     const normalized: AppConfig = {
       ...raw,
+      topBanner,
       heroSlides,
       categories,
       instagramStrip,
