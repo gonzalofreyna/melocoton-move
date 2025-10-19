@@ -15,7 +15,9 @@ type HeroSlide = {
   type: "image" | "video";
   desktopImage?: string;
   mobileImage?: string;
-  videoUrl?: string;
+  desktopVideo?: string; // opcional
+  mobileVideo?: string; // 👈 nuevo campo
+  videoUrl?: string; // se mantiene como fallback general
   title?: string;
   paragraph?: string;
   alt?: string;
@@ -49,7 +51,7 @@ export default function HeroSection() {
     <section className="relative w-full h-screen overflow-hidden">
       <Swiper
         modules={[Autoplay, Pagination]}
-        autoplay={{ delay: 6000, disableOnInteraction: false }}
+        autoplay={{ delay: 12000, disableOnInteraction: false }}
         pagination={{
           clickable: true,
           bulletClass:
@@ -73,15 +75,44 @@ export default function HeroSection() {
             <SwiperSlide key={idx}>
               <div className="relative w-full h-screen flex items-center justify-center text-center">
                 {/* 🎥 Fondo dinámico */}
-                {isVideo && slide.videoUrl ? (
-                  <video
-                    className="absolute inset-0 w-full h-full object-cover"
-                    src={slide.videoUrl}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                  />
+
+                {/* 🎥 Fondo dinámico con soporte para mobileVideo */}
+                {isVideo ? (
+                  isMobile && slide.mobileVideo ? (
+                    <video
+                      className="absolute inset-0 w-full h-full object-cover"
+                      src={slide.mobileVideo}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  ) : slide.desktopVideo ? (
+                    <video
+                      className="absolute inset-0 w-full h-full object-cover"
+                      src={slide.desktopVideo}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  ) : slide.videoUrl ? (
+                    <video
+                      className="absolute inset-0 w-full h-full object-cover"
+                      src={slide.videoUrl}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  ) : imgSrc ? (
+                    <img
+                      src={imgSrc}
+                      alt={slide.alt || slide.title || `Hero ${idx + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      loading="eager"
+                    />
+                  ) : null
                 ) : (
                   imgSrc && (
                     <img

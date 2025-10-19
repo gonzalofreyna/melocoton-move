@@ -64,7 +64,7 @@ export default function ProductCard({
   };
 
   return (
-    <div className="relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-transform transform hover:scale-105">
+    <div className="relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-transform transform hover:scale-105 h-full">
       {shouldShowBadge && <OfferBadge cfg={offerBadge} />}
 
       {/* Imagen */}

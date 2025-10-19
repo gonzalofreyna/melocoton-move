@@ -99,6 +99,8 @@ export type HeroSlide = {
   type: "image" | "video";
   desktopImage?: string;
   mobileImage?: string;
+  desktopVideo?: string; // opcional para video en escritorio
+  mobileVideo?: string; // 👈 nuevo campo
   videoUrl?: string;
   title?: string;
   paragraph?: string;
@@ -246,11 +248,14 @@ export async function fetchConfig(): Promise<AppConfig> {
     }
 
     // ===== Normalización de heroSlides
+    // ===== Normalización de heroSlides
     let heroSlides: HeroSlide[] | undefined = Array.isArray(raw.heroSlides)
       ? raw.heroSlides.map((s) => ({
           ...s,
           desktopImage: s.desktopImage ? abs(s.desktopImage) : undefined,
           mobileImage: s.mobileImage ? abs(s.mobileImage) : undefined,
+          desktopVideo: s.desktopVideo ? abs(s.desktopVideo) : undefined,
+          mobileVideo: s.mobileVideo ? abs(s.mobileVideo) : undefined,
           videoUrl: s.videoUrl ? abs(s.videoUrl) : undefined,
         }))
       : undefined;

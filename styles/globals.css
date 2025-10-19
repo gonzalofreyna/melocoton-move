@@ -59,3 +59,10 @@ body {
   -ms-overflow-style: none; /* IE y Edge antiguos */
   scrollbar-width: none; /* Firefox */
 }
+
+/* 💅 Corrige alturas inconsistentes en Swiper */
+.swiper-slide {
+  height: auto !important; /* permite que el contenido defina su altura */
+  display: flex !important; /* iguala el comportamiento interno */
+  align-items: stretch !important; /* las cards se estiran a la misma altura */
+}
