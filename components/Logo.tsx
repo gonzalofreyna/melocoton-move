@@ -21,7 +21,7 @@ export default function Logo({ className = "" }) {
           maskSize: "contain",
           maskPosition: "center",
           background:
-            "linear-gradient(270deg, #1a272eff,#1a272eff, #e8e7e7ff, #73accaff, #73accaff, #e8e7e7ff, #b870e5ff, #b870e5ff)",
+            "linear-gradient(270deg, #1A120Eff, #1A120Eff, #e8e7e7ff, #86B96Aff, #86B96Aff, #e8e7e7ff, #FF6F61ff, #FF6F61ff)",
           backgroundSize: "400% 400%",
           backgroundPosition: "0% 50%",
         }}
