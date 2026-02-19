@@ -96,18 +96,18 @@ export default function PuntosDeVentaSection({
                 }}
                 className="flex flex-col items-center p-4"
               >
-                {/* Contenedor circular */}
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-white shadow-md flex items-center justify-center transition-transform duration-500 hover:scale-110">
+                {/* Logo card – Melocotón Move */}
+                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden transition-transform duration-500 ease-out hover:scale-110">
                   <motion.img
                     src={punto.logo}
                     alt={punto.estado}
-                    whileHover={{ scale: 1.05 }}
+                    className="w-full h-full object-cover"
+                    whileHover={{ scale: 1.04 }}
                     transition={{
                       type: "spring",
-                      stiffness: 200,
-                      damping: 15,
+                      stiffness: 180,
+                      damping: 18,
                     }}
-                    className="h-12 w-12 object-contain"
                   />
                 </div>
 
