@@ -32,7 +32,7 @@ export default function FeaturedProductsSection() {
         <>
           {/* 🌀 Swiper con breakpoints responsive */}
           <Swiper
-            className="max-w-6xl mx-auto custom-swiper"
+            className="max-w-6xl mx-auto custom-swiper py-4"
             modules={[Autoplay, Pagination]}
             spaceBetween={16}
             loop={true}
@@ -46,7 +46,7 @@ export default function FeaturedProductsSection() {
             }}
           >
             {featuredProducts.map((product, idx) => (
-              <SwiperSlide key={product.slug ?? idx}>
+              <SwiperSlide key={product.slug ?? idx} className="py-2">
                 <ProductCard
                   product={product}
                   offerBadge={config?.offerBadge}
