@@ -45,11 +45,10 @@ export default function ProductCard({
     stock === undefined
       ? ""
       : isOut
-        ? "bg-red-100 text-red-700 border-red-200"
+        ? "bg-[#F8E7E7] text-[#9B4A4A] border-[#E8CACA]"
         : isLow
-          ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-          : "bg-green-100 text-green-700 border-green-200";
-
+          ? "bg-[#FFF3D8] text-[#9A6A1F] border-[#F1D9A8]"
+          : "bg-[#EAF3E8] text-[#5F7F5C] border-[#D3E4CF]";
   const handleAddToCart = () => {
     if (isOut) return;
     addToCart({
@@ -94,7 +93,7 @@ export default function ProductCard({
       {/* Info del producto */}
       <div className="p-4 text-center flex flex-col">
         {/* Nombre y stock */}
-        <div className="mb-3 min-h-[3.75rem] sm:min-h-[4.25rem] flex flex-col justify-start">
+        <div className="mb-2 min-h-[3.25rem] sm:min-h-[3.75rem] flex flex-col justify-start">
           {/* Nombre del producto */}
           <h3 className="text-[8px] sm:text-sm lg:text-base font-semibold text-brand-blue leading-snug mb-1 line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] lg:min-h-[2.75rem]">
             {product.name}
@@ -103,7 +102,7 @@ export default function ProductCard({
           {/* Stock Badge — debajo del nombre, antes de los colores */}
           {stockLabel && (
             <span
-              className={`inline-block text-[11px] px-2 py-0.5 rounded-full border ${stockClass}`}
+              className={`mx-auto inline-flex w-fit items-center rounded-full border px-2 py-[2px] text-[9px] sm:text-[10px] font-medium tracking-wide ${stockClass}`}
             >
               {stockLabel}
             </span>

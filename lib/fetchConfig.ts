@@ -94,6 +94,38 @@ export type OpeningStudioConfig = {
   buttonHref?: string;
 };
 
+export type StudioTypeConfig = {
+  label: string;
+  value: string;
+  enabled: boolean;
+};
+
+export const QUOTE_QUANTITY_TYPE_VALUES = [
+  "capacity",
+  "fixed",
+  "halfCapacity",
+  "quarterCapacity",
+] as const;
+
+export type QuoteQuantityType = (typeof QUOTE_QUANTITY_TYPE_VALUES)[number];
+
+export const isQuoteQuantityType = (
+  value: unknown,
+): value is QuoteQuantityType =>
+  typeof value === "string" &&
+  QUOTE_QUANTITY_TYPE_VALUES.includes(value as QuoteQuantityType);
+
+export type QuoteQuantityTypeConfig = {
+  label: string;
+  value: QuoteQuantityType;
+  enabled: boolean;
+};
+
+export type StudioQuoteConfig = {
+  studioTypes: StudioTypeConfig[];
+  quoteQuantityTypes: QuoteQuantityTypeConfig[];
+};
+
 /** ========= NUEVO: Hero Slides ========= */
 export type HeroSlide = {
   type: "image" | "video";
@@ -171,6 +203,7 @@ export type AppConfig = {
   navigation?: { primary?: NavItem[]; quickFilters?: NavItem[] };
   promoModal?: PromoModalConfig;
   events?: EventsConfig;
+  studioQuote?: StudioQuoteConfig;
   openingStudio?: OpeningStudioConfig;
 };
 
@@ -300,7 +333,33 @@ export async function fetchConfig(): Promise<AppConfig> {
           overlay: abs(cat.overlay),
         }))
       : [];
+    // ===== Normalización de studioQuote
+    const studioQuote: StudioQuoteConfig = {
+      studioTypes: Array.isArray(raw.studioQuote?.studioTypes)
+        ? raw.studioQuote.studioTypes
+            .map((item) => ({
+              label: String(item?.label || item?.value || "").trim(),
+              value: String(item?.value || item?.label || "").trim(),
+              enabled: item?.enabled !== false,
+            }))
+            .filter((item) => item.label && item.value && item.enabled)
+        : [],
+      quoteQuantityTypes: Array.isArray(raw.studioQuote?.quoteQuantityTypes)
+        ? raw.studioQuote.quoteQuantityTypes
+            .map((item) => {
+              const value = item?.value;
 
+              if (!isQuoteQuantityType(value)) return null;
+
+              return {
+                label: String(item?.label || value).trim(),
+                value,
+                enabled: item?.enabled !== false,
+              };
+            })
+            .filter((item): item is QuoteQuantityTypeConfig => item !== null)
+        : [],
+    };
     const navigation = raw.navigation;
     // ===== Normalización de topBanner (para soportar mensajes múltiples)
     const topBanner = raw.topBanner
@@ -311,8 +370,8 @@ export async function fetchConfig(): Promise<AppConfig> {
             raw.topBanner.messages.length > 0
               ? raw.topBanner.messages
               : raw.topBanner.text
-              ? [raw.topBanner.text]
-              : [],
+                ? [raw.topBanner.text]
+                : [],
         }
       : undefined;
 
@@ -326,6 +385,7 @@ export async function fetchConfig(): Promise<AppConfig> {
       navigation,
       promoModal,
       events,
+      studioQuote,
       openingStudio,
     };
 

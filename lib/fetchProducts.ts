@@ -5,6 +5,12 @@ export type ShippingEstimate = {
   maxBusinessDays: number;
 };
 
+export type QuoteQuantityType =
+  | "capacity"
+  | "fixed"
+  | "halfCapacity"
+  | "quarterCapacity";
+
 export type Product = {
   name: string;
   slug: string;
@@ -16,6 +22,10 @@ export type Product = {
   category: string;
   featured: boolean;
   description: string;
+  studioTypes?: string[];
+  quoteQuantityType?: QuoteQuantityType;
+  quoteFixedQuantity?: number;
+  quoteNote?: string;
   freeShipping?: boolean;
   shippingType?: "standard" | "custom"; // 🆕 agregado
   stock?: number;
@@ -71,6 +81,16 @@ export async function fetchProducts(): Promise<Product[]> {
         ? v.map((x) => (typeof x === "string" ? x.trim() : "")).filter(Boolean)
         : [];
 
+    const validQuoteQuantityTypes: QuoteQuantityType[] = [
+      "capacity",
+      "fixed",
+      "halfCapacity",
+      "quarterCapacity",
+    ];
+
+    const toQuoteQuantityType = (v: any): QuoteQuantityType | undefined =>
+      validQuoteQuantityTypes.includes(v) ? v : undefined;
+
     const toGallery = (img: string, g: any): string[] => {
       const main = toStr(img);
       const arr = toStrArr(g);
@@ -113,6 +133,10 @@ export async function fetchProducts(): Promise<Product[]> {
         category,
         featured,
         description,
+        studioTypes: toStrArr(p?.studioTypes),
+        quoteQuantityType: toQuoteQuantityType(p?.quoteQuantityType),
+        quoteFixedQuantity: toInt(p?.quoteFixedQuantity),
+        quoteNote: toStr(p?.quoteNote),
         freeShipping: p?.freeShipping === true,
 
         // 🆕 Normaliza shippingType
