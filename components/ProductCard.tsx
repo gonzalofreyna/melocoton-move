@@ -111,14 +111,20 @@ export default function ProductCard({
 
         {/* Colores */}
         {product.colors && product.colors.length > 0 && (
-          <div className="flex justify-center space-x-2 mt-2 min-h-[20px] sm:min-h-[24px]">
-            {product.colors.map((color, idx) => (
+          <div className="mt-3 min-h-[24px] flex items-center justify-center gap-1.5">
+            {product.colors.slice(0, 8).map((color, idx) => (
               <div
                 key={idx}
-                className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-gray-300"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-gray-300 shadow-sm"
                 style={{ backgroundColor: color }}
               />
             ))}
+
+            {product.colors.length > 8 && (
+              <span className="ml-1 text-[10px] sm:text-xs text-gray-500 font-medium">
+                +{product.colors.length - 8} colores
+              </span>
+            )}
           </div>
         )}
 
