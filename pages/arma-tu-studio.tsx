@@ -179,7 +179,7 @@ export default function ArmaTuStudioPage() {
   const getItemDiscount = (item: QuoteItem) => {
     const subtotal = getItemSubtotal(item);
 
-    return item.quantity >= 5 ? subtotal * 0.15 : 0;
+    return item.quantity > 20 ? subtotal * 0.1 : 0;
   };
 
   const getItemTotal = (item: QuoteItem) => {
@@ -204,7 +204,7 @@ export default function ArmaTuStudioPage() {
               `- ${item.quantity} ${item.name}${
                 item.selectedColor ? ` color ${item.selectedColor}` : ""
               } — ${formatCurrency(getItemTotal(item))}${
-                item.quantity >= 5 ? " (15% off aplicado)" : ""
+                item.quantity > 20 ? " (10% off aplicado)" : ""
               }`,
           ),
           "",
@@ -763,13 +763,13 @@ export default function ArmaTuStudioPage() {
                           </div>
 
                           <div className="w-[140px] justify-self-start text-left md:justify-self-end md:text-right">
-                            {product.quantity >= 5 && (
+                            {product.quantity > 20 && (
                               <p className="text-xs font-medium text-green-600">
-                                15% off aplicado
+                                10% off aplicado
                               </p>
                             )}
 
-                            {product.quantity >= 5 && (
+                            {product.quantity > 20 && (
                               <p className="text-xs text-gray-400 line-through">
                                 {formatCurrency(getItemSubtotal(product))}
                               </p>
@@ -795,8 +795,8 @@ export default function ArmaTuStudioPage() {
                       </div>
 
                       <p className="mt-2 text-xs opacity-80">
-                        El 15% de descuento se aplica individualmente por
-                        producto cuando agregas 5 piezas o más del mismo item.
+                        El 10% de descuento se aplica individualmente por
+                        producto cuando agregas más de 20 piezas del mismo item.
                       </p>
                     </div>
                     {quoteItems.length > 0 && (
