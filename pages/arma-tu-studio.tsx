@@ -121,7 +121,7 @@ export default function ArmaTuStudioPage() {
       : [];
   const studioOptions =
     config?.studioQuote?.studioTypes?.filter((item) => item.enabled) ?? [];
-  const quoteAllowedCategories = ["reformers", "accesorios"];
+  const quoteAllowedCategories = ["reformers", "accesorios", "mat"];
 
   const quoteAvailableProducts = allProducts.filter((product) =>
     quoteAllowedCategories.includes(product.category),
