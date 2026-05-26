@@ -6,8 +6,6 @@ import { useAppConfig } from "../context/ConfigContext";
 import { useProducts } from "../context/ProductsContext";
 
 import PromoModal from "../components/PromoModal";
-import OpeningStudioSection from "../components/OpeningStudioSection";
-import { EventosFromConfig } from "../components/EventosCarousel";
 import PuntosDeVentaSection from "../components/PuntosDeVentaSection";
 import CategoriasSection from "../components/CategoriasSection";
 import AboutUsHero from "../components/AboutUsHero";
@@ -54,9 +52,6 @@ export default function Home() {
             puntos={config.puntosDeVenta}
           />
         )}
-
-      {/* Eventos */}
-      <EventosFromConfig className="w-full py-20 px-6 bg-white" />
 
       {/* CTA final */}
       {config?.featureFlags?.showFinalCTA && config?.finalCTA?.enabled && (
