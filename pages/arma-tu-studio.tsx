@@ -16,6 +16,7 @@ type RecommendedProduct = {
   availableColors: string[];
   selectedColor: string;
   note?: string;
+  category?: string;
 };
 
 type QuoteItem = RecommendedProduct;
@@ -80,6 +81,7 @@ function productToQuoteItem(
     availableColors: colors,
     selectedColor: colors[0],
     note,
+    category: product.category,
   };
 }
 
@@ -176,10 +178,27 @@ export default function ArmaTuStudioPage() {
     return item.quantity * item.unitPrice;
   };
 
+  const isMatItem = (item: QuoteItem) => {
+    const category = item.category?.toLowerCase() ?? "";
+    const name = item.name.toLowerCase();
+
+    return category === "mat" || name.includes("tapete");
+  };
+
+  const getMatFreeQuantity = (item: QuoteItem) => {
+    if (!isMatItem(item)) return 0;
+
+    return Math.floor(item.quantity / 5);
+  };
+
   const getItemDiscount = (item: QuoteItem) => {
+    if (isMatItem(item)) {
+      return getMatFreeQuantity(item) * item.unitPrice;
+    }
+
     const subtotal = getItemSubtotal(item);
 
-    return item.quantity > 20 ? subtotal * 0.1 : 0;
+    return item.quantity >= 10 ? subtotal * 0.15 : 0;
   };
 
   const getItemTotal = (item: QuoteItem) => {
@@ -204,7 +223,11 @@ export default function ArmaTuStudioPage() {
               `- ${item.quantity} ${item.name}${
                 item.selectedColor ? ` color ${item.selectedColor}` : ""
               } — ${formatCurrency(getItemTotal(item))}${
-                item.quantity > 20 ? " (10% off aplicado)" : ""
+                isMatItem(item) && getMatFreeQuantity(item) > 0
+                  ? ` (Promo 5x4: ${getMatFreeQuantity(item)} gratis)`
+                  : item.quantity >= 10
+                    ? " (15% off aplicado)"
+                    : ""
               }`,
           ),
           "",
@@ -763,13 +786,21 @@ export default function ArmaTuStudioPage() {
                           </div>
 
                           <div className="w-[140px] justify-self-start text-left md:justify-self-end md:text-right">
-                            {product.quantity > 20 && (
+                            {isMatItem(product) &&
+                              getMatFreeQuantity(product) > 0 && (
+                                <p className="text-xs font-medium text-green-600">
+                                  Promo 5x4: {getMatFreeQuantity(product)}{" "}
+                                  gratis
+                                </p>
+                              )}
+
+                            {!isMatItem(product) && product.quantity >= 10 && (
                               <p className="text-xs font-medium text-green-600">
-                                10% off aplicado
+                                15% off aplicado
                               </p>
                             )}
 
-                            {product.quantity > 20 && (
+                            {getItemDiscount(product) > 0 && (
                               <p className="text-xs text-gray-400 line-through">
                                 {formatCurrency(getItemSubtotal(product))}
                               </p>
@@ -795,8 +826,10 @@ export default function ArmaTuStudioPage() {
                       </div>
 
                       <p className="mt-2 text-xs opacity-80">
-                        El 10% de descuento se aplica individualmente por
-                        producto cuando agregas más de 20 piezas del mismo item.
+                        El 15% de descuento se aplica individualmente por
+                        producto cuando agregas mínimo 10 piezas del mismo item.
+                        Los tapetes no participan en ese descuento ya que tienen
+                        promoción de 5x4.
                       </p>
                     </div>
                     {quoteItems.length > 0 && (
