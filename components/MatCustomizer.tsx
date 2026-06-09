@@ -450,139 +450,143 @@ export default function MatCustomizer() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm md:p-8">
-            <div className="mb-8">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                1. Elige la forma
-              </h2>
+          <div className="contents lg:block lg:rounded-[2rem] lg:bg-white lg:p-8 lg:shadow-sm">
+            <div className="order-1 rounded-[2rem] bg-white p-5 shadow-sm md:p-8 lg:p-0 lg:shadow-none">
+              <div className="mb-8">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900">
+                  1. Elige la forma
+                </h2>
 
-              <div className="grid grid-cols-3 gap-3">
-                {matShapes.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setShape(item.id)}
-                    className={`rounded-2xl border p-4 transition ${
-                      shape === item.id
-                        ? "border-gray-900 bg-gray-900 text-white"
-                        : "border-gray-200 bg-white text-gray-800 hover:border-gray-400"
-                    }`}
-                    type="button"
-                  >
-                    <div
-                      className="mx-auto mb-3 h-24 w-14 bg-current"
-                      style={{
-                        borderRadius:
-                          item.id === "capsula"
-                            ? "999px"
-                            : item.id === "bala"
-                              ? "999px 999px 8px 8px"
-                              : "8px",
-                      }}
-                    />
-                    <span className="text-sm font-bold uppercase">
-                      {item.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                2. Elige color o textura
-              </h2>
-
-              <div className="mb-6">
-                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">
-                  Colores sólidos
-                </h3>
-
-                <div className="grid grid-cols-7 gap-3 sm:grid-cols-10">
-                  {solidColors.map((item) => (
+                <div className="grid grid-cols-3 gap-3">
+                  {matShapes.map((item) => (
                     <button
-                      key={item}
-                      onClick={() =>
-                        setFinish({
-                          type: "solid",
-                          value: item,
-                          label: item,
-                        })
-                      }
-                      className={`h-10 rounded-xl border transition ${
-                        finish.type === "solid" && finish.value === item
-                          ? "scale-110 border-gray-900 ring-2 ring-gray-900"
-                          : "border-gray-200"
-                      }`}
-                      style={{ backgroundColor: item }}
-                      type="button"
-                      aria-label={`Elegir color ${item}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">
-                  Texturas premium
-                </h3>
-
-                <div className="grid grid-cols-5 gap-3 sm:grid-cols-8">
-                  {textureFinishes.map((item) => (
-                    <button
-                      key={item.value}
-                      onClick={() => setFinish(item)}
-                      className={`h-16 overflow-hidden rounded-xl border transition ${
-                        finish.type === "texture" && finish.value === item.value
-                          ? "scale-105 border-gray-900 ring-2 ring-gray-900"
-                          : "border-gray-200"
+                      key={item.id}
+                      onClick={() => setShape(item.id)}
+                      className={`rounded-2xl border p-4 transition ${
+                        shape === item.id
+                          ? "border-gray-900 bg-gray-900 text-white"
+                          : "border-gray-200 bg-white text-gray-800 hover:border-gray-400"
                       }`}
                       type="button"
-                      aria-label={`Elegir ${item.label}`}
                     >
-                      <img
-                        src={item.value}
-                        alt={item.label}
-                        className="h-full w-full object-cover"
+                      <div
+                        className="mx-auto mb-3 h-24 w-14 bg-current"
+                        style={{
+                          borderRadius:
+                            item.id === "capsula"
+                              ? "999px"
+                              : item.id === "bala"
+                                ? "999px 999px 8px 8px"
+                                : "8px",
+                        }}
                       />
+                      <span className="text-sm font-bold uppercase">
+                        {item.label}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
+
+              <div className="mb-8">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900">
+                  2. Elige color o textura
+                </h2>
+
+                <div className="mb-6">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">
+                    Colores sólidos
+                  </h3>
+
+                  <div className="grid grid-cols-7 gap-3 sm:grid-cols-10">
+                    {solidColors.map((item) => (
+                      <button
+                        key={item}
+                        onClick={() =>
+                          setFinish({
+                            type: "solid",
+                            value: item,
+                            label: item,
+                          })
+                        }
+                        className={`h-10 rounded-xl border transition ${
+                          finish.type === "solid" && finish.value === item
+                            ? "scale-110 border-gray-900 ring-2 ring-gray-900"
+                            : "border-gray-200"
+                        }`}
+                        style={{ backgroundColor: item }}
+                        type="button"
+                        aria-label={`Elegir color ${item}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">
+                    Texturas premium
+                  </h3>
+
+                  <div className="grid grid-cols-5 gap-3 sm:grid-cols-8">
+                    {textureFinishes.map((item) => (
+                      <button
+                        key={item.value}
+                        onClick={() => setFinish(item)}
+                        className={`h-16 overflow-hidden rounded-xl border transition ${
+                          finish.type === "texture" &&
+                          finish.value === item.value
+                            ? "scale-105 border-gray-900 ring-2 ring-gray-900"
+                            : "border-gray-200"
+                        }`}
+                        type="button"
+                        aria-label={`Elegir ${item.label}`}
+                      >
+                        <img
+                          src={item.value}
+                          alt={item.label}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900">
+                  3. Sube tu logo o diseño
+                </h2>
+
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center transition hover:border-gray-500">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleLogoUpload(e.target.files)}
+                  />
+
+                  <span className="text-base font-semibold text-gray-900">
+                    Subir logo o diseño
+                  </span>
+
+                  <span className="mt-1 text-sm text-gray-500">
+                    PNG, JPG, WEBP o SVG. Puedes subir más de una imagen.
+                  </span>
+
+                  <span className="mt-4 max-w-md rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-gray-600 shadow-sm">
+                    Para mejor resultado, sube tu logo en{" "}
+                    <strong className="font-semibold text-gray-900">
+                      PNG con fondo transparente
+                    </strong>{" "}
+                    o{" "}
+                    <strong className="font-semibold text-gray-900">SVG</strong>
+                    . Si tu imagen tiene fondo blanco, se verá sobre el mat.
+                  </span>
+                </label>
+              </div>
             </div>
-
-            <div className="mb-8">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                3. Sube tu logo o diseño
-              </h2>
-
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center transition hover:border-gray-500">
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleLogoUpload(e.target.files)}
-                />
-
-                <span className="text-base font-semibold text-gray-900">
-                  Subir logo o diseño
-                </span>
-
-                <span className="mt-1 text-sm text-gray-500">
-                  PNG, JPG, WEBP o SVG. Puedes subir más de una imagen.
-                </span>
-
-                <span className="mt-4 max-w-md rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-gray-600 shadow-sm">
-                  Para mejor resultado, sube tu logo en{" "}
-                  <strong className="font-semibold text-gray-900">
-                    PNG con fondo transparente
-                  </strong>{" "}
-                  o <strong className="font-semibold text-gray-900">SVG</strong>
-                  . Si tu imagen tiene fondo blanco, se verá sobre el mat.
-                </span>
-              </label>
-            </div>
-            <div className="mb-8 rounded-3xl border border-gray-200 bg-white p-5">
+            <div className="order-3 mb-8 rounded-3xl border border-gray-200 bg-white p-5">
               <h2 className="mb-4 text-lg font-semibold text-gray-900">
                 4. Cantidad y cotización
               </h2>
@@ -779,7 +783,7 @@ export default function MatCustomizer() {
             )}
           </div>
 
-          <div className="w-full min-w-0 lg:sticky lg:top-28 lg:self-start">
+          <div className="order-2 w-full min-w-0 lg:sticky lg:top-28 lg:self-start">
             <div className="w-full rounded-[2rem] bg-white p-3 shadow-sm sm:p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
