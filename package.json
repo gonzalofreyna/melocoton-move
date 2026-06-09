@@ -18,15 +18,20 @@
     "@stripe/stripe-js": "^7.8.0",
     "@tailwindcss/line-clamp": "^0.4.4",
     "framer-motion": "^12.23.12",
+    "html-to-image": "^1.11.13",
     "html2pdf.js": "^0.12.1",
+    "jspdf": "^4.2.1",
+    "konva": "^10.3.0",
     "lucide-react": "^0.539.0",
     "next": "15.4.5",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "react-icons": "^5.5.0",
+    "react-konva": "^19.2.4",
     "resend": "^6.0.1",
     "stripe": "^18.4.0",
-    "swiper": "^11.2.10"
+    "swiper": "^11.2.10",
+    "use-image": "^1.1.4"
   },
   "devDependencies": {
     "@types/node": "20.12.12",
