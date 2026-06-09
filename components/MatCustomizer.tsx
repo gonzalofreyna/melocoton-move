@@ -717,7 +717,7 @@ export default function MatCustomizer() {
                 onClick={handleWhatsAppOrder}
                 className="mt-4 w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-gray-700"
               >
-                Listo, comprar por WhatsApp
+                Solicitar y comprar
               </button>
 
               <p className="mt-3 text-center text-xs leading-5 text-gray-500">
