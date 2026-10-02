@@ -8,7 +8,6 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { usePathname } from "next/navigation"; // 👈 agregado
 
 export type CartItem = {
   slug: string;
@@ -55,7 +54,6 @@ function clampToStock(qty: number, maxStock?: number) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname(); // 👈 aquí detectamos la ruta actual
 
   // ⛳ Cargar carrito desde localStorage
   useEffect(() => {
@@ -77,7 +75,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               maxStock,
               quantity: clampToStock(i.quantity, maxStock),
             };
-          })
+          }),
         );
       }
     } catch {}
@@ -92,31 +90,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [cart]);
 
-  // 🚀 Limpia automáticamente el carrito al entrar a /success
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isSuccessPage = pathname === "/success";
-    const hasStripeSession = window.location.search.includes("session_id=");
-
-    // ✅ Solo limpia si Stripe realmente devolvió un session_id de pago exitoso
-    if (isSuccessPage && hasStripeSession) {
-      setCart([]);
-      localStorage.removeItem("cart");
-      setIsOpen(false);
-    }
-  }, [pathname]);
-
   // 📊 Derivados
   const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const FREE_SHIPPING_MIN_TOTAL = Number(
-    process.env.NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL ?? 499
+    process.env.NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL ?? 499,
   );
 
   const FIXED_SHIPPING_FEE = Number(
-    process.env.NEXT_PUBLIC_FIXED_SHIPPING_FEE ?? 149
+    process.env.NEXT_PUBLIC_FIXED_SHIPPING_FEE ?? 149,
   );
 
   // Verifica si hay productos con envío especial
@@ -151,7 +134,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const remaining = FREE_SHIPPING_MIN_TOTAL - subtotal;
     shippingCost = FIXED_SHIPPING_FEE;
     shippingLabel = `Te faltan $${remaining.toFixed(
-      0
+      0,
     )} para obtener envío gratis 💸`;
   }
   // 📦 Prioridad 4: Caso general (subtotal >= mínimo pero sin free shipping)
@@ -184,7 +167,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const nextQty = clampToStock(existing.quantity + 1, existing.maxStock);
         if (nextQty === existing.quantity) return prev;
         return prev.map((p) =>
-          p.slug === item.slug ? { ...p, quantity: nextQty } : p
+          p.slug === item.slug ? { ...p, quantity: nextQty } : p,
         );
       }
 
@@ -212,7 +195,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (i.slug !== slug) return i;
         const nextQty = clampToStock(i.quantity + 1, i.maxStock);
         return nextQty === i.quantity ? i : { ...i, quantity: nextQty };
-      })
+      }),
     );
 
   const decrement = (slug: string) =>
@@ -223,7 +206,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const nextQty = Math.max(0, i.quantity - 1);
           return { ...i, quantity: nextQty };
         })
-        .filter((i) => i.quantity > 0)
+        .filter((i) => i.quantity > 0),
     );
 
   const updateQuantity = (slug: string, q: number) => {
@@ -234,11 +217,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const nextQty = clampToStock(q, i.maxStock);
           return { ...i, quantity: nextQty };
         })
-        .filter((i) => i.quantity > 0)
+        .filter((i) => i.quantity > 0),
     );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, []);
 
   return (
     <CartContext.Provider

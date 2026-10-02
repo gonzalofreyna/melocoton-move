@@ -1,7 +1,7 @@
 // pages/success.tsx
 import { GetServerSideProps } from "next";
 import Head from "next/head";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
 
@@ -38,9 +38,21 @@ export default function SuccessPage({
   orderId,
   errorMessage,
 }: SuccessProps) {
-  const { closeCart } = useCart();
+  const { clearCart, closeCart } = useCart();
   const pdfRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!ok) return;
+
+    clearCart();
+
+    try {
+      localStorage.removeItem("cart");
+    } catch {}
+
+    closeCart();
+  }, [ok, clearCart, closeCart]);
 
   const fmt = (value?: number, curr?: string) => {
     if (value == null || !curr) return "-";
@@ -186,8 +198,8 @@ export default function SuccessPage({
               {shippingLabel
                 ? shippingLabel
                 : typeof shippingCost === "number"
-                ? fmt(shippingCost, currency)
-                : "Incluido en el total"}
+                  ? fmt(shippingCost, currency)
+                  : "Incluido en el total"}
             </span>
           </p>
 
@@ -234,7 +246,7 @@ export default function SuccessPage({
 }
 
 export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
-  ctx
+  ctx,
 ) => {
   try {
     const sessionId = (ctx.query.session_id as string) || null;
@@ -250,18 +262,33 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       expand: ["line_items", "payment_intent"],
     });
 
-    const lineItems = (session.line_items?.data || []).map((li) => ({
-      description: li.description || "Artículo",
-      quantity: li.quantity || 0,
-      amountSubtotal: li.amount_subtotal ?? li.amount_total ?? 0,
-    }));
+    if (session.payment_status !== "paid") {
+      return {
+        props: {
+          ok: false,
+          errorMessage: "El pago todavía no ha sido confirmado por Stripe.",
+        },
+      };
+    }
 
-    const sessAny = session as any;
-    const sd =
-      sessAny?.shipping_details ||
-      (typeof session.payment_intent === "object"
-        ? (session.payment_intent as any)?.shipping
-        : null);
+    if (session.metadata?.source !== "melocoton_ecommerce") {
+      return {
+        props: {
+          ok: false,
+          errorMessage: "La sesión de pago no pertenece a Melocotón Move.",
+        },
+      };
+    }
+
+    const lineItems = (session.line_items?.data || [])
+      .filter((li) => li.description !== "Costo de envío")
+      .map((li) => ({
+        description: li.description || "Artículo",
+        quantity: li.quantity || 0,
+        amountSubtotal: li.amount_subtotal ?? li.amount_total ?? 0,
+      }));
+
+    const sd = session.collected_information?.shipping_details ?? null;
 
     const addr = sd?.address;
     const shippingName: string | null = sd?.name ?? null;
@@ -277,15 +304,23 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
           .join("\n")
       : null;
 
-    // 🧠 Determinar tipo de envío
+    const shippingLine = (session.line_items?.data || []).find(
+      (li) => li.description === "Costo de envío",
+    );
+
+    const shippingCost = shippingLine?.amount_total ?? 0;
+
     let shippingLabel: string | null = null;
-    if (session.shipping_cost?.amount_total === 0) {
-      shippingLabel = "Envío gratis 🚚✨";
-    } else if (session.metadata?.hasCustomShipping === "true") {
+
+    if (session.metadata?.hasCustomShipping === "true") {
       shippingLabel = "Incluye artículos con envío a cotizar 🚛";
-    } else if (session.shipping_cost?.amount_total) {
-      const cost = (session.shipping_cost.amount_total / 100).toFixed(0);
-      shippingLabel = `Costo de envío: $${cost}`;
+    } else if (shippingCost > 0) {
+      shippingLabel = `Costo de envío: ${new Intl.NumberFormat("es-MX", {
+        style: "currency",
+        currency: (session.currency || "mxn").toUpperCase(),
+      }).format(shippingCost / 100)}`;
+    } else {
+      shippingLabel = "Envío gratis 🚚✨";
     }
 
     return {
@@ -295,14 +330,11 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
         currency: session.currency ?? "mxn",
         customerEmail: session.customer_details?.email ?? null,
         items: lineItems,
-        shippingCost: session.shipping_cost?.amount_total ?? null,
+        shippingCost,
         shippingLabel,
         shippingName,
         shippingAddress,
-        orderId:
-          typeof session.payment_intent === "string"
-            ? session.payment_intent
-            : session.id,
+        orderId: session.id,
       },
     };
   } catch (e: any) {
