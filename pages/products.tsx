@@ -77,19 +77,33 @@ export default function ProductsPage() {
     freeShippingParam,
   ]);
 
+  const groupedProducts = useMemo(() => {
+    const groups = new Map<string, typeof filteredProducts>();
+
+    filteredProducts.forEach((product) => {
+      const key = product.name.trim().toLowerCase().replace(/\s+/g, " ");
+
+      const currentGroup = groups.get(key) ?? [];
+      currentGroup.push(product);
+      groups.set(key, currentGroup);
+    });
+
+    return Array.from(groups.values());
+  }, [filteredProducts]);
+
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   const title = searchString
     ? `Resultados para "${q(search)}"`
     : onSaleParam
-    ? "Mejores ofertas"
-    : popularParam
-    ? "Populares"
-    : freeShippingParam
-    ? "Envío gratis"
-    : categoryString
-    ? cap(categoryString)
-    : "Nuestros Productos";
+      ? "Mejores ofertas"
+      : popularParam
+        ? "Populares"
+        : freeShippingParam
+          ? "Envío gratis"
+          : categoryString
+            ? cap(categoryString)
+            : "Nuestros Productos";
 
   const isLoading = productsLoading || configLoading;
   const anyError = productsError || configError;
@@ -110,20 +124,25 @@ export default function ProductsPage() {
 
       {!isLoading && !anyError && (
         <>
-          {filteredProducts.length === 0 ? (
+          {groupedProducts.length === 0 ? (
             <p className="text-gray-500 text-center">
               No se encontraron productos.
             </p>
           ) : (
             <div className="grid gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full max-w-7xl">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.slug}
-                  product={product}
-                  offerBadge={config!.offerBadge}
-                  featureFlags={config!.featureFlags}
-                />
-              ))}
+              {groupedProducts.map((variants) => {
+                const product = variants[0];
+
+                return (
+                  <ProductCard
+                    key={product.slug}
+                    product={product}
+                    variants={variants}
+                    offerBadge={config!.offerBadge}
+                    featureFlags={config!.featureFlags}
+                  />
+                );
+              })}
             </div>
           )}
         </>

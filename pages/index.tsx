@@ -43,16 +43,6 @@ export default function Home() {
       {/* Productos destacados */}
       <FeaturedProductsSection />
 
-      {/* Puntos de venta */}
-      {config?.featureFlags?.showPuntosDeVenta &&
-        Array.isArray(config?.puntosDeVenta) &&
-        config.puntosDeVenta.length > 0 && (
-          <PuntosDeVentaSection
-            header={config?.puntosDeVentaHeader}
-            puntos={config.puntosDeVenta}
-          />
-        )}
-
       {/* CTA final */}
       {config?.featureFlags?.showFinalCTA && config?.finalCTA?.enabled && (
         <section

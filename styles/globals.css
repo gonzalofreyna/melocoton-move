@@ -66,3 +66,22 @@ body {
   display: flex !important; /* iguala el comportamiento interno */
   align-items: stretch !important; /* las cards se estiran a la misma altura */
 }
+
+.featured-products-swiper .swiper-button-prev,
+.featured-products-swiper .swiper-button-next {
+  color: #9ca3af;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.featured-products-swiper .swiper-button-prev:hover,
+.featured-products-swiper .swiper-button-next:hover {
+  color: #6b7280;
+}
+
+.featured-products-swiper .swiper-button-prev::after,
+.featured-products-swiper .swiper-button-next::after {
+  font-size: 18px;
+  font-weight: 700;
+}
