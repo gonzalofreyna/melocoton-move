@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum ShippingType {
+  standard
+  custom
+}
+
+enum QuoteQuantityType {
+  capacity
+  fixed
+  halfCapacity
+  quarterCapacity
+}
+
+enum OrderStatus {
+  pending
+  paid
+  canceled
+  refunded
+}
+
+enum InventoryMovementType {
+  sale
+  refund
+  adjustment
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  image         String
+  gallery       String[]
+  fullPrice     Decimal  @db.Decimal(12, 2)
+  discountPrice Decimal? @db.Decimal(12, 2)
+  colors        String[]
+  category      String
+  featured      Boolean  @default(false)
+  description   String
+
+  studioTypes        String[]
+  quoteQuantityType  QuoteQuantityType?
+  quoteFixedQuantity Int?
+  quoteNote          String?
+  quoteRecommended   Boolean            @default(false)
+
+  freeShipping Boolean      @default(false)
+  shippingType ShippingType @default(standard)
+
+  stock       Int?
+  maxQty      Int?
+  weightGrams Decimal? @db.Decimal(12, 2)
+
+  widthCm  Decimal? @db.Decimal(10, 2)
+  heightCm Decimal? @db.Decimal(10, 2)
+  lengthCm Decimal? @db.Decimal(10, 2)
+
+  shippingMinBusinessDays Int?
+  shippingMaxBusinessDays Int?
+
+  brand String?
+  sku   String? @unique
+
+  materials      String[]
+  care           String[]
+  highlights     String[]
+  whatsIncluded  String[]
+  returnDays     Int?
+  warrantyMonths Int?
+  tags           String[]
+  related        String[]
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItems OrderItem[]
+  inventoryMovements InventoryMovement[]
+
+  @@index([category])
+  @@index([featured])
+  @@index([active])
+}
+
+model Order {
+  id String @id @default(cuid())
+
+  stripeSessionId String @unique
+  paymentIntentId String?
+
+  customerEmail String?
+  customerName  String?
+
+  status OrderStatus @default(pending)
+
+  currency       String  @default("mxn")
+  subtotal       Decimal @db.Decimal(12, 2)
+  shippingAmount Decimal @db.Decimal(12, 2)
+  discountAmount Decimal @db.Decimal(12, 2)
+  total          Decimal @db.Decimal(12, 2)
+
+  shippingName       String?
+  shippingAddress    String?
+  shippingPostalCode String?
+  shippingCity       String?
+  shippingState      String?
+  shippingCountry    String?
+
+  hasCustomShipping Boolean @default(false)
+  shippingLabel      String?
+
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+  inventoryMovements InventoryMovement[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerEmail])
+}
+
+model OrderItem {
+  id String @id @default(cuid())
+
+  orderId   String
+  productId String?
+
+  slug String
+  sku  String?
+  name String
+
+  quantity Int
+
+  unitPrice Decimal @db.Decimal(12, 2)
+  subtotal  Decimal @db.Decimal(12, 2)
+
+  image String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([slug])
+}
+
+model InventoryMovement {
+  id String @id @default(cuid())
+
+  productId String
+  orderId   String?
+
+  type     InventoryMovementType
+  quantity Int
+  note     String?
+  
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([orderId])
+  @@index([createdAt])
+}

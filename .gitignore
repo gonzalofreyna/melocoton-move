@@ -20,3 +20,12 @@ Thumbs.db
 
 tsconfig.tsbuildinfo
 .vscode/
+
+
+# AWS Lambda build artifacts
+ecommerce-api/lambda-package/
+ecommerce-api/*.zip
+
+# Checkout Lambda build artifacts
+checkout-api/lambda-package/
+checkout-api/*.zip
