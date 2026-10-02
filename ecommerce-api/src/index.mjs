@@ -1,4 +1,5 @@
 import pg from "pg";
+import { randomUUID } from "node:crypto";
 
 const { Pool } = pg;
 
@@ -14,6 +15,20 @@ const pool = new Pool({
   },
   max: 5,
 });
+
+function isAuthorizedInternalRequest(event) {
+  const expectedKey = process.env.INTERNAL_API_KEY;
+
+  if (!expectedKey) {
+    console.error("❌ Falta INTERNAL_API_KEY en la Lambda");
+    return false;
+  }
+
+  const receivedKey =
+    event?.headers?.["x-internal-key"] || event?.headers?.["X-Internal-Key"];
+
+  return receivedKey === expectedKey;
+}
 
 function cors(event) {
   const origin = (event?.headers?.origin || "").toLowerCase();
@@ -205,6 +220,475 @@ export const handler = async (event) => {
         headers: H,
         body: "",
       };
+    }
+
+    if (method === "POST" && path === "/internal/orders/complete") {
+      if (!isAuthorizedInternalRequest(event)) {
+        return {
+          statusCode: 401,
+          headers: H,
+          body: JSON.stringify({
+            error: "Unauthorized",
+          }),
+        };
+      }
+
+      let body;
+
+      try {
+        body = JSON.parse(event.body || "{}");
+      } catch {
+        return {
+          statusCode: 400,
+          headers: H,
+          body: JSON.stringify({
+            error: "Invalid JSON",
+          }),
+        };
+      }
+
+      const {
+        stripeSessionId,
+        paymentIntentId,
+        customerEmail,
+        customerName,
+        currency,
+        subtotal,
+        shippingAmount,
+        discountAmount,
+        total,
+        shippingName,
+        shippingAddress,
+        shippingPostalCode,
+        shippingCity,
+        shippingState,
+        shippingCountry,
+        hasCustomShipping,
+        shippingLabel,
+        items,
+      } = body;
+
+      if (!stripeSessionId || typeof stripeSessionId !== "string") {
+        return {
+          statusCode: 400,
+          headers: H,
+          body: JSON.stringify({
+            error: "Missing stripeSessionId",
+          }),
+        };
+      }
+
+      if (!Array.isArray(items) || items.length === 0) {
+        return {
+          statusCode: 400,
+          headers: H,
+          body: JSON.stringify({
+            error: "Order must contain at least one item",
+          }),
+        };
+      }
+
+      for (const item of items) {
+        if (
+          !item ||
+          typeof item.slug !== "string" ||
+          !item.slug ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity <= 0
+        ) {
+          return {
+            statusCode: 400,
+            headers: H,
+            body: JSON.stringify({
+              error: "Invalid order item",
+            }),
+          };
+        }
+      }
+
+      const client = await pool.connect();
+
+      try {
+        await client.query("BEGIN");
+
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          stripeSessionId,
+        ]);
+
+        const existingOrder = await client.query(
+          `
+      SELECT id, status
+      FROM "Order"
+      WHERE "stripeSessionId" = $1
+      LIMIT 1
+    `,
+          [stripeSessionId],
+        );
+
+        if (existingOrder.rows.length > 0) {
+          await client.query("COMMIT");
+
+          return {
+            statusCode: 200,
+            headers: H,
+            body: JSON.stringify({
+              ok: true,
+              alreadyProcessed: true,
+              orderId: existingOrder.rows[0].id,
+              status: existingOrder.rows[0].status,
+            }),
+          };
+        }
+
+        const quantitiesBySlug = new Map();
+
+        for (const item of items) {
+          const slug = item.slug.trim();
+          const currentQuantity = quantitiesBySlug.get(slug) || 0;
+
+          quantitiesBySlug.set(slug, currentQuantity + item.quantity);
+        }
+
+        const lockedProducts = [];
+
+        for (const [slug, quantity] of quantitiesBySlug.entries()) {
+          const productResult = await client.query(
+            `
+     SELECT
+  id,
+  slug,
+  sku,
+  name,
+  image,
+  "fullPrice",
+  "discountPrice",
+  stock,
+  "maxQty",
+  active
+FROM "Product"
+WHERE slug = $1
+FOR UPDATE
+    `,
+            [slug],
+          );
+
+          if (productResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+
+            return {
+              statusCode: 400,
+              headers: H,
+              body: JSON.stringify({
+                error: "Product not found",
+                slug,
+              }),
+            };
+          }
+
+          const product = productResult.rows[0];
+
+          if (product.active !== true) {
+            await client.query("ROLLBACK");
+
+            return {
+              statusCode: 400,
+              headers: H,
+              body: JSON.stringify({
+                error: "Product is inactive",
+                slug,
+              }),
+            };
+          }
+
+          const maxQty = product.maxQty === null ? 10 : product.maxQty;
+
+          if (quantity > maxQty) {
+            await client.query("ROLLBACK");
+
+            return {
+              statusCode: 400,
+              headers: H,
+              body: JSON.stringify({
+                error: "Quantity exceeds maxQty",
+                slug,
+                requestedQuantity: quantity,
+                maxQty,
+              }),
+            };
+          }
+
+          if (
+            product.stock !== null &&
+            Number.isInteger(product.stock) &&
+            quantity > product.stock
+          ) {
+            await client.query("ROLLBACK");
+
+            return {
+              statusCode: 400,
+              headers: H,
+              body: JSON.stringify({
+                error: "Insufficient stock",
+                slug,
+                requestedQuantity: quantity,
+                availableStock: product.stock,
+              }),
+            };
+          }
+
+          lockedProducts.push({
+            ...product,
+            quantity,
+          });
+        }
+
+        const orderSubtotal = Number(subtotal);
+        const orderShippingAmount = Number(shippingAmount);
+        const orderDiscountAmount = Number(discountAmount);
+        const orderTotal = Number(total);
+
+        if (
+          !Number.isFinite(orderSubtotal) ||
+          !Number.isFinite(orderShippingAmount) ||
+          !Number.isFinite(orderDiscountAmount) ||
+          !Number.isFinite(orderTotal) ||
+          orderSubtotal < 0 ||
+          orderShippingAmount < 0 ||
+          orderDiscountAmount < 0 ||
+          orderTotal < 0
+        ) {
+          await client.query("ROLLBACK");
+
+          return {
+            statusCode: 400,
+            headers: H,
+            body: JSON.stringify({
+              error: "Invalid order amounts",
+            }),
+          };
+        }
+
+        const orderId = randomUUID();
+
+        const insertedOrder = await client.query(
+          `
+    INSERT INTO "Order" (
+      id,
+      "stripeSessionId",
+      "paymentIntentId",
+      "customerEmail",
+      "customerName",
+      status,
+      currency,
+      subtotal,
+      "shippingAmount",
+      "discountAmount",
+      total,
+      "shippingName",
+      "shippingAddress",
+      "shippingPostalCode",
+      "shippingCity",
+      "shippingState",
+      "shippingCountry",
+      "hasCustomShipping",
+      "shippingLabel",
+      "paidAt",
+      "createdAt",
+      "updatedAt"
+    )
+    VALUES (
+      $1, $2, $3, $4, $5,
+      'paid',
+      $6, $7, $8, $9, $10,
+      $11, $12, $13, $14, $15, $16,
+      $17, $18,
+      NOW(),
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT ("stripeSessionId") DO NOTHING
+    RETURNING id, status
+  `,
+          [
+            orderId,
+            stripeSessionId,
+            paymentIntentId || null,
+            customerEmail || null,
+            customerName || null,
+            typeof currency === "string" && currency
+              ? currency.toLowerCase()
+              : "mxn",
+            orderSubtotal,
+            orderShippingAmount,
+            orderDiscountAmount,
+            orderTotal,
+            shippingName || null,
+            shippingAddress || null,
+            shippingPostalCode || null,
+            shippingCity || null,
+            shippingState || null,
+            shippingCountry || null,
+            hasCustomShipping === true,
+            shippingLabel || null,
+          ],
+        );
+
+        if (insertedOrder.rows.length === 0) {
+          const duplicatedOrder = await client.query(
+            `
+      SELECT id, status
+      FROM "Order"
+      WHERE "stripeSessionId" = $1
+      LIMIT 1
+    `,
+            [stripeSessionId],
+          );
+
+          await client.query("COMMIT");
+
+          return {
+            statusCode: 200,
+            headers: H,
+            body: JSON.stringify({
+              ok: true,
+              alreadyProcessed: true,
+              orderId: duplicatedOrder.rows[0]?.id,
+              status: duplicatedOrder.rows[0]?.status,
+            }),
+          };
+        }
+
+        for (const product of lockedProducts) {
+          const fullPrice = Number(product.fullPrice);
+
+          const discountPrice =
+            product.discountPrice !== null
+              ? Number(product.discountPrice)
+              : null;
+
+          const unitPrice =
+            discountPrice !== null &&
+            Number.isFinite(discountPrice) &&
+            discountPrice > 0
+              ? discountPrice
+              : fullPrice;
+
+          if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+            throw new Error(`Precio inválido para producto ${product.slug}`);
+          }
+
+          const itemSubtotal = unitPrice * product.quantity;
+
+          await client.query(
+            `
+      INSERT INTO "OrderItem" (
+        id,
+        "orderId",
+        "productId",
+        slug,
+        sku,
+        name,
+        quantity,
+        "unitPrice",
+        subtotal,
+        image,
+        "createdAt"
+      )
+      VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        NOW()
+      )
+    `,
+            [
+              randomUUID(),
+              insertedOrder.rows[0].id,
+              product.id,
+              product.slug,
+              product.sku || null,
+              product.name,
+              product.quantity,
+              unitPrice,
+              itemSubtotal,
+              product.image || null,
+            ],
+          );
+        }
+
+        for (const product of lockedProducts) {
+          if (product.stock === null) {
+            continue;
+          }
+
+          const updatedStock = await client.query(
+            `
+      UPDATE "Product"
+      SET
+        stock = stock - $1,
+        "updatedAt" = NOW()
+      WHERE id = $2
+        AND stock IS NOT NULL
+        AND stock >= $1
+      RETURNING stock
+    `,
+            [product.quantity, product.id],
+          );
+
+          if (updatedStock.rows.length === 0) {
+            throw new Error(`No se pudo descontar stock de ${product.slug}`);
+          }
+
+          await client.query(
+            `
+      INSERT INTO "InventoryMovement" (
+        id,
+        "productId",
+        "orderId",
+        type,
+        quantity,
+        note,
+        "createdAt"
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        'sale',
+        $4,
+        $5,
+        NOW()
+      )
+    `,
+            [
+              randomUUID(),
+              product.id,
+              insertedOrder.rows[0].id,
+              -product.quantity,
+              `Venta Stripe ${stripeSessionId}`,
+            ],
+          );
+        }
+
+        await client.query("COMMIT");
+
+        return {
+          statusCode: 200,
+          headers: H,
+          body: JSON.stringify({
+            ok: true,
+            alreadyProcessed: false,
+            orderId: insertedOrder.rows[0].id,
+            status: insertedOrder.rows[0].status,
+            itemCount: items.length,
+            message: "Order created",
+          }),
+        };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
     }
 
     if (method === "GET" && path === "/api/products") {

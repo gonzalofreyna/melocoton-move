@@ -23,9 +23,11 @@ async function getSecret(secretName) {
 
 // === Cargar catálogo desde API pública ===
 async function getCatalog() {
-  const CATALOG_URL =
-    process.env.API_PRODUCTS_URL ||
-    "https://ily1a9bb17.execute-api.us-east-1.amazonaws.com/api/products";
+  const CATALOG_URL = process.env.API_PRODUCTS_URL;
+
+  if (!CATALOG_URL) {
+    throw new Error("Falta API_PRODUCTS_URL en la configuración de la Lambda");
+  }
 
   const res = await fetch(CATALOG_URL);
   if (!res.ok) throw new Error(`Error al cargar catálogo: ${res.status}`);
@@ -97,10 +99,38 @@ export const handler = async (event) => {
         }
 
         const maxQty = ref.maxQty ?? DEFAULT_MAX_QTY;
-        const qty = Math.max(
-          1,
-          Math.min(maxQty, Math.floor(Number(it.quantity) || 1)),
-        );
+        const requestedQty = Math.max(1, Math.floor(Number(it.quantity) || 1));
+
+        const stock =
+          typeof ref.stock === "number" && Number.isFinite(ref.stock)
+            ? Math.max(0, Math.floor(ref.stock))
+            : null;
+
+        if (stock !== null && stock <= 0) {
+          return {
+            statusCode: 400,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ok: false,
+              message: `Producto agotado: ${ref.name}`,
+            }),
+          };
+        }
+
+        const maxAllowed = stock === null ? maxQty : Math.min(maxQty, stock);
+
+        if (requestedQty > maxAllowed) {
+          return {
+            statusCode: 400,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ok: false,
+              message: `Solo puedes comprar hasta ${maxAllowed} unidad(es) de ${ref.name}`,
+            }),
+          };
+        }
+
+        const qty = requestedQty;
         const price =
           ref.discountPrice && ref.discountPrice > 0
             ? ref.discountPrice
@@ -116,6 +146,10 @@ export const handler = async (event) => {
             product_data: {
               name: ref.name,
               images: ref.image ? [ref.image] : [],
+              metadata: {
+                slug: String(ref.slug),
+                sku: ref.sku ? String(ref.sku) : "",
+              },
             },
           },
         });
@@ -167,7 +201,7 @@ export const handler = async (event) => {
         success_url: `${SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${SITE_URL}/`,
         metadata: {
-          source: "lambda",
+          source: "melocoton_ecommerce",
           hasCustomShipping: hasCustomShipping ? "true" : "false",
           shippingLabel,
         },
