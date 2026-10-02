@@ -42,6 +42,18 @@ export default function ProductDetail() {
     return products.find((p) => p.slug.toLowerCase() === s);
   }, [slug, products]);
 
+  const variants = useMemo(() => {
+    if (!product) return [];
+
+    const productKey = product.name.trim().toLowerCase().replace(/\s+/g, " ");
+
+    return products.filter((p) => {
+      const key = p.name.trim().toLowerCase().replace(/\s+/g, " ");
+
+      return key === productKey;
+    });
+  }, [product, products]);
+
   useEffect(() => {
     if (product?.image) setMainUrl(resolveImage(product.image));
   }, [product?.image, product?.slug]);
@@ -60,7 +72,7 @@ export default function ProductDetail() {
     {
       left: 0,
       right: 0,
-    }
+    },
   );
 
   useEffect(() => {
@@ -125,22 +137,6 @@ export default function ProductDetail() {
     `${product.dimensionsCm.w}×${product.dimensionsCm.l}×${product.dimensionsCm.h} cm`;
 
   const stock = product.stock;
-  const stockLabel =
-    stock == null
-      ? null
-      : stock <= 0
-      ? "Agotado"
-      : stock <= 5
-      ? "Pocas piezas"
-      : "Disponible";
-  const stockClass =
-    stock == null
-      ? ""
-      : stock <= 0
-      ? "bg-red-100 text-red-700"
-      : stock <= 5
-      ? "bg-yellow-100 text-yellow-800"
-      : "bg-green-100 text-green-700";
 
   // ====== SEO
   const SITE_URL = (
@@ -213,7 +209,7 @@ export default function ProductDetail() {
 
   const textContent = offerBadge?.uppercase
     ? (offerBadge?.text ?? "Promoción").toUpperCase()
-    : offerBadge?.text ?? "Promoción";
+    : (offerBadge?.text ?? "Promoción");
 
   const pillClassFromSize = (() => {
     const base = "px-3 py-1 text-xs";
@@ -372,16 +368,30 @@ export default function ProductDetail() {
 
             {/* ===== Precio, colores y botón debajo de la galería ===== */}
             <div className="flex flex-col space-y-4 pt-2">
-              {!!product.colors?.length && (
-                <div className="flex items-center gap-2">
-                  {product.colors.map((color, idx) => (
-                    <span
-                      key={idx}
-                      className="w-6 h-6 rounded-full border border-gray-300"
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    />
-                  ))}
+              {variants.length > 1 && (
+                <div className="flex items-center gap-3">
+                  {variants.map((variant) => {
+                    const color = variant.colors?.[0];
+                    const isSelected = variant.slug === product.slug;
+
+                    if (!color) return null;
+
+                    return (
+                      <button
+                        key={variant.slug}
+                        type="button"
+                        onClick={() => router.push(`/${variant.slug}`)}
+                        aria-label={`Seleccionar ${variant.name}`}
+                        aria-pressed={isSelected}
+                        className={`w-7 h-7 rounded-full border transition-all ${
+                          isSelected
+                            ? "ring-2 ring-brand-blue ring-offset-2 border-white"
+                            : "border-gray-300 hover:scale-110"
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    );
+                  })}
                 </div>
               )}
 
@@ -431,13 +441,6 @@ export default function ProductDetail() {
               <h1 className="text-2xl sm:text-3xl font-bold text-brand-blue">
                 {product.name}
               </h1>
-              {stockLabel && (
-                <span
-                  className={`px-2.5 py-1 text-xs rounded-full border ${stockClass}`}
-                >
-                  {stockLabel}
-                </span>
-              )}
             </div>
 
             {product.description && (
