@@ -21,6 +21,8 @@ type SuccessProps = {
   shippingLabel?: string | null;
   shippingName?: string | null;
   shippingAddress?: string | null;
+  shippingProvider?: string | null;
+  shippingService?: string | null;
   orderId?: string | null;
   errorMessage?: string;
 };
@@ -33,6 +35,8 @@ export default function SuccessPage({
   items,
   shippingCost,
   shippingLabel,
+  shippingProvider,
+  shippingService,
   shippingName,
   shippingAddress,
   orderId,
@@ -120,17 +124,17 @@ export default function SuccessPage({
   }
 
   return (
-    <main className="flex flex-col items-center px-4 py-16 bg-gray-50 min-h-screen">
+    <main className="flex flex-col items-center px-3 py-6 sm:px-4 sm:py-12 bg-gray-50 min-h-screen">
       <Head>
         <title>Pago exitoso</title>
       </Head>
 
       {/* Encabezado */}
-      <div className="w-full max-w-md bg-gradient-to-r from-brand-beige/60 to-brand-beige/30 rounded-t-[32px] shadow-md text-center py-8 relative">
+      <div className="w-full max-w-md bg-gradient-to-r from-brand-beige/60 to-brand-beige/30 rounded-t-[24px] sm:rounded-t-[32px] shadow-md text-center py-5 sm:py-8 relative">
         <img
           src="/images/logomelocoton.png"
           alt="Melocotón Move"
-          className="w-20 h-20 object-contain mx-auto mb-2 filter brightness-0 saturate-100 invert-[40%] sepia-[10%] hue-rotate-[180deg] contrast-[90%]"
+          className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto mb-2 filter brightness-0 saturate-100 invert-[40%] sepia-[10%] hue-rotate-[180deg] contrast-[90%]"
         />
         <h1 className="text-2xl font-extrabold text-brand-blue">
           ¡Pago exitoso!
@@ -147,19 +151,19 @@ export default function SuccessPage({
       {/* Recibo */}
       <div
         ref={pdfRef}
-        className="w-full max-w-md bg-white rounded-b-[32px] shadow-lg border border-gray-100 p-8 relative overflow-hidden"
+        className="w-full max-w-md bg-white rounded-b-[24px] sm:rounded-b-[32px] shadow-lg border border-gray-100 p-4 sm:p-8 relative overflow-hidden"
       >
-        <div className="flex justify-between items-start border-b pb-4 mb-4 text-gray-600">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start border-b pb-4 mb-4 text-gray-600">
           <div>
             <h2 className="text-lg font-semibold text-brand-blue">
               melocoton.move
             </h2>
             <p className="text-sm">Correo: {customerEmail ?? "—"}</p>
           </div>
-          <div className="text-right text-xs">
+          <div className="text-left sm:text-right text-xs">
             <p>Fecha: {new Date().toLocaleDateString("es-MX")}</p>
             {orderId && (
-              <p className="mt-1 break-all max-w-[140px] text-gray-400">
+              <p className="mt-1 break-all sm:max-w-[140px] text-gray-400">
                 ID Pedido:
                 <br />
                 {orderId}
@@ -169,18 +173,22 @@ export default function SuccessPage({
         </div>
 
         {/* Productos */}
-        <table className="w-full text-sm text-gray-700 mb-4">
+        <table className="w-full text-sm text-gray-700 mb-4 table-fixed">
           <thead>
             <tr className="border-b text-gray-400">
-              <th className="text-left pb-2 font-semibold">Producto</th>
-              <th className="text-center pb-2 font-semibold">Cant.</th>
-              <th className="text-right pb-2 font-semibold">Subtotal</th>
+              <th className="text-left pb-2 font-semibold w-[55%]">Producto</th>
+              <th className="text-center pb-2 font-semibold w-[15%]">Cant.</th>
+              <th className="text-right pb-2 font-semibold w-[30%]">
+                Subtotal
+              </th>
             </tr>
           </thead>
           <tbody>
             {(items || []).map((it, idx) => (
               <tr key={idx} className="border-b last:border-0">
-                <td className="py-2">{it.description || "Artículo"}</td>
+                <td className="py-2 pr-2 break-words">
+                  {it.description || "Artículo"}
+                </td>
                 <td className="text-center">{it.quantity}</td>
                 <td className="text-right font-medium">
                   {fmt(it.amountSubtotal, currency)}
@@ -191,26 +199,33 @@ export default function SuccessPage({
         </table>
 
         {/* Totales */}
-        <div className="text-right border-t pt-4 mt-4 text-gray-700">
-          <p className="text-sm mb-1">
-            Envío:{" "}
-            <span className="font-medium">
-              {shippingLabel
-                ? shippingLabel
-                : typeof shippingCost === "number"
-                  ? fmt(shippingCost, currency)
-                  : "Incluido en el total"}
-            </span>
-          </p>
+        <div className="border-t pt-4 mt-4 text-gray-700">
+          <div className="rounded-xl bg-gray-50 border border-gray-100 p-3 mb-4">
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Envío
+            </p>
 
-          <p className="text-lg font-bold text-brand-blue mt-1">
+            <p className="text-sm font-medium text-gray-800">
+              {shippingLabel || "Envío"}
+            </p>
+
+            {(shippingProvider || shippingService) && (
+              <p className="text-xs text-gray-500 mt-1">
+                {[shippingProvider, shippingService]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+
+          <p className="text-lg font-bold text-brand-blue mt-1 text-right">
             Total pagado: {fmt(amountTotal, currency)}
           </p>
         </div>
 
         {/* Dirección */}
         {(shippingName || shippingAddress) && (
-          <div className="mt-6 border-t pt-4 text-gray-700 text-sm">
+          <div className="mt-5 border-t pt-4 text-gray-700 text-sm leading-relaxed">
             <h3 className="font-semibold text-brand-blue mb-1">
               Dirección de envío
             </h3>
@@ -227,16 +242,16 @@ export default function SuccessPage({
       </div>
 
       {/* Botones */}
-      <div className="flex flex-wrap gap-3 mt-8 justify-end max-w-md w-full">
+      <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8 sm:justify-end max-w-md w-full">
         <button
           onClick={handleDownloadPDF}
-          className="border border-brand-blue text-brand-blue px-4 py-2 rounded-lg hover:bg-brand-blue hover:text-white transition text-sm font-medium"
+          className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl hover:bg-brand-blue hover:text-white transition text-sm font-medium"
         >
           Descargar recibo (PDF)
         </button>
         <button
           onClick={() => router.push("/")}
-          className="bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-beige hover:text-brand-blue transition text-sm font-medium"
+          className="w-full sm:w-auto bg-brand-blue text-white px-4 py-3 sm:py-2 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition text-sm font-medium"
         >
           Volver al inicio
         </button>
@@ -310,17 +325,33 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
 
     const shippingCost = shippingLine?.amount_total ?? 0;
 
-    let shippingLabel: string | null = null;
+    const shippingProvider = session.metadata?.shippingProvider?.trim() || null;
 
-    if (session.metadata?.hasCustomShipping === "true") {
-      shippingLabel = "Incluye artículos con envío a cotizar 🚛";
-    } else if (shippingCost > 0) {
-      shippingLabel = `Costo de envío: ${new Intl.NumberFormat("es-MX", {
-        style: "currency",
-        currency: (session.currency || "mxn").toUpperCase(),
-      }).format(shippingCost / 100)}`;
-    } else {
-      shippingLabel = "Envío gratis 🚚✨";
+    const shippingService = session.metadata?.shippingService?.trim() || null;
+
+    const shippingPromoApplied =
+      session.metadata?.shippingPromoApplied === "true";
+
+    const freeShipping = session.metadata?.freeShipping === "true";
+
+    let shippingLabel: string | null =
+      session.metadata?.shippingLabel?.trim() || null;
+
+    if (!shippingLabel) {
+      if (session.metadata?.hasCustomShipping === "true") {
+        shippingLabel = "Incluye artículos con envío a cotizar";
+      } else if (shippingPromoApplied) {
+        shippingLabel = "Envío gratis por código promocional";
+      } else if (freeShipping) {
+        shippingLabel = "Envío gratis";
+      } else if (shippingCost > 0) {
+        shippingLabel = `Costo de envío: ${new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: (session.currency || "mxn").toUpperCase(),
+        }).format(shippingCost / 100)}`;
+      } else {
+        shippingLabel = "Envío";
+      }
     }
 
     return {
@@ -332,6 +363,8 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
         items: lineItems,
         shippingCost,
         shippingLabel,
+        shippingProvider,
+        shippingService,
         shippingName,
         shippingAddress,
         orderId: session.id,
