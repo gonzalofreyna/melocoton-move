@@ -376,11 +376,10 @@ export default function MiniCart() {
 
     if (!cleanCode) {
       setMsg("Introduce un código de descuento.");
-
       return;
     }
 
-    // Cupón porcentual normal
+    // 1. Cupón porcentual normal
     if (validCode && cleanCode === validCode) {
       setFreeShippingPromo(false);
       setAppliedShippingPromoCode(null);
@@ -393,12 +392,17 @@ export default function MiniCart() {
       setAppliedCoupon(validCode);
 
       setMsg(`Cupón aplicado: -${percent}%`);
-
       return;
     }
 
-    // Si no fue cupón porcentual,
-    // comprobar si es código de envío gratis.
+    // Guardamos el envío actual por si el código resulta inválido
+    const previousRates = shippingRates;
+    const previousSelectedRateId = selectedRateId;
+    const previousShippingMsg = shippingMsg;
+    const previousFreeShippingPromo = freeShippingPromo;
+    const previousShippingPromoCode = appliedShippingPromoCode;
+
+    // 2. Probar si es un código de envío gratis
     try {
       const result = await requestShippingQuote(cleanCode);
 
@@ -407,21 +411,35 @@ export default function MiniCart() {
         setAppliedCoupon(null);
 
         setMsg("Envío gratis aplicado.");
-
         return;
       }
 
-      setDiscount(0);
-      setAppliedCoupon(null);
+      // Seguridad adicional
+      setShippingRates(previousRates);
+      setSelectedRateId(previousSelectedRateId);
+      setShippingMsg(previousShippingMsg);
+      setFreeShippingPromo(previousFreeShippingPromo);
+      setAppliedShippingPromoCode(previousShippingPromoCode);
 
       setMsg("Código no válido.");
     } catch (e: any) {
       console.error(e);
 
+      // Restaurar el envío que ya había elegido el cliente
+      setShippingRates(previousRates);
+      setSelectedRateId(previousSelectedRateId);
+      setShippingMsg(previousShippingMsg);
+      setFreeShippingPromo(previousFreeShippingPromo);
+      setAppliedShippingPromoCode(previousShippingPromoCode);
+
       setDiscount(0);
       setAppliedCoupon(null);
 
-      setMsg(e?.message || "No fue posible validar el código.");
+      setMsg(
+        e?.message === "Código promocional no válido."
+          ? "Código no válido."
+          : e?.message || "No fue posible validar el código.",
+      );
     }
   };
 
@@ -497,16 +515,18 @@ export default function MiniCart() {
       {/* Panel */}
       <aside
         ref={panelRef}
-        className={`fixed top-0 right-0 h-full w-[380px] md:w-[420px] bg-white shadow-xl transform transition-transform duration-300 z-[1110] flex flex-col ${
+        className={`fixed top-0 right-0 h-[100dvh] w-full sm:w-[420px] bg-[#FFFEFC] shadow-[0_10px_40px_rgba(15,23,42,0.10)] transform transition-transform duration-300 z-[1110] flex flex-col ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-5 border-b">
-          <h2 className="text-xl font-semibold text-brand-blue">Tu Carrito</h2>
+        <div className="flex justify-between items-center px-4 py-4 sm:px-5 sm:py-5 border-b border-neutral-200/80 bg-white/80 backdrop-blur-sm">
+          <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.02em] text-brand-blue">
+            Tu carrito
+          </h2>
           <button
             onClick={closeCart}
-            className="text-gray-500 hover:text-gray-700 text-xl leading-none"
+            className="h-10 w-10 inline-flex items-center justify-center rounded-full text-gray-500 hover:text-brand-blue hover:bg-gray-100 transition text-xl leading-none"
             aria-label="Cerrar carrito"
           >
             ✕
@@ -515,7 +535,7 @@ export default function MiniCart() {
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 space-y-4">
+          <div className="px-4 py-4 sm:px-5 sm:py-5 space-y-3">
             {cart.length === 0 ? (
               <p className="text-gray-600 text-center mt-12 text-base">
                 Tu carrito está vacío 🛍️
@@ -548,12 +568,17 @@ export default function MiniCart() {
 
           {/* Footer */}
           {cart.length > 0 && (
-            <div className="p-5 border-t bg-white space-y-4">
+            <div className="border-t border-neutral-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5 space-y-4 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]">
               {!hasCustomShipping && (
-                <div className="rounded-xl border border-gray-200 p-3 space-y-3">
-                  <p className="text-sm font-semibold text-brand-blue">
-                    Calcula tu envío
-                  </p>
+                <div className="rounded-2xl border border-neutral-200 bg-[#FFFDF9] p-4 space-y-3 shadow-sm">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold tracking-[-0.01em] text-brand-blue">
+                      Calcula tu envío
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Ingresa tu código postal para autocompletar tu dirección.
+                    </p>
+                  </div>
 
                   <input
                     type="text"
@@ -566,7 +591,7 @@ export default function MiniCart() {
                         e.target.value.replace(/\D/g, "").slice(0, 5),
                       )
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
                   />
 
                   {postalCodeLoading && (
@@ -584,24 +609,29 @@ export default function MiniCart() {
                       type="text"
                       placeholder="Estado"
                       value={areaLevel1}
-                      readOnly
-                      className="border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700"
+                      onChange={(e) => setAreaLevel1(e.target.value)}
+                      readOnly={!postalCodeMsg}
+                      className={`rounded-xl border border-neutral-200 px-3.5 py-3 text-sm text-gray-700 ${
+                        postalCodeMsg ? "bg-white" : "bg-neutral-50"
+                      }`}
                     />
 
                     <input
                       type="text"
                       placeholder="Municipio / Alcaldía"
                       value={areaLevel2}
-                      readOnly
-                      className="border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700"
+                      onChange={(e) => setAreaLevel2(e.target.value)}
+                      readOnly={!postalCodeMsg}
+                      className={`rounded-xl border border-neutral-200 px-3.5 py-3 text-sm text-gray-700 ${
+                        postalCodeMsg ? "bg-white" : "bg-neutral-50"
+                      }`}
                     />
                   </div>
-
                   {colonies.length > 0 ? (
                     <select
                       value={areaLevel3}
                       onChange={(e) => setAreaLevel3(e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                      className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm text-gray-800 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
                     >
                       <option value="">Selecciona tu colonia</option>
 
@@ -618,7 +648,7 @@ export default function MiniCart() {
                       value={areaLevel3}
                       onChange={(e) => setAreaLevel3(e.target.value)}
                       disabled={postalCodeLoading}
-                      className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-50"
+                      className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 disabled:bg-neutral-50"
                     />
                   )}
 
@@ -626,10 +656,18 @@ export default function MiniCart() {
                     <button
                       type="button"
                       onClick={handleQuoteShipping}
-                      disabled={shippingLoading}
-                      className="w-full border border-brand-blue text-brand-blue px-3 py-2 rounded-lg text-sm font-medium hover:bg-brand-blue hover:text-white transition disabled:opacity-50"
+                      disabled={
+                        shippingLoading ||
+                        postalCodeLoading ||
+                        !destinationComplete
+                      }
+                      className="w-full rounded-xl border border-brand-blue px-3.5 py-3 text-sm font-medium text-brand-blue transition hover:bg-brand-blue hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      {shippingLoading ? "Cotizando..." : "Cotizar envío"}
+                      {postalCodeLoading
+                        ? "Buscando dirección..."
+                        : shippingLoading
+                          ? "Cotizando..."
+                          : "Cotizar envío"}
                     </button>
                   )}
 
@@ -648,7 +686,7 @@ export default function MiniCart() {
                   )}
 
                   {!shippingIsFree && shippingRates.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                       <p className="text-xs font-medium text-gray-700">
                         Selecciona tu envío
                       </p>
@@ -656,13 +694,13 @@ export default function MiniCart() {
                       {shippingRates.map((rate) => (
                         <label
                           key={rate.id}
-                          className={`block rounded-lg border p-3 cursor-pointer transition ${
+                          className={`block rounded-2xl border p-3.5 cursor-pointer transition shadow-sm ${
                             selectedRateId === rate.id
-                              ? "border-brand-blue bg-blue-50"
-                              : "border-gray-200"
+                              ? "border-brand-blue bg-brand-blue/[0.04] shadow-[0_6px_20px_rgba(37,99,235,0.10)]"
+                              : "border-neutral-200 bg-white hover:border-neutral-300"
                           }`}
                         >
-                          <div className="flex gap-3">
+                          <div className="flex items-start gap-3">
                             <input
                               type="radio"
                               name="shipping-rate"
@@ -673,16 +711,16 @@ export default function MiniCart() {
 
                             <div className="flex-1">
                               <div className="flex justify-between gap-3">
-                                <span className="text-sm font-medium">
+                                <span className="text-sm font-semibold text-gray-800">
                                   {rate.providerDisplayName}
                                 </span>
 
-                                <span className="text-sm font-semibold">
+                                <span className="text-sm font-semibold text-brand-blue">
                                   {MX.format(rate.total)}
                                 </span>
                               </div>
 
-                              <p className="text-xs text-gray-600">
+                              <p className="text-xs text-gray-500 mt-1">
                                 {rate.serviceName}
                                 {rate.days
                                   ? ` · ${rate.days} día${
@@ -703,7 +741,7 @@ export default function MiniCart() {
                 </div>
               )}
               {/* Totales */}
-              <div className="space-y-2 text-sm">
+              <div className="rounded-2xl bg-[#FCFBF8] border border-neutral-200 px-4 py-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-700">Subtotal</span>
                   <span>{MX.format(subtotal)}</span>
@@ -729,7 +767,7 @@ export default function MiniCart() {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center border-t pt-2 mt-2 text-base font-semibold text-brand-blue">
+                <div className="flex justify-between items-center border-t border-neutral-200 pt-3 mt-3 text-base font-semibold text-brand-blue">
                   <span>Total</span>
                   <span>{MX.format(total)}</span>
                 </div>
@@ -737,17 +775,17 @@ export default function MiniCart() {
 
               {/* Cupón */}
               <div className="mt-3">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     placeholder="Cupón"
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value)}
-                    className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                    className="flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
                   />
                   <button
                     onClick={handleApplyCoupon}
-                    className="bg-brand-blue text-white px-3 py-2 rounded-lg text-sm hover:bg-brand-beige hover:text-brand-blue transition"
+                    className="w-full sm:w-auto bg-brand-blue text-white px-4 py-3 rounded-xl text-sm font-medium hover:bg-brand-beige hover:text-brand-blue transition"
                   >
                     Aplicar
                   </button>
@@ -792,9 +830,9 @@ export default function MiniCart() {
               <button
                 onClick={handleCheckout}
                 disabled={loading || shippingLoading || !shippingReady}
-                className={`w-full py-3 mt-2 rounded-xl font-semibold transition ${
+                className={`w-full py-3.5 mt-2 rounded-2xl font-semibold text-[15px] shadow-sm transition ${
                   loading || shippingLoading || !shippingReady
-                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    ? "bg-gray-300 text-white cursor-not-allowed"
                     : "bg-brand-blue text-white hover:bg-brand-beige hover:text-brand-blue"
                 }`}
               >

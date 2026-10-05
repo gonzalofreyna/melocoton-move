@@ -364,7 +364,21 @@ export const handler = async (event) => {
         };
       }
 
-      const hasFreeShippingPromo = isValidFreeShippingCode(promoCode);
+      const cleanPromoCode = String(promoCode || "").trim();
+
+      if (cleanPromoCode && !isValidFreeShippingCode(cleanPromoCode)) {
+        return {
+          statusCode: 400,
+          headers: H,
+          body: JSON.stringify({
+            ok: false,
+            error: "Invalid promo code",
+            message: "Código promocional no válido.",
+          }),
+        };
+      }
+
+      const hasFreeShippingPromo = isValidFreeShippingCode(cleanPromoCode);
 
       if (hasFreeShippingPromo) {
         return {

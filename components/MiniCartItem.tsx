@@ -38,7 +38,7 @@ export default function MiniCartItem({
   const maxQuantity = stock ?? 99;
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+    <div className="relative flex flex-col sm:flex-row items-start gap-4 p-4 bg-white rounded-3xl shadow-[0_8px_24px_rgba(15,23,42,0.05)] border border-neutral-200/80">
       {/* Imagen */}
       <div className="flex-shrink-0 mx-auto sm:mx-0">
         <img
@@ -47,51 +47,48 @@ export default function MiniCartItem({
           width={80}
           height={80}
           loading="lazy"
-          className="rounded-xl object-cover w-20 h-20"
+          className="rounded-2xl object-cover w-20 h-20 border border-neutral-200 bg-[#FAF8F4]"
         />
       </div>
-
       {/* Contenido principal */}
-      <div className="flex-1 w-full min-w-0">
+      <div className="flex-1 w-full min-w-0 pr-8">
         <div className="flex flex-col gap-1 sm:gap-1.5">
           {/* Nombre */}
-          <h3 className="text-[15px] sm:text-base font-medium text-gray-800 leading-snug break-words">
+          <h3 className="text-[15px] sm:text-base font-semibold tracking-[-0.01em] text-gray-800 leading-snug break-words">
             {name}
           </h3>
 
           {/* Aviso debajo del nombre */}
           {shippingExcluded && (
-            <span className="inline-flex items-center gap-1 self-start text-[10px] sm:text-[11px] px-2 py-[2px] rounded-md bg-yellow-50 text-yellow-800 border border-yellow-100 font-medium mt-0.5">
+            <span className="inline-flex items-center gap-1 self-start text-[10px] sm:text-[11px] px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium mt-0.5">
               <ExclamationTriangleIcon className="h-3 w-3" />
               Sin envío gratis
             </span>
           )}
 
           {/* Precio unitario */}
-          <p className="text-gray-700 text-sm sm:text-base mt-1">
-            {fmtCurrency(price)}
-          </p>
+          <p className="text-gray-500 text-sm mt-1">{fmtCurrency(price)}</p>
         </div>
 
         {/* Cantidad y total */}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           {/* Controles cantidad */}
-          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+          <div className="flex items-center border border-neutral-200 rounded-xl overflow-hidden bg-[#FAFAF8]">
             <button
               onClick={() => updateQuantity(slug, Math.max(quantity - 1, 1))}
-              className="w-8 h-8 text-lg font-semibold text-gray-600 hover:bg-gray-100 transition"
+              className="w-9 h-9 text-lg font-semibold text-gray-600 hover:bg-white transition"
               aria-label="Disminuir cantidad"
             >
               −
             </button>
-            <span className="w-10 text-center text-sm text-gray-800">
+            <span className="w-10 text-center text-sm font-medium text-gray-800">
               {quantity}
             </span>
             <button
               onClick={() =>
                 updateQuantity(slug, Math.min(quantity + 1, maxQuantity))
               }
-              className="w-8 h-8 text-lg font-semibold text-gray-600 hover:bg-gray-100 transition"
+              className="w-9 h-9 text-lg font-semibold text-gray-600 hover:bg-white transition disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Aumentar cantidad"
               disabled={quantity >= maxQuantity}
             >
@@ -100,16 +97,15 @@ export default function MiniCartItem({
           </div>
 
           {/* Total */}
-          <p className="font-semibold text-brand-blue text-right text-sm sm:text-lg">
+          <p className="font-semibold text-brand-blue text-right text-base sm:text-lg tracking-[-0.01em]">
             {fmtCurrency(price * quantity)}
           </p>
         </div>
       </div>
-
       {/* Eliminar */}
       <button
         onClick={() => removeFromCart(slug)}
-        className="text-red-500 hover:text-red-600 ml-auto sm:ml-2 mt-2 sm:mt-0"
+        className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
         aria-label="Eliminar producto del carrito"
       >
         <XMarkIcon className="h-5 w-5" />
