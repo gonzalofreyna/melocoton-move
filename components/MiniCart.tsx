@@ -432,264 +432,268 @@ export default function MiniCart() {
         </div>
 
         {/* Items */}
-        <div className="p-4 flex-1 overflow-y-auto space-y-4">
-          {cart.length === 0 ? (
-            <p className="text-gray-600 text-center mt-12 text-base">
-              Tu carrito está vacío 🛍️
-            </p>
-          ) : (
-            cart.map((item) => (
-              <div key={item.slug}>
-                <MiniCartItem
-                  slug={item.slug}
-                  name={item.name}
-                  image={item.image}
-                  price={item.price}
-                  quantity={item.quantity}
-                  shippingExcluded={!item.freeShipping}
-                />
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-4">
+            {cart.length === 0 ? (
+              <p className="text-gray-600 text-center mt-12 text-base">
+                Tu carrito está vacío 🛍️
+              </p>
+            ) : (
+              cart.map((item) => (
+                <div key={item.slug}>
+                  <MiniCartItem
+                    slug={item.slug}
+                    name={item.name}
+                    image={item.image}
+                    price={item.price}
+                    quantity={item.quantity}
+                    shippingExcluded={!item.freeShipping}
+                  />
 
-                {item.shippingType === "custom" && (
-                  <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-                    <p className="text-xs text-amber-800 leading-relaxed">
-                      Envío especial · Este producto no participa en la
-                      promoción de envío gratis y su envío se cotiza por
-                      separado.
-                    </p>
+                  {item.shippingType === "custom" && (
+                    <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                      <p className="text-xs text-amber-800 leading-relaxed">
+                        Envío especial · Este producto no participa en la
+                        promoción de envío gratis y su envío se cotiza por
+                        separado.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          {cart.length > 0 && (
+            <div className="p-5 border-t bg-white space-y-4">
+              {!hasCustomShipping && (
+                <div className="rounded-xl border border-gray-200 p-3 space-y-3">
+                  <p className="text-sm font-semibold text-brand-blue">
+                    Calcula tu envío
+                  </p>
+
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    placeholder="Código postal"
+                    value={postalCode}
+                    onChange={(e) =>
+                      setPostalCode(
+                        e.target.value.replace(/\D/g, "").slice(0, 5),
+                      )
+                    }
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Estado"
+                      value={areaLevel1}
+                      onChange={(e) => setAreaLevel1(e.target.value)}
+                      className="border rounded-lg px-3 py-2 text-sm"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder="Municipio / Alcaldía"
+                      value={areaLevel2}
+                      onChange={(e) => setAreaLevel2(e.target.value)}
+                      className="border rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Colonia"
+                    value={areaLevel3}
+                    onChange={(e) => setAreaLevel3(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                  />
+
+                  {!freeShippingPromo && (
+                    <button
+                      type="button"
+                      onClick={handleQuoteShipping}
+                      disabled={shippingLoading}
+                      className="w-full border border-brand-blue text-brand-blue px-3 py-2 rounded-lg text-sm font-medium hover:bg-brand-blue hover:text-white transition disabled:opacity-50"
+                    >
+                      {shippingLoading ? "Cotizando..." : "Cotizar envío"}
+                    </button>
+                  )}
+
+                  {shippingIsFree && (
+                    <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                      <p className="text-sm font-medium text-green-800">
+                        ✓ Envío gratis
+                      </p>
+
+                      {freeShippingPromo && (
+                        <p className="text-xs text-green-700 mt-1">
+                          Código promocional aplicado.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {!shippingIsFree && shippingRates.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-700">
+                        Selecciona tu envío
+                      </p>
+
+                      {shippingRates.map((rate) => (
+                        <label
+                          key={rate.id}
+                          className={`block rounded-lg border p-3 cursor-pointer transition ${
+                            selectedRateId === rate.id
+                              ? "border-brand-blue bg-blue-50"
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <div className="flex gap-3">
+                            <input
+                              type="radio"
+                              name="shipping-rate"
+                              value={rate.id}
+                              checked={selectedRateId === rate.id}
+                              onChange={() => setSelectedRateId(rate.id)}
+                            />
+
+                            <div className="flex-1">
+                              <div className="flex justify-between gap-3">
+                                <span className="text-sm font-medium">
+                                  {rate.providerDisplayName}
+                                </span>
+
+                                <span className="text-sm font-semibold">
+                                  {MX.format(rate.total)}
+                                </span>
+                              </div>
+
+                              <p className="text-xs text-gray-600">
+                                {rate.serviceName}
+                                {rate.days
+                                  ? ` · ${rate.days} día${
+                                      rate.days === 1 ? "" : "s"
+                                    }`
+                                  : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {shippingMsg && (
+                    <p className="text-xs text-gray-600">{shippingMsg}</p>
+                  )}
+                </div>
+              )}
+              {/* Totales */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Subtotal</span>
+                  <span>{MX.format(subtotal)}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Envío</span>
+                  <span>
+                    {hasCustomShipping
+                      ? "A cotizar"
+                      : shippingIsFree
+                        ? "Gratis"
+                        : selectedRate
+                          ? MX.format(effectiveShippingCost)
+                          : "Por calcular"}
+                  </span>
+                </div>
+
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-700 font-medium">
+                    <span>Descuento ({appliedCoupon})</span>
+                    <span>-{MX.format(discount)}</span>
                   </div>
                 )}
+
+                <div className="flex justify-between items-center border-t pt-2 mt-2 text-base font-semibold text-brand-blue">
+                  <span>Total</span>
+                  <span>{MX.format(total)}</span>
+                </div>
               </div>
-            ))
+
+              {/* Cupón */}
+              <div className="mt-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Cupón"
+                    value={coupon}
+                    onChange={(e) => setCoupon(e.target.value)}
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    className="bg-brand-blue text-white px-3 py-2 rounded-lg text-sm hover:bg-brand-beige hover:text-brand-blue transition"
+                  >
+                    Aplicar
+                  </button>
+                </div>
+
+                {msg && (
+                  <p
+                    className={`text-sm mt-1 ${
+                      msg.includes("válido") ? "text-red-600" : "text-gray-700"
+                    }`}
+                  >
+                    {msg}
+                  </p>
+                )}
+
+                {hasCustomShipping ? (
+                  <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                    <p className="text-xs font-medium text-amber-900">
+                      Este pedido contiene envío especial
+                    </p>
+
+                    <p className="text-xs mt-1 text-amber-800 leading-relaxed">
+                      Los productos con envío especial no participan en
+                      promociones de envío gratis. Su costo de envío se cotiza
+                      por separado.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs mt-2 text-gray-700">
+                    {freeShippingPromo
+                      ? "Código de envío gratis aplicado."
+                      : shippingIsFree
+                        ? "Envío gratis."
+                        : selectedRate
+                          ? `${selectedRate.providerDisplayName} · ${selectedRate.serviceName}`
+                          : "Cotiza el envío para continuar."}
+                  </p>
+                )}
+              </div>
+
+              {/* Botón */}
+              <button
+                onClick={handleCheckout}
+                disabled={loading || shippingLoading || !shippingReady}
+                className={`w-full py-3 mt-2 rounded-xl font-semibold transition ${
+                  loading || shippingLoading || !shippingReady
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-brand-blue text-white hover:bg-brand-beige hover:text-brand-blue"
+                }`}
+              >
+                {loading ? "Procesando..." : "Finalizar compra"}
+              </button>
+            </div>
           )}
         </div>
-
-        {/* Footer */}
-        {cart.length > 0 && (
-          <div className="p-5 border-t bg-white space-y-4">
-            {!hasCustomShipping && (
-              <div className="rounded-xl border border-gray-200 p-3 space-y-3">
-                <p className="text-sm font-semibold text-brand-blue">
-                  Calcula tu envío
-                </p>
-
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  placeholder="Código postal"
-                  value={postalCode}
-                  onChange={(e) =>
-                    setPostalCode(e.target.value.replace(/\D/g, "").slice(0, 5))
-                  }
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="Estado"
-                    value={areaLevel1}
-                    onChange={(e) => setAreaLevel1(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Municipio / Alcaldía"
-                    value={areaLevel2}
-                    onChange={(e) => setAreaLevel2(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <input
-                  type="text"
-                  placeholder="Colonia"
-                  value={areaLevel3}
-                  onChange={(e) => setAreaLevel3(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-
-                {!freeShippingPromo && (
-                  <button
-                    type="button"
-                    onClick={handleQuoteShipping}
-                    disabled={shippingLoading}
-                    className="w-full border border-brand-blue text-brand-blue px-3 py-2 rounded-lg text-sm font-medium hover:bg-brand-blue hover:text-white transition disabled:opacity-50"
-                  >
-                    {shippingLoading ? "Cotizando..." : "Cotizar envío"}
-                  </button>
-                )}
-
-                {shippingIsFree && (
-                  <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2">
-                    <p className="text-sm font-medium text-green-800">
-                      ✓ Envío gratis
-                    </p>
-
-                    {freeShippingPromo && (
-                      <p className="text-xs text-green-700 mt-1">
-                        Código promocional aplicado.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {!shippingIsFree && shippingRates.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700">
-                      Selecciona tu envío
-                    </p>
-
-                    {shippingRates.map((rate) => (
-                      <label
-                        key={rate.id}
-                        className={`block rounded-lg border p-3 cursor-pointer transition ${
-                          selectedRateId === rate.id
-                            ? "border-brand-blue bg-blue-50"
-                            : "border-gray-200"
-                        }`}
-                      >
-                        <div className="flex gap-3">
-                          <input
-                            type="radio"
-                            name="shipping-rate"
-                            value={rate.id}
-                            checked={selectedRateId === rate.id}
-                            onChange={() => setSelectedRateId(rate.id)}
-                          />
-
-                          <div className="flex-1">
-                            <div className="flex justify-between gap-3">
-                              <span className="text-sm font-medium">
-                                {rate.providerDisplayName}
-                              </span>
-
-                              <span className="text-sm font-semibold">
-                                {MX.format(rate.total)}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-gray-600">
-                              {rate.serviceName}
-                              {rate.days
-                                ? ` · ${rate.days} día${
-                                    rate.days === 1 ? "" : "s"
-                                  }`
-                                : ""}
-                            </p>
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                {shippingMsg && (
-                  <p className="text-xs text-gray-600">{shippingMsg}</p>
-                )}
-              </div>
-            )}
-            {/* Totales */}
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-700">Subtotal</span>
-                <span>{MX.format(subtotal)}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-700">Envío</span>
-                <span>
-                  {hasCustomShipping
-                    ? "A cotizar"
-                    : shippingIsFree
-                      ? "Gratis"
-                      : selectedRate
-                        ? MX.format(effectiveShippingCost)
-                        : "Por calcular"}
-                </span>
-              </div>
-
-              {discount > 0 && (
-                <div className="flex justify-between text-green-700 font-medium">
-                  <span>Descuento ({appliedCoupon})</span>
-                  <span>-{MX.format(discount)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center border-t pt-2 mt-2 text-base font-semibold text-brand-blue">
-                <span>Total</span>
-                <span>{MX.format(total)}</span>
-              </div>
-            </div>
-
-            {/* Cupón */}
-            <div className="mt-3">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Cupón"
-                  value={coupon}
-                  onChange={(e) => setCoupon(e.target.value)}
-                  className="flex-1 border rounded-lg px-3 py-2 text-sm"
-                />
-                <button
-                  onClick={handleApplyCoupon}
-                  className="bg-brand-blue text-white px-3 py-2 rounded-lg text-sm hover:bg-brand-beige hover:text-brand-blue transition"
-                >
-                  Aplicar
-                </button>
-              </div>
-
-              {msg && (
-                <p
-                  className={`text-sm mt-1 ${
-                    msg.includes("válido") ? "text-red-600" : "text-gray-700"
-                  }`}
-                >
-                  {msg}
-                </p>
-              )}
-
-              {hasCustomShipping ? (
-                <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-                  <p className="text-xs font-medium text-amber-900">
-                    Este pedido contiene envío especial
-                  </p>
-
-                  <p className="text-xs mt-1 text-amber-800 leading-relaxed">
-                    Los productos con envío especial no participan en
-                    promociones de envío gratis. Su costo de envío se cotiza por
-                    separado.
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs mt-2 text-gray-700">
-                  {freeShippingPromo
-                    ? "Código de envío gratis aplicado."
-                    : shippingIsFree
-                      ? "Envío gratis."
-                      : selectedRate
-                        ? `${selectedRate.providerDisplayName} · ${selectedRate.serviceName}`
-                        : "Cotiza el envío para continuar."}
-                </p>
-              )}
-            </div>
-
-            {/* Botón */}
-            <button
-              onClick={handleCheckout}
-              disabled={loading || shippingLoading || !shippingReady}
-              className={`w-full py-3 mt-2 rounded-xl font-semibold transition ${
-                loading || shippingLoading || !shippingReady
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "bg-brand-blue text-white hover:bg-brand-beige hover:text-brand-blue"
-              }`}
-            >
-              {loading ? "Procesando..." : "Finalizar compra"}
-            </button>
-          </div>
-        )}
       </aside>
     </>
   );
