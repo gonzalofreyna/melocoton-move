@@ -54,6 +54,10 @@ export default function MiniCart() {
   const [areaLevel2, setAreaLevel2] = useState("");
   const [areaLevel3, setAreaLevel3] = useState("");
 
+  const [postalCodeLoading, setPostalCodeLoading] = useState(false);
+  const [postalCodeMsg, setPostalCodeMsg] = useState<string | null>(null);
+  const [colonies, setColonies] = useState<string[]>([]);
+
   const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
 
@@ -83,6 +87,84 @@ export default function MiniCart() {
     (destinationComplete && (freeShippingPromo || selectedRate !== null));
 
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const cleanPostalCode = postalCode.trim();
+
+    if (cleanPostalCode.length !== 5) {
+      setAreaLevel1("");
+      setAreaLevel2("");
+      setAreaLevel3("");
+      setColonies([]);
+      setPostalCodeMsg(null);
+      return;
+    }
+
+    if (!/^\d{5}$/.test(cleanPostalCode)) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setPostalCodeLoading(true);
+        setPostalCodeMsg(null);
+
+        const res = await fetch(
+          `${SHIPPING_API_URL}/api/shipping/postal-code/${cleanPostalCode}`,
+          {
+            method: "GET",
+            signal: controller.signal,
+          },
+        );
+
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok || !data?.ok) {
+          throw new Error(
+            data?.message || data?.error || "No encontramos ese código postal.",
+          );
+        }
+
+        const nextColonies = Array.isArray(data.colonies) ? data.colonies : [];
+
+        setAreaLevel1(data.areaLevel1 || "");
+        setAreaLevel2(data.areaLevel2 || "");
+        setColonies(nextColonies);
+
+        if (nextColonies.length === 1) {
+          setAreaLevel3(nextColonies[0]);
+        } else {
+          setAreaLevel3("");
+        }
+      } catch (error: any) {
+        if (error?.name === "AbortError") {
+          return;
+        }
+
+        console.error(error);
+
+        setAreaLevel1("");
+        setAreaLevel2("");
+        setAreaLevel3("");
+        setColonies([]);
+
+        setPostalCodeMsg(
+          error?.message || "No fue posible consultar el código postal.",
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setPostalCodeLoading(false);
+        }
+      }
+    }, 400);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [postalCode]);
 
   // 🔁 Recalcular descuento si cambia el subtotal o el cupón aplicado
   // 🔁 Recalcular descuento si cambia el subtotal, el envío o el cupón aplicado
@@ -487,31 +569,58 @@ export default function MiniCart() {
                     className="w-full border rounded-lg px-3 py-2 text-sm"
                   />
 
+                  {postalCodeLoading && (
+                    <p className="text-xs text-gray-500">
+                      Buscando dirección...
+                    </p>
+                  )}
+
+                  {postalCodeMsg && (
+                    <p className="text-xs text-red-600">{postalCodeMsg}</p>
+                  )}
+
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
                       placeholder="Estado"
                       value={areaLevel1}
-                      onChange={(e) => setAreaLevel1(e.target.value)}
-                      className="border rounded-lg px-3 py-2 text-sm"
+                      readOnly
+                      className="border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700"
                     />
 
                     <input
                       type="text"
                       placeholder="Municipio / Alcaldía"
                       value={areaLevel2}
-                      onChange={(e) => setAreaLevel2(e.target.value)}
-                      className="border rounded-lg px-3 py-2 text-sm"
+                      readOnly
+                      className="border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700"
                     />
                   </div>
 
-                  <input
-                    type="text"
-                    placeholder="Colonia"
-                    value={areaLevel3}
-                    onChange={(e) => setAreaLevel3(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  />
+                  {colonies.length > 0 ? (
+                    <select
+                      value={areaLevel3}
+                      onChange={(e) => setAreaLevel3(e.target.value)}
+                      className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                    >
+                      <option value="">Selecciona tu colonia</option>
+
+                      {colonies.map((colony) => (
+                        <option key={colony} value={colony}>
+                          {colony}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Colonia"
+                      value={areaLevel3}
+                      onChange={(e) => setAreaLevel3(e.target.value)}
+                      disabled={postalCodeLoading}
+                      className="w-full border rounded-lg px-3 py-2 text-sm disabled:bg-gray-50"
+                    />
+                  )}
 
                   {!freeShippingPromo && (
                     <button

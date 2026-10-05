@@ -5,6 +5,8 @@ import {
   getQuotation,
 } from "./skydropx.mjs";
 
+import { getPostalCodeData } from "./postal-code.mjs";
+
 async function getTrustedShippingProducts(items) {
   const ecommerceApiUrl = process.env.ECOMMERCE_API_URL;
   const internalApiKey = process.env.INTERNAL_API_KEY;
@@ -243,6 +245,45 @@ export const handler = async (event) => {
         statusCode: 204,
         headers: H,
         body: "",
+      };
+    }
+
+    if (method === "GET" && path.startsWith("/api/shipping/postal-code/")) {
+      const postalCode = path.replace("/api/shipping/postal-code/", "").trim();
+
+      if (!/^\d{5}$/.test(postalCode)) {
+        return {
+          statusCode: 400,
+          headers: H,
+          body: JSON.stringify({
+            ok: false,
+            error: "Invalid postal code",
+            message: "El código postal debe contener 5 dígitos.",
+          }),
+        };
+      }
+
+      const postalCodeData = await getPostalCodeData(postalCode);
+
+      if (!postalCodeData) {
+        return {
+          statusCode: 404,
+          headers: H,
+          body: JSON.stringify({
+            ok: false,
+            error: "Postal code not found",
+            message: "No encontramos ese código postal.",
+          }),
+        };
+      }
+
+      return {
+        statusCode: 200,
+        headers: H,
+        body: JSON.stringify({
+          ok: true,
+          ...postalCodeData,
+        }),
       };
     }
 
