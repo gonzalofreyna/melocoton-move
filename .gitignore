@@ -29,3 +29,5 @@ ecommerce-api/*.zip
 # Checkout Lambda build artifacts
 checkout-api/lambda-package/
 checkout-api/*.zip
+# AWS Lambda build artifacts
+shipping-api/*.zip
