@@ -10,14 +10,32 @@ const MX = new Intl.NumberFormat("es-MX", {
   currency: "MXN",
 });
 
+type ShippingRate = {
+  id: string;
+  provider: string;
+  providerDisplayName: string;
+  serviceName: string;
+  serviceCode: string;
+  total: number;
+  amount: number | null;
+  serviceFee: number | null;
+  days: number | null;
+  currency: string;
+  pickup: boolean;
+  officeDelivery: boolean;
+  officeDeliveryOnly: boolean;
+};
+
+const SHIPPING_API_URL = (
+  process.env.NEXT_PUBLIC_SHIPPING_API_URL || ""
+).replace(/\/$/, "");
+
 export default function MiniCart() {
   const {
     cart,
     subtotal,
     isOpen,
     closeCart,
-    shippingCost,
-    shippingLabel,
     qualifiesForFreeShipping,
     hasCustomShipping,
   } = useCart();
@@ -28,6 +46,42 @@ export default function MiniCart() {
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
+  const [postalCode, setPostalCode] = useState("");
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [freeShippingPromo, setFreeShippingPromo] = useState(false);
+
+  const [areaLevel1, setAreaLevel1] = useState("");
+  const [areaLevel2, setAreaLevel2] = useState("");
+  const [areaLevel3, setAreaLevel3] = useState("");
+
+  const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
+  const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
+
+  const [appliedShippingPromoCode, setAppliedShippingPromoCode] = useState<
+    string | null
+  >(null);
+
+  const [shippingMsg, setShippingMsg] = useState<string | null>(null);
+
+  const selectedRate =
+    shippingRates.find((rate) => rate.id === selectedRateId) || null;
+
+  const destinationComplete =
+    /^\d{5}$/.test(postalCode.trim()) &&
+    areaLevel1.trim() !== "" &&
+    areaLevel2.trim() !== "" &&
+    areaLevel3.trim() !== "";
+
+  const shippingIsFree =
+    !hasCustomShipping && (freeShippingPromo || qualifiesForFreeShipping);
+
+  const effectiveShippingCost =
+    hasCustomShipping || shippingIsFree ? 0 : (selectedRate?.total ?? 0);
+
+  const shippingReady =
+    hasCustomShipping ||
+    (destinationComplete && (freeShippingPromo || selectedRate !== null));
+
   const panelRef = useRef<HTMLDivElement>(null);
 
   // 🔁 Recalcular descuento si cambia el subtotal o el cupón aplicado
@@ -37,25 +91,50 @@ export default function MiniCart() {
 
     const validCode =
       process.env.NEXT_PUBLIC_COUPON_CODE?.trim().toUpperCase() || "";
+
     const percent = Number(process.env.NEXT_PUBLIC_COUPON_PERCENT) || 0;
 
     if (appliedCoupon === validCode) {
-      // 🔹 Base: subtotal + envío (si aplica)
-      const base = subtotal + (hasCustomShipping ? 0 : shippingCost);
+      const base = subtotal + (hasCustomShipping ? 0 : effectiveShippingCost);
+
       const newDiscount = (base * percent) / 100;
+
       setDiscount(newDiscount);
     }
-  }, [subtotal, shippingCost, hasCustomShipping, appliedCoupon]);
+  }, [subtotal, effectiveShippingCost, hasCustomShipping, appliedCoupon]);
 
   // 🧹 Limpiar cupón si el carrito queda vacío
   useEffect(() => {
     if (cart.length === 0) {
+      setPostalCode("");
+      setAreaLevel1("");
+      setAreaLevel2("");
+      setAreaLevel3("");
+
+      setShippingRates([]);
+      setSelectedRateId(null);
+      setFreeShippingPromo(false);
+      setAppliedShippingPromoCode(null);
+      setShippingMsg(null);
       setAppliedCoupon(null);
       setDiscount(0);
       setMsg(null);
       setCoupon("");
     }
   }, [cart]);
+
+  const cartShippingKey = cart
+    .map((item) => `${item.slug}:${item.quantity}`)
+    .join("|");
+
+  useEffect(() => {
+    setShippingRates([]);
+    setSelectedRateId(null);
+    setFreeShippingPromo(false);
+    setAppliedShippingPromoCode(null);
+    setShippingMsg(null);
+    setMsg(null);
+  }, [cartShippingKey, postalCode, areaLevel1, areaLevel2, areaLevel3]);
 
   // Cerrar con tecla Escape
   useEffect(() => {
@@ -68,7 +147,7 @@ export default function MiniCart() {
   useEffect(() => {
     if (!isOpen || !panelRef.current) return;
     const focusable = panelRef.current.querySelectorAll<HTMLElement>(
-      "button, [href], input, select, textarea"
+      "button, [href], input, select, textarea",
     );
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
@@ -86,40 +165,200 @@ export default function MiniCart() {
     return () => document.removeEventListener("keydown", trap);
   }, [isOpen]);
 
-  const handleApplyCoupon = () => {
+  const requestShippingQuote = async (promoCode?: string) => {
+    if (hasCustomShipping) {
+      setShippingMsg(
+        "Este pedido contiene productos con envío especial que se cotizan por separado.",
+      );
+
+      return null;
+    }
+
+    if (!SHIPPING_API_URL) {
+      throw new Error("Falta NEXT_PUBLIC_SHIPPING_API_URL.");
+    }
+
+    if (!/^\d{5}$/.test(postalCode.trim())) {
+      throw new Error("Introduce un código postal válido de 5 dígitos.");
+    }
+
+    if (!areaLevel1.trim() || !areaLevel2.trim() || !areaLevel3.trim()) {
+      throw new Error("Completa estado, municipio/alcaldía y colonia.");
+    }
+
+    const items = cart.map((item) => ({
+      slug: item.slug,
+      quantity: item.quantity,
+    }));
+
+    setShippingLoading(true);
+    setShippingMsg(null);
+
+    try {
+      const res = await fetch(`${SHIPPING_API_URL}/api/shipping/quote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          postalCode: postalCode.trim(),
+          areaLevel1: areaLevel1.trim(),
+          areaLevel2: areaLevel2.trim(),
+          areaLevel3: areaLevel3.trim(),
+          promoCode: promoCode?.trim() || undefined,
+          items,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok) {
+        throw new Error(
+          data?.detail ||
+            data?.error ||
+            data?.message ||
+            "No fue posible cotizar el envío.",
+        );
+      }
+
+      if (data.type === "custom") {
+        setShippingRates([]);
+        setSelectedRateId(null);
+
+        setShippingMsg(data.message || "Este pedido contiene envío especial.");
+
+        return data;
+      }
+
+      if (data.type === "free_shipping_promo") {
+        setShippingRates([]);
+        setSelectedRateId(null);
+
+        setFreeShippingPromo(true);
+
+        setAppliedShippingPromoCode(promoCode?.trim().toUpperCase() || null);
+
+        setShippingMsg("Código de envío gratis aplicado.");
+
+        return data;
+      }
+
+      const rates: ShippingRate[] = Array.isArray(data.rates) ? data.rates : [];
+
+      if (rates.length === 0) {
+        throw new Error("No encontramos opciones de envío para este destino.");
+      }
+
+      setFreeShippingPromo(false);
+      setAppliedShippingPromoCode(null);
+      setShippingRates(rates);
+
+      /*
+       * Si ya aplica envío gratis por la promoción normal,
+       * el cliente no necesita elegir la paquetería.
+       * El servidor elegirá después la opción más económica.
+       */
+      if (qualifiesForFreeShipping) {
+        setSelectedRateId(rates[0].id);
+
+        setShippingMsg("Envío gratis disponible.");
+      } else {
+        setSelectedRateId(null);
+
+        setShippingMsg("Selecciona una opción de envío.");
+      }
+
+      return data;
+    } finally {
+      setShippingLoading(false);
+    }
+  };
+
+  const handleQuoteShipping = async () => {
+    try {
+      await requestShippingQuote();
+    } catch (e: any) {
+      console.error(e);
+
+      setShippingMsg(e?.message || "No fue posible cotizar el envío.");
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    const cleanCode = coupon.trim().toUpperCase();
+
     const validCode =
       process.env.NEXT_PUBLIC_COUPON_CODE?.trim().toUpperCase() || "";
+
     const percent = Number(process.env.NEXT_PUBLIC_COUPON_PERCENT) || 0;
 
-    if (!coupon.trim()) {
+    if (!cleanCode) {
       setMsg("Introduce un código de descuento.");
+
       return;
     }
 
-    if (coupon.trim().toUpperCase() === validCode) {
-      // 🔹 Base para el descuento: subtotal + envío (solo si no es a cotizar)
-      const base = subtotal + (hasCustomShipping ? 0 : shippingCost);
+    // Cupón porcentual normal
+    if (validCode && cleanCode === validCode) {
+      setFreeShippingPromo(false);
+      setAppliedShippingPromoCode(null);
+
+      const base = subtotal + (hasCustomShipping ? 0 : effectiveShippingCost);
+
       const discountAmt = (base * percent) / 100;
 
       setDiscount(discountAmt);
       setAppliedCoupon(validCode);
+
       setMsg(`Cupón aplicado: -${percent}%`);
-    } else {
+
+      return;
+    }
+
+    // Si no fue cupón porcentual,
+    // comprobar si es código de envío gratis.
+    try {
+      const result = await requestShippingQuote(cleanCode);
+
+      if (result?.type === "free_shipping_promo") {
+        setDiscount(0);
+        setAppliedCoupon(null);
+
+        setMsg("Envío gratis aplicado.");
+
+        return;
+      }
+
       setDiscount(0);
       setAppliedCoupon(null);
+
       setMsg("Código no válido.");
+    } catch (e: any) {
+      console.error(e);
+
+      setDiscount(0);
+      setAppliedCoupon(null);
+
+      setMsg(e?.message || "No fue posible validar el código.");
     }
   };
 
   const handleCheckout = async () => {
     try {
+      if (!shippingReady) {
+        setMsg(
+          "Cotiza tu envío y selecciona una opción antes de finalizar la compra.",
+        );
+
+        return;
+      }
       setMsg(null);
       setLoading(true);
 
       const invalid = cart.find((i) => !i.slug || typeof i.slug !== "string");
       if (invalid) {
         setMsg(
-          "Un producto de tu carrito pertenece a una versión anterior. Elimínalo y vuelve a agregarlo."
+          "Un producto de tu carrito pertenece a una versión anterior. Elimínalo y vuelve a agregarlo.",
         );
         setLoading(false);
         return;
@@ -131,7 +370,20 @@ export default function MiniCart() {
       }));
 
       // ✅ Llamada al endpoint AWS (usa createCheckout de src/lib/checkoutClient)
-      const data = await createCheckout(items, appliedCoupon ?? undefined);
+      const data = await createCheckout(items, appliedCoupon ?? undefined, {
+        postalCode: postalCode.trim(),
+        areaLevel1: areaLevel1.trim(),
+        areaLevel2: areaLevel2.trim(),
+        areaLevel3: areaLevel3.trim(),
+
+        selectedProvider: selectedRate?.provider,
+
+        selectedServiceCode: selectedRate?.serviceCode,
+
+        expectedShippingTotal: selectedRate?.total,
+
+        shippingPromoCode: appliedShippingPromoCode ?? undefined,
+      });
 
       if (!data?.ok || !data?.url) {
         throw new Error(data?.message || "No se recibió URL de Stripe.");
@@ -146,7 +398,8 @@ export default function MiniCart() {
     }
   };
 
-  const totalBeforeDiscount = subtotal + (hasCustomShipping ? 0 : shippingCost);
+  const totalBeforeDiscount =
+    subtotal + (hasCustomShipping ? 0 : effectiveShippingCost);
   const total = totalBeforeDiscount - discount;
 
   return (
@@ -186,15 +439,26 @@ export default function MiniCart() {
             </p>
           ) : (
             cart.map((item) => (
-              <MiniCartItem
-                key={item.slug}
-                slug={item.slug}
-                name={item.name}
-                image={item.image}
-                price={item.price}
-                quantity={item.quantity}
-                shippingExcluded={!item.freeShipping}
-              />
+              <div key={item.slug}>
+                <MiniCartItem
+                  slug={item.slug}
+                  name={item.name}
+                  image={item.image}
+                  price={item.price}
+                  quantity={item.quantity}
+                  shippingExcluded={!item.freeShipping}
+                />
+
+                {item.shippingType === "custom" && (
+                  <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      Envío especial · Este producto no participa en la
+                      promoción de envío gratis y su envío se cotiza por
+                      separado.
+                    </p>
+                  </div>
+                )}
+              </div>
             ))
           )}
         </div>
@@ -202,6 +466,130 @@ export default function MiniCart() {
         {/* Footer */}
         {cart.length > 0 && (
           <div className="p-5 border-t bg-white space-y-4">
+            {!hasCustomShipping && (
+              <div className="rounded-xl border border-gray-200 p-3 space-y-3">
+                <p className="text-sm font-semibold text-brand-blue">
+                  Calcula tu envío
+                </p>
+
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
+                  placeholder="Código postal"
+                  value={postalCode}
+                  onChange={(e) =>
+                    setPostalCode(e.target.value.replace(/\D/g, "").slice(0, 5))
+                  }
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Estado"
+                    value={areaLevel1}
+                    onChange={(e) => setAreaLevel1(e.target.value)}
+                    className="border rounded-lg px-3 py-2 text-sm"
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Municipio / Alcaldía"
+                    value={areaLevel2}
+                    onChange={(e) => setAreaLevel2(e.target.value)}
+                    className="border rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Colonia"
+                  value={areaLevel3}
+                  onChange={(e) => setAreaLevel3(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+
+                {!freeShippingPromo && (
+                  <button
+                    type="button"
+                    onClick={handleQuoteShipping}
+                    disabled={shippingLoading}
+                    className="w-full border border-brand-blue text-brand-blue px-3 py-2 rounded-lg text-sm font-medium hover:bg-brand-blue hover:text-white transition disabled:opacity-50"
+                  >
+                    {shippingLoading ? "Cotizando..." : "Cotizar envío"}
+                  </button>
+                )}
+
+                {shippingIsFree && (
+                  <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                    <p className="text-sm font-medium text-green-800">
+                      ✓ Envío gratis
+                    </p>
+
+                    {freeShippingPromo && (
+                      <p className="text-xs text-green-700 mt-1">
+                        Código promocional aplicado.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {!shippingIsFree && shippingRates.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-700">
+                      Selecciona tu envío
+                    </p>
+
+                    {shippingRates.map((rate) => (
+                      <label
+                        key={rate.id}
+                        className={`block rounded-lg border p-3 cursor-pointer transition ${
+                          selectedRateId === rate.id
+                            ? "border-brand-blue bg-blue-50"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <div className="flex gap-3">
+                          <input
+                            type="radio"
+                            name="shipping-rate"
+                            value={rate.id}
+                            checked={selectedRateId === rate.id}
+                            onChange={() => setSelectedRateId(rate.id)}
+                          />
+
+                          <div className="flex-1">
+                            <div className="flex justify-between gap-3">
+                              <span className="text-sm font-medium">
+                                {rate.providerDisplayName}
+                              </span>
+
+                              <span className="text-sm font-semibold">
+                                {MX.format(rate.total)}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-gray-600">
+                              {rate.serviceName}
+                              {rate.days
+                                ? ` · ${rate.days} día${
+                                    rate.days === 1 ? "" : "s"
+                                  }`
+                                : ""}
+                            </p>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {shippingMsg && (
+                  <p className="text-xs text-gray-600">{shippingMsg}</p>
+                )}
+              </div>
+            )}
             {/* Totales */}
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -214,9 +602,11 @@ export default function MiniCart() {
                 <span>
                   {hasCustomShipping
                     ? "A cotizar"
-                    : qualifiesForFreeShipping
-                    ? "Gratis"
-                    : MX.format(shippingCost)}
+                    : shippingIsFree
+                      ? "Gratis"
+                      : selectedRate
+                        ? MX.format(effectiveShippingCost)
+                        : "Por calcular"}
                 </span>
               </div>
 
@@ -261,15 +651,37 @@ export default function MiniCart() {
                 </p>
               )}
 
-              <p className="text-xs mt-2 text-gray-700">{shippingLabel}</p>
+              {hasCustomShipping ? (
+                <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                  <p className="text-xs font-medium text-amber-900">
+                    Este pedido contiene envío especial
+                  </p>
+
+                  <p className="text-xs mt-1 text-amber-800 leading-relaxed">
+                    Los productos con envío especial no participan en
+                    promociones de envío gratis. Su costo de envío se cotiza por
+                    separado.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs mt-2 text-gray-700">
+                  {freeShippingPromo
+                    ? "Código de envío gratis aplicado."
+                    : shippingIsFree
+                      ? "Envío gratis."
+                      : selectedRate
+                        ? `${selectedRate.providerDisplayName} · ${selectedRate.serviceName}`
+                        : "Cotiza el envío para continuar."}
+                </p>
+              )}
             </div>
 
             {/* Botón */}
             <button
               onClick={handleCheckout}
-              disabled={loading}
+              disabled={loading || shippingLoading || !shippingReady}
               className={`w-full py-3 mt-2 rounded-xl font-semibold transition ${
-                loading
+                loading || shippingLoading || !shippingReady
                   ? "bg-gray-400 text-white cursor-not-allowed"
                   : "bg-brand-blue text-white hover:bg-brand-beige hover:text-brand-blue"
               }`}

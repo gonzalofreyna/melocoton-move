@@ -52,7 +52,7 @@ export const handler = async (event) => {
   if (path === "/checkout" && method === "POST") {
     try {
       const body = JSON.parse(event.body || "{}");
-      const { items, coupon, couponCode } = body;
+      const { items, coupon, couponCode, shipping } = body;
       const codeInput = (coupon || couponCode || "").toUpperCase();
 
       if (!Array.isArray(items) || items.length === 0) {
@@ -72,8 +72,12 @@ export const handler = async (event) => {
       const FREE_SHIPPING_MIN_TOTAL = Number(
         process.env.FREE_SHIPPING_MIN_TOTAL || 499,
       );
-      const FIXED_SHIPPING_FEE = Number(process.env.FIXED_SHIPPING_FEE || 149);
+
       const SITE_URL = process.env.SITE_URL || "https://www.melocotonmove.com";
+      const SHIPPING_API_URL = (process.env.SHIPPING_API_URL || "").replace(
+        /\/$/,
+        "",
+      );
       const DEFAULT_MAX_QTY = 10;
 
       // --- Cargar catálogo real ---
@@ -83,6 +87,8 @@ export const handler = async (event) => {
       // --- Construir line_items y subtotal ---
       const line_items = [];
       let subtotal = 0;
+
+      let allItemsFreeShipping = true;
 
       for (const it of items) {
         const ref = catalogMap.get(String(it.slug));
@@ -96,6 +102,10 @@ export const handler = async (event) => {
               message: `Producto inválido o no encontrado: ${it.slug}`,
             }),
           };
+        }
+
+        if (ref.freeShipping !== true) {
+          allItemsFreeShipping = false;
         }
 
         const maxQty = ref.maxQty ?? DEFAULT_MAX_QTY;
@@ -158,27 +168,259 @@ export const handler = async (event) => {
       // --- Envío ---
       const hasCustomShipping = items.some((it) => {
         const ref = catalogMap.get(String(it.slug));
+
         return ref && ref.shippingType === "custom";
       });
 
+      const qualifiesForFreeShipping =
+        allItemsFreeShipping &&
+        subtotal >= FREE_SHIPPING_MIN_TOTAL &&
+        !hasCustomShipping;
+
       let shippingCost = 0;
-      let shippingLabel = "Envío gratis 🚚✨";
+      let shippingLabel = "";
+      let actualShippingCost = 0;
+
+      let selectedShippingProvider = "";
+      let selectedShippingService = "";
+      let selectedShippingServiceCode = "";
+
+      let shippingPromoApplied = false;
 
       if (hasCustomShipping) {
         shippingCost = 0;
+
         shippingLabel = "Incluye artículos con envío a cotizar 🚛";
-      } else if (subtotal < FREE_SHIPPING_MIN_TOTAL) {
-        shippingCost = FIXED_SHIPPING_FEE;
-        shippingLabel = `Costo de envío fijo $${FIXED_SHIPPING_FEE}`;
+      } else {
+        if (!SHIPPING_API_URL) {
+          throw new Error("Falta SHIPPING_API_URL en checkout-api");
+        }
+
+        const postalCode = String(shipping?.postalCode || "").trim();
+
+        const areaLevel1 = String(shipping?.areaLevel1 || "").trim();
+
+        const areaLevel2 = String(shipping?.areaLevel2 || "").trim();
+
+        const areaLevel3 = String(shipping?.areaLevel3 || "").trim();
+
+        if (!/^\d{5}$/.test(postalCode)) {
+          return {
+            statusCode: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ok: false,
+              message: "Código postal de envío inválido.",
+            }),
+          };
+        }
+
+        if (!areaLevel1 || !areaLevel2 || !areaLevel3) {
+          return {
+            statusCode: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ok: false,
+              message: "Faltan datos del destino de envío.",
+            }),
+          };
+        }
+
+        const shippingPromoCode = String(shipping?.shippingPromoCode || "")
+          .trim()
+          .toUpperCase();
+
+        const quoteResponse = await fetch(
+          `${SHIPPING_API_URL}/api/shipping/quote`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              postalCode,
+              areaLevel1,
+              areaLevel2,
+              areaLevel3,
+
+              promoCode: shippingPromoCode || undefined,
+
+              items,
+            }),
+          },
+        );
+
+        const quoteData = await quoteResponse.json().catch(() => null);
+
+        if (!quoteResponse.ok || !quoteData?.ok) {
+          console.error("❌ Shipping quote error:", quoteData);
+
+          return {
+            statusCode: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ok: false,
+
+              message:
+                quoteData?.detail ||
+                quoteData?.error ||
+                quoteData?.message ||
+                "No fue posible validar el envío.",
+            }),
+          };
+        }
+
+        // Código manual de envío gratis
+        if (quoteData.type === "free_shipping_promo") {
+          shippingCost = 0;
+
+          shippingPromoApplied = true;
+
+          shippingLabel = "Envío gratis por código promocional 🚚✨";
+        } else {
+          const rates = Array.isArray(quoteData.rates) ? quoteData.rates : [];
+
+          if (rates.length === 0) {
+            return {
+              statusCode: 400,
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                ok: false,
+                message:
+                  "No encontramos tarifas disponibles para este destino.",
+              }),
+            };
+          }
+
+          /*
+           * Promoción normal de envío gratis:
+           * checkout vuelve a cotizar y Melocotón
+           * absorbe la tarifa más económica.
+           */
+          if (qualifiesForFreeShipping) {
+            const cheapestRate = rates[0];
+
+            selectedShippingProvider = cheapestRate.provider || "";
+
+            selectedShippingService = cheapestRate.serviceName || "";
+
+            selectedShippingServiceCode = cheapestRate.serviceCode || "";
+
+            actualShippingCost = Number(cheapestRate.total) || 0;
+            shippingCost = 0;
+
+            shippingLabel = "Envío gratis";
+          } else {
+            const requestedProvider = String(
+              shipping?.selectedProvider || "",
+            ).trim();
+
+            const requestedServiceCode = String(
+              shipping?.selectedServiceCode || "",
+            ).trim();
+
+            const selectedRate = rates.find(
+              (rate) =>
+                rate.provider === requestedProvider &&
+                rate.serviceCode === requestedServiceCode,
+            );
+
+            if (!selectedRate) {
+              return {
+                statusCode: 409,
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  ok: false,
+                  message:
+                    "La tarifa seleccionada ya no está disponible. Vuelve a cotizar el envío.",
+                }),
+              };
+            }
+
+            const realShippingCost = Number(selectedRate.total);
+
+            if (!Number.isFinite(realShippingCost) || realShippingCost < 0) {
+              throw new Error("Skydropx devolvió un costo de envío inválido.");
+            }
+
+            /*
+             * Comprobamos además que el precio no haya
+             * cambiado desde que el cliente cotizó.
+             */
+            const expectedShippingTotal = Number(
+              shipping?.expectedShippingTotal,
+            );
+
+            if (!Number.isFinite(expectedShippingTotal)) {
+              return {
+                statusCode: 400,
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  ok: false,
+                  message:
+                    "Falta la tarifa de envío seleccionada. Vuelve a cotizar el envío.",
+                }),
+              };
+            }
+
+            if (Math.abs(expectedShippingTotal - realShippingCost) > 0.01) {
+              return {
+                statusCode: 409,
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  ok: false,
+                  message:
+                    "La tarifa de envío cambió. Vuelve a cotizar antes de continuar.",
+                }),
+              };
+            }
+
+            shippingCost = realShippingCost;
+            actualShippingCost = realShippingCost;
+
+            selectedShippingProvider = selectedRate.provider || "";
+
+            selectedShippingService = selectedRate.serviceName || "";
+
+            selectedShippingServiceCode = selectedRate.serviceCode || "";
+
+            shippingLabel =
+              `${selectedRate.providerDisplayName} · ` +
+              `${selectedRate.serviceName} · ` +
+              `$${shippingCost.toFixed(2)}`;
+          }
+        }
       }
 
       if (shippingCost > 0) {
         line_items.push({
           quantity: 1,
+
           price_data: {
             currency: "mxn",
+
             unit_amount: Math.round(shippingCost * 100),
-            product_data: { name: "Costo de envío", images: [] },
+
+            product_data: {
+              name: "Costo de envío",
+              images: [],
+            },
           },
         });
       }
@@ -202,8 +444,22 @@ export const handler = async (event) => {
         cancel_url: `${SITE_URL}/`,
         metadata: {
           source: "melocoton_ecommerce",
+
           hasCustomShipping: hasCustomShipping ? "true" : "false",
+
           shippingLabel,
+
+          shippingProvider: selectedShippingProvider,
+
+          shippingService: selectedShippingService,
+
+          shippingServiceCode: selectedShippingServiceCode,
+
+          shippingCost: String(shippingCost),
+          actualShippingCost: String(actualShippingCost),
+          freeShipping: qualifiesForFreeShipping ? "true" : "false",
+
+          shippingPromoApplied: shippingPromoApplied ? "true" : "false",
         },
         payment_method_options: { card: { installments: { enabled: true } } },
         discounts,

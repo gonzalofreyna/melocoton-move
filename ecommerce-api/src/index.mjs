@@ -41,7 +41,7 @@ function cors(event) {
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type,Authorization",
   };
 }
@@ -219,6 +219,228 @@ export const handler = async (event) => {
         statusCode: 204,
         headers: H,
         body: "",
+      };
+    }
+
+    if (method === "POST" && path === "/internal/shipping/products") {
+      if (!isAuthorizedInternalRequest(event)) {
+        return {
+          statusCode: 401,
+          headers: H,
+          body: JSON.stringify({
+            ok: false,
+            error: "Unauthorized",
+          }),
+        };
+      }
+
+      let body;
+
+      try {
+        body = JSON.parse(event.body || "{}");
+      } catch {
+        return {
+          statusCode: 400,
+          headers: H,
+          body: JSON.stringify({
+            ok: false,
+            error: "Invalid JSON",
+          }),
+        };
+      }
+
+      const { items } = body;
+
+      if (!Array.isArray(items) || items.length === 0) {
+        return {
+          statusCode: 400,
+          headers: H,
+          body: JSON.stringify({
+            ok: false,
+            error: "Cart must contain at least one item",
+          }),
+        };
+      }
+
+      const quantitiesBySlug = new Map();
+
+      for (const item of items) {
+        const slug = typeof item?.slug === "string" ? item.slug.trim() : "";
+
+        const quantity = Number(item?.quantity);
+
+        if (!slug || !Number.isInteger(quantity) || quantity <= 0) {
+          return {
+            statusCode: 400,
+            headers: H,
+            body: JSON.stringify({
+              ok: false,
+              error: "Invalid cart item",
+            }),
+          };
+        }
+
+        quantitiesBySlug.set(
+          slug,
+          (quantitiesBySlug.get(slug) || 0) + quantity,
+        );
+      }
+
+      const slugs = [...quantitiesBySlug.keys()];
+
+      const productResult = await pool.query(
+        `
+      SELECT
+        slug,
+        name,
+        active,
+        stock,
+        "maxQty",
+        "freeShipping",
+        "shippingType",
+        "weightGrams",
+        "widthCm",
+        "heightCm",
+        "lengthCm"
+      FROM "Product"
+      WHERE slug = ANY($1::text[])
+    `,
+        [slugs],
+      );
+
+      const productsBySlug = new Map(
+        productResult.rows.map((row) => [row.slug, row]),
+      );
+
+      const trustedItems = [];
+
+      for (const slug of slugs) {
+        const product = productsBySlug.get(slug);
+        const quantity = quantitiesBySlug.get(slug);
+
+        if (!product) {
+          return {
+            statusCode: 400,
+            headers: H,
+            body: JSON.stringify({
+              ok: false,
+              error: "Product not found",
+              slug,
+            }),
+          };
+        }
+
+        if (product.active !== true) {
+          return {
+            statusCode: 400,
+            headers: H,
+            body: JSON.stringify({
+              ok: false,
+              error: "Product is inactive",
+              slug,
+            }),
+          };
+        }
+
+        const maxQty = product.maxQty === null ? 10 : product.maxQty;
+
+        if (quantity > maxQty) {
+          return {
+            statusCode: 400,
+            headers: H,
+            body: JSON.stringify({
+              ok: false,
+              error: "Quantity exceeds maxQty",
+              slug,
+              requestedQuantity: quantity,
+              maxQty,
+            }),
+          };
+        }
+
+        if (
+          product.stock !== null &&
+          Number.isInteger(product.stock) &&
+          quantity > product.stock
+        ) {
+          return {
+            statusCode: 400,
+            headers: H,
+            body: JSON.stringify({
+              ok: false,
+              error: "Insufficient stock",
+              slug,
+              requestedQuantity: quantity,
+              availableStock: product.stock,
+            }),
+          };
+        }
+
+        const weightGrams = decimalToNumber(product.weightGrams);
+        const widthCm = decimalToNumber(product.widthCm);
+        const heightCm = decimalToNumber(product.heightCm);
+        const lengthCm = decimalToNumber(product.lengthCm);
+
+        const isCustom = product.shippingType === "custom";
+
+        const missingShippingData = isCustom
+          ? []
+          : [
+              weightGrams === undefined ? "weightGrams" : null,
+              widthCm === undefined ? "widthCm" : null,
+              heightCm === undefined ? "heightCm" : null,
+              lengthCm === undefined ? "lengthCm" : null,
+            ].filter(Boolean);
+
+        trustedItems.push({
+          slug: product.slug,
+          name: product.name,
+          quantity,
+          freeShipping: product.freeShipping === true,
+          shippingType: isCustom ? "custom" : "standard",
+          weightGrams: weightGrams ?? null,
+          widthCm: widthCm ?? null,
+          heightCm: heightCm ?? null,
+          lengthCm: lengthCm ?? null,
+          readyForAutomaticQuote: isCustom || missingShippingData.length === 0,
+          missingShippingData,
+        });
+      }
+
+      const hasCustomShipping = trustedItems.some(
+        (item) => item.shippingType === "custom",
+      );
+
+      const standardItems = trustedItems.filter(
+        (item) => item.shippingType === "standard",
+      );
+
+      const allStandardItemsFreeShipping =
+        standardItems.length > 0 &&
+        standardItems.every((item) => item.freeShipping === true);
+
+      const missingShippingData = trustedItems
+        .filter(
+          (item) =>
+            item.shippingType === "standard" &&
+            item.readyForAutomaticQuote !== true,
+        )
+        .map((item) => ({
+          slug: item.slug,
+          fields: item.missingShippingData,
+        }));
+
+      return {
+        statusCode: 200,
+        headers: H,
+        body: JSON.stringify({
+          ok: true,
+          items: trustedItems,
+          hasCustomShipping,
+          allStandardItemsFreeShipping,
+          canQuoteAutomatically: missingShippingData.length === 0,
+          missingShippingData,
+        }),
       };
     }
 
