@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { useState } from "react";
 
 export default function ContactPage() {
@@ -41,7 +42,13 @@ export default function ContactPage() {
   }
 
   return (
-    <main className="flex flex-col items-center px-6 py-16 bg-gray-50 min-h-screen">
+    <>
+      <Head>
+        <title>Contacto | Melocotón Move</title>
+        <meta name="description" content="Contacta al equipo de Melocotón Move para resolver tus dudas sobre productos, pedidos y colaboraciones." />
+        <link rel="canonical" href="https://www.melocotonmove.com/contact" />
+      </Head>
+      <main className="flex flex-col items-center px-6 py-16 bg-gray-50 min-h-screen">
       <h1 className="text-4xl font-extrabold text-brand-blue mb-8">
         Contáctanos
       </h1>
@@ -117,5 +124,6 @@ export default function ContactPage() {
         )}
       </form>
     </main>
+    </>
   );
 }
