@@ -18,7 +18,6 @@ export default function Home() {
   const { config, loading: configLoading } = useAppConfig();
   const { products, loading: productsLoading, error } = useProducts();
 
-  if (configLoading) return null;
 
   const showHero =
     !!config?.featureFlags?.showHero &&
@@ -35,6 +34,7 @@ export default function Home() {
         />
         <link rel="canonical" href="https://www.melocotonmove.com/" />
       </Head>
+      {!configLoading && (
       <main className="flex flex-col items-center text-center bg-gray-50">
       {/* Popup de promociones SOLO en Home */}
       <PromoModal />
@@ -80,6 +80,7 @@ export default function Home() {
         </section>
       )}
       </main>
+      )}
     </>
   );
 }
