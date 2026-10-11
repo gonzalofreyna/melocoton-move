@@ -165,11 +165,11 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
   const rawDescription = (
     product.description ||
     "Productos de pilates con estilo, agarre y comodidad."
-  ).replace(/\\s+/g, " ").trim();
+  ).replace(/\s+/g, " ").trim();
   const description =
     rawDescription.length <= 155
       ? rawDescription
-      : rawDescription.slice(0, 156).replace(/\\s+\\S*$/, "").trimEnd() + "…";
+      : rawDescription.slice(0, 156).replace(/\s+\S*$/, "").trimEnd() + "…";
 
   const ldImages = Array.from(new Set([mainImgFixed, ...galleryArr]));
   const productLd = {
