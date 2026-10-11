@@ -8,9 +8,9 @@ export default function CalcetinesPilates({ products }: SeoCategoryProps) {
   return <SeoCategoryPage
     products={products}
     title="Calcetines Antideslizantes para Pilates | Melocotón Move"
-    description="Descubre calcetines antideslizantes y calcetas antiderrapantes para Pilates. Explora diseños y colores de Melocotón Move."
+    description="Compra calcetas antideslizantes para Pilates, barre y reformer. Explora modelos con agarre en la planta, 80% algodón y distintos colores."
     heading="Calcetines Antideslizantes para Pilates"
-    intro="Descubre calcetines para Pilates en diferentes diseños y colores, pensados para acompañar tu práctica."
+    intro="Explora calcetas antideslizantes para Pilates, barre y reformer, diseñadas para ofrecer agarre durante tus movimientos. Conoce nuestros modelos y elige el color que acompaña tu práctica."
     canonicalPath="/calcetines-antideslizantes-pilates"
   />;
 }
