@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useAppConfig } from "../context/ConfigContext";
+import { categoryHref } from "../lib/categoryHref";
 
 export default function DesktopNav() {
   const { config, loading } = useAppConfig();
@@ -10,7 +11,7 @@ export default function DesktopNav() {
   const navToHref = (item: any): string => {
     const kind = item?.kind || "link";
     if (kind === "category" && item?.category)
-      return `/products?category=${encodeURIComponent(item.category)}`;
+      return categoryHref(String(item.category));
     if (kind === "onSale") return "/products?onSale=1";
     if (kind === "popular") return "/products?popular=1";
     if (kind === "freeShipping") return "/products?freeShipping=1";
