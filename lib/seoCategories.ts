@@ -12,7 +12,7 @@ export function matchesSeoCategory(product: Product, kind: SeoCategory): boolean
 export function seoCategoryProps(kind: SeoCategory): GetStaticProps<SeoCategoryProps> {
   return async () => {
     const { fetchProducts } = await import("./fetchProducts");
-    const products = await fetchProducts();
+    const products = await fetchProducts({ fresh: true });
     return {
       props: { products: JSON.parse(JSON.stringify(products.filter((product) => matchesSeoCategory(product, kind)))) as Product[] },
       revalidate: 1800,
