@@ -61,7 +61,7 @@ export async function fetchProducts(options: { fresh?: boolean } = {}): Promise<
 
   const request = (async () => {
     const separator = API_PRODUCTS_URL.includes("?") ? "&" : "?";
-    const url = `${API_PRODUCTS_URL}${separator}v=${Math.floor(Date.now() / CACHE_MS)}`;
+    const url = `${API_PRODUCTS_URL}${separator}v=${options.fresh ? Date.now() : Math.floor(Date.now() / CACHE_MS)}`;
     console.log("♻️ Fetching products from", url);
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`Error cargando productos: ${res.status}`);
