@@ -162,10 +162,14 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
   const SITE_URL = "https://www.melocotonmove.com";
   const canonical = `${SITE_URL}/${product.slug}`;
   const title = `${product.name} | Melocotón Move`;
-  const description = (
+  const rawDescription = (
     product.description ||
     "Productos de pilates con estilo, agarre y comodidad."
-  ).slice(0, 155);
+  ).replace(/\\s+/g, " ").trim();
+  const description =
+    rawDescription.length <= 155
+      ? rawDescription
+      : rawDescription.slice(0, 156).replace(/\\s+\\S*$/, "").trimEnd() + "…";
 
   const ldImages = Array.from(new Set([mainImgFixed, ...galleryArr]));
   const productLd = {
