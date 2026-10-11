@@ -20,6 +20,8 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   const urls = new Set([
     "/",
     "/products",
+    "/tapetes-yoga-pilates",
+    "/calcetines-antideslizantes-pilates",
     "/aboutus",
     "/contact",
     "/arma-tu-studio",
