@@ -23,7 +23,7 @@ export function seoCategoryProps(kind: SeoCategory): GetStaticProps<SeoCategoryP
     const { fetchProducts } = await import("./fetchProducts");
     const products = await fetchProducts();
     return {
-      props: { products: products.filter((product) => matchesSeoCategory(product, kind)) },
+      props: { products: JSON.parse(JSON.stringify(products.filter((product) => matchesSeoCategory(product, kind)))) as Product[] },
       revalidate: 1800,
     };
   };
