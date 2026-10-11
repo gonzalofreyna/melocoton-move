@@ -1,5 +1,6 @@
-import Head from "next/head";
 "use client";
+
+import Head from "next/head";
 
 import { motion } from "framer-motion";
 import OpeningStudioSection from "../components/OpeningStudioSection";
