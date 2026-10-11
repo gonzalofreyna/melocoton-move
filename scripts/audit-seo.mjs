@@ -5,7 +5,7 @@ const site = "https://www.melocotonmove.com";
 const decode = (s = "") => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 const text = (html, tag) => decode(html.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"))?.[1]?.trim() || "");
 const meta = (html, key) => decode(html.match(new RegExp(`<meta\\s+[^>]*name=["']${key}["'][^>]*>`, "i"))?.[0]?.match(/content=["']([^"']*)["']/i)?.[1] || "");
-const canonical = (html) => decode(html.match(/<link\\s+[^>]*rel=["']canonical["'][^>]*>/i)?.[0]?.match(/href=["']([^"']*)["']/i)?.[1] || "");
+const canonical = (html) => decode(html.match(/<link\s+[^>]*rel=["']canonical["'][^>]*>/i)?.[0]?.match(/href=["']([^"']*)["']/i)?.[1] || "");
 const errors = [];
 const titles = new Map();
 let total = 0;
@@ -14,7 +14,7 @@ try {
   const response = await fetch(base + "/sitemap.xml");
   if (!response.ok) throw new Error("sitemap.xml HTTP " + response.status);
   const xml = await response.text();
-  const paths = [...xml.matchAll(/<loc>([^<]+)<\\/loc>/g)]
+  const paths = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
     .map((m) => new URL(m[1].replace(/&amp;/g, "&")).pathname);
   if (!paths.length) throw new Error("Sitemap sin URLs");
   for (const path of new Set(paths)) {
@@ -36,7 +36,7 @@ try {
     const isProduct = !["/", "/products", "/aboutus", "/contact", "/arma-tu-studio", "/crea-tu-mat", "/tapetes-yoga-pilates", "/calcetines-antideslizantes-pilates"].includes(path);
     if (isProduct) {
       products++;
-      const scripts = [...html.matchAll(/<script[^>]*type=["']application\\/ld\\+json["'][^>]*>([\\s\\S]*?)<\\/script>/gi)];
+      const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
       const structured = [];
       for (const m of scripts) {
         try { structured.push(JSON.parse(m[1])); }
