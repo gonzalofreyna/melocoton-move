@@ -8,9 +8,13 @@ export default function TapetesYogaPilates({ products }: SeoCategoryProps) {
   return <SeoCategoryPage
     products={products}
     title="Tapetes de Yoga y Pilates | Melocotón Move"
-    description="Explora tapetes de yoga y Pilates Melocotón Move. Descubre diseños para acompañar tu práctica y elige tu favorito."
+    description="Compra tapetes de yoga y Pilates de caucho natural y poliuretano, con 5 mm de grosor y opciones personalizables. Descubre Melocotón Move."
     heading="Tapetes de Yoga y Pilates"
-    intro="Encuentra un tapete para acompañar tus sesiones de yoga y Pilates. Explora los diseños disponibles en Melocotón Move."
+    intro="Descubre tapetes para yoga y Pilates con una superficie de poliuretano de alto grado y base de caucho natural. Explora nuestros colores y diseños para practicar en casa o en estudio."
+    contentSections={[
+      { heading: "¿Qué materiales tienen nuestros tapetes?", body: "Nuestros mats profesionales combinan caucho natural y poliuretano de alto grado. Explora cada ficha para elegir la textura, el diseño y las características que mejor se adaptan a tu práctica." },
+      { heading: "Tapetes para yoga, Pilates y estudio", body: "Un buen mat acompaña tus ejercicios de piso, estiramientos y trabajo de control. Revisa las medidas, el grosor y las opciones de personalización disponibles en cada modelo antes de elegir." },
+    ]}
     canonicalPath="/tapetes-yoga-pilates"
   />;
 }

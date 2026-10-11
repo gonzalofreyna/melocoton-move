@@ -12,10 +12,11 @@ type Props = SeoCategoryProps & {
   heading: string;
   intro: string;
   canonicalPath: string;
+  contentSections?: { heading: string; body: string }[];
 };
 
 export default function SeoCategoryPage({
-  products, title, description, heading, intro, canonicalPath,
+  products, title, description, heading, intro, canonicalPath, contentSections = [],
 }: Props) {
   const { config } = useAppConfig();
   const offerBadge = config?.offerBadge ?? ({ enabled: false } as OfferBadgeConfig);
@@ -53,6 +54,19 @@ export default function SeoCategoryPage({
                 );
               })}
             </div>
+          )}
+          {contentSections.length > 0 && (
+            <section aria-label="Guía de compra" className="mx-auto mt-16 max-w-4xl border-t border-gray-200 pt-10">
+              <h2 className="text-2xl font-bold text-brand-blue">Encuentra el producto ideal para tu práctica</h2>
+              <div className="mt-6 grid gap-8 md:grid-cols-2">
+                {contentSections.map((section) => (
+                  <div key={section.heading}>
+                    <h3 className="text-lg font-semibold text-brand-blue">{section.heading}</h3>
+                    <p className="mt-2 leading-relaxed text-gray-600">{section.body}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
         </div>
       </main>
