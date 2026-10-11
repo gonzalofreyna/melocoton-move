@@ -118,9 +118,6 @@ export default function ProductsPage() {
           content="Explora calcetines antideslizantes, tapetes de yoga y accesorios de Pilates en Melocotón Move. Descubre nuestra colección."
         />
         <link rel="canonical" href="https://www.melocotonmove.com/products" />
-        {Boolean(searchString || onSaleParam || popularParam || freeShippingParam || categoryString || sortParam) && (
-          <meta name="robots" content="noindex,follow" />
-        )}
       </Head>
       <main className="flex flex-col items-center px-6 py-16 bg-gray-50 min-h-screen">
       <h1 className="text-3xl sm:text-4xl font-extrabold text-brand-blue mb-12">
