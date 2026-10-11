@@ -1,6 +1,7 @@
 import Head from "next/head";
-import Link from "next/link";
-import { resolveImage } from "../lib/resolveImage";
+import ProductCard from "./ProductCard";
+import { useAppConfig } from "../context/ConfigContext";
+import type { OfferBadgeConfig, AppConfig } from "../lib/fetchConfig";
 import type { Product } from "../lib/fetchProducts";
 
 export type SeoCategoryProps = { products: Product[] };
@@ -16,6 +17,9 @@ type Props = SeoCategoryProps & {
 export default function SeoCategoryPage({
   products, title, description, heading, intro, canonicalPath,
 }: Props) {
+  const { config } = useAppConfig();
+  const offerBadge = config?.offerBadge ?? ({ enabled: false } as OfferBadgeConfig);
+  const featureFlags = config?.featureFlags ?? ({} as AppConfig["featureFlags"]);
   const groups = new Map<string, Product[]>();
   for (const product of products) {
     const key = product.name.trim().toLowerCase();
@@ -39,16 +43,13 @@ export default function SeoCategoryPage({
               {[...groups.values()].map((variants) => {
                 const product = variants[0];
                 return (
-                  <Link key={product.slug} href={`/${product.slug}`} className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md">
-                    <div className="aspect-square flex items-center justify-center">
-                      <img src={resolveImage(product.image)} alt={product.name} className="max-h-full max-w-full object-contain" loading="lazy" />
-                    </div>
-                    <h2 className="mt-4 text-center font-semibold text-brand-blue">{product.name}</h2>
-                    <p className="mt-2 text-center text-brand-blue">
-                      {(product.discountPrice ?? product.fullPrice).toLocaleString("es-MX", {style:"currency",currency:"MXN"})}
-                    </p>
-                    {variants.length > 1 && <p className="mt-1 text-center text-sm text-gray-500">{variants.length} opciones disponibles</p>}
-                  </Link>
+                  <ProductCard
+                    key={product.slug}
+                    product={product}
+                    variants={variants}
+                    offerBadge={offerBadge}
+                    featureFlags={featureFlags}
+                  />
                 );
               })}
             </div>
