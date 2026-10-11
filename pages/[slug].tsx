@@ -29,7 +29,7 @@ export const getStaticProps: GetStaticProps<ProductPageProps> = async ({ params 
   const initialProduct = products.find((item) => item.slug.toLowerCase() === slug);
 
   if (!initialProduct) return { notFound: true, revalidate: 60 };
-  return { props: { initialProduct }, revalidate: 1800 };
+  return { props: { initialProduct: JSON.parse(JSON.stringify(initialProduct)) as Product }, revalidate: 1800 };
 };
 
 export default function ProductDetail({ initialProduct }: ProductPageProps) {
