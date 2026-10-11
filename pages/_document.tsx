@@ -4,7 +4,7 @@ import { Html, Head, Main, NextScript } from "next/document";
 export default function Document() {
   const SITE_URL = (
     process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://main.d15wjbc4ifk2rq.amplifyapp.com"
+    "https://www.melocotonmove.com"
   ).replace(/\/$/, "");
 
   const orgLd = {
