@@ -31,7 +31,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   try {
     // Consulta el mismo catálogo que utiliza la tienda para encontrar slugs reales.
     const { fetchProducts } = await import("../lib/fetchProducts");
-    const products = await fetchProducts();
+    const products = await fetchProducts({ fresh: true });
     for (const product of products) {
       if (product.slug && !product.slug.includes("/")) {
         urls.add("/" + encodeURIComponent(product.slug));
