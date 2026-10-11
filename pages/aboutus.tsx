@@ -1,3 +1,4 @@
+import Head from "next/head";
 "use client";
 
 import { motion } from "framer-motion";
@@ -8,10 +9,16 @@ import Link from "next/link";
 export default function AboutUs() {
   const { config, loading: configLoading } = useAppConfig();
 
-  if (configLoading) return null;
+
 
   return (
-    <main className="flex flex-col items-center text-center bg-gray-50">
+    <>
+      <Head>
+        <title>Sobre Nosotros | Melocotón Move</title>
+        <meta name="description" content="Conoce Melocotón Move, una marca de tapetes, calcetas y accesorios para Pilates y yoga." />
+        <link rel="canonical" href="https://www.melocotonmove.com/aboutus" />
+      </Head>
+      {!configLoading && <main className="flex flex-col items-center text-center bg-gray-50">
       {/* 🌸 HERO SECTION */}
       {config?.featureFlags?.showOpeningStudio &&
         config?.openingStudio?.enabled && (
@@ -117,6 +124,7 @@ export default function AboutUs() {
           `}</style>
         </section>
       )}
-    </main>
+    </main>}
+    </>
   );
 }
