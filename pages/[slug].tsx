@@ -139,10 +139,7 @@ export default function ProductDetail() {
   const stock = product.stock;
 
   // ====== SEO
-  const SITE_URL = (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://main.d15wjbc4ifk2rq.amplifyapp.com"
-  ).replace(/\/$/, "");
+  const SITE_URL = "https://www.melocotonmove.com";
   const canonical = `${SITE_URL}/${product.slug}`;
   const title = `${product.name} | Melocotón Move`;
   const description = (

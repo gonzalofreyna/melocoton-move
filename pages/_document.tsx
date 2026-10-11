@@ -2,10 +2,7 @@
 import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
-  const SITE_URL = (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://main.d15wjbc4ifk2rq.amplifyapp.com"
-  ).replace(/\/$/, "");
+  const SITE_URL = "https://www.melocotonmove.com";
 
   const orgLd = {
     "@context": "https://schema.org",
