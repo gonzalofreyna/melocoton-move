@@ -12,6 +12,7 @@ import AboutUsHero from "../components/AboutUsHero";
 import FeaturedProductsSection from "../components/FeaturedProductsSection";
 import HeroSection from "../components/HeroSection";
 import Link from "next/link";
+import Head from "next/head";
 
 export default function Home() {
   const { config, loading: configLoading } = useAppConfig();
@@ -25,7 +26,16 @@ export default function Home() {
     config.heroSlides.length > 0;
 
   return (
-    <main className="flex flex-col items-center text-center bg-gray-50">
+    <>
+      <Head>
+        <title>Melocotón Move | Tapetes de Yoga y Accesorios de Pilates</title>
+        <meta
+          name="description"
+          content="Descubre tapetes de yoga y Pilates, calcetines antideslizantes y accesorios para tu práctica. Diseños exclusivos en Melocotón Move México."
+        />
+        <link rel="canonical" href="https://www.melocotonmove.com/" />
+      </Head>
+      <main className="flex flex-col items-center text-center bg-gray-50">
       {/* Popup de promociones SOLO en Home */}
       <PromoModal />
 
@@ -69,6 +79,7 @@ export default function Home() {
           </div>
         </section>
       )}
-    </main>
+      </main>
+    </>
   );
 }
