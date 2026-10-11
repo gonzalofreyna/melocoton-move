@@ -1,7 +1,7 @@
 // ------------------------------------------------------------
 // components/ProductCard.tsx
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { resolveImage } from "../lib/resolveImage";
 import type { Product } from "../lib/fetchProducts";
@@ -24,6 +24,12 @@ export default function ProductCard({
 }: Props) {
   const { addToCart } = useCart();
   const [selectedProduct, setSelectedProduct] = useState<Product>(product);
+
+  // ISR puede entregar nuevas props sin desmontar esta tarjeta.
+  // Evitar que Detalles y el carrito conserven el slug anterior.
+  useEffect(() => {
+    setSelectedProduct(product);
+  }, [product.slug]);
   const finalPrice = selectedProduct.discountPrice ?? selectedProduct.fullPrice;
   const img = resolveImage(selectedProduct.image);
 
