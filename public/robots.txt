@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /success
+
+Sitemap: https://www.melocotonmove.com/sitemap.xml
