@@ -163,14 +163,23 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
   const SITE_URL = "https://www.melocotonmove.com";
   const canonical = `${SITE_URL}/${product.slug}`;
   const title = `${product.name} | Melocotón Move`;
-  const rawDescription = (
-    product.description ||
-    "Productos de pilates con estilo, agarre y comodidad."
-  ).replace(/\s+/g, " ").trim();
-  const description =
-    rawDescription.length <= 155
-      ? rawDescription
-      : rawDescription.slice(0, 156).replace(/\s+\S*$/, "").trimEnd() + "…";
+  const categoryKeyword =
+    product.category === "mat"
+      ? "tapete de yoga y Pilates"
+      : product.category === "calcetas"
+        ? "calcetas antideslizantes para Pilates"
+        : "";
+  const rawDescription = product.description.replace(/\s+/g, " ").trim();
+  const seoLead = categoryKeyword
+    ? `${product.name}: ${categoryKeyword} de Melocotón Move.`
+    : product.name + " de Melocotón Move.";
+  // Las fichas sin texto descriptivo siguen teniendo una descripción específica.
+  // Reservamos espacio para el texto real del catálogo sin inventar atributos.
+  const remaining = 155 - seoLead.length - 1;
+  const excerpt = remaining > 25 && rawDescription
+    ? rawDescription.slice(0, remaining).replace(/\s+\S*$/, "").trim()
+    : "";
+  const description = excerpt ? `${seoLead} ${excerpt}` : seoLead;
 
   const ldImages = Array.from(new Set([mainImgFixed, ...galleryArr]));
   const productLd = {
@@ -302,6 +311,19 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
       </Head>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+        <nav aria-label="Ruta de navegación" className="mb-6 text-sm text-gray-600">
+          <Link href="/" className="hover:underline">Inicio</Link>
+          <span aria-hidden="true" className="mx-2">/</span>
+          <Link href={categoryHref(product.category)} className="hover:underline">
+            {product.category === "mat"
+              ? "Tapetes de yoga y Pilates"
+              : product.category === "calcetas"
+                ? "Calcetas antideslizantes"
+                : "Productos"}
+          </Link>
+          <span aria-hidden="true" className="mx-2">/</span>
+          <span aria-current="page" className="text-gray-800">{product.name}</span>
+        </nav>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           {/* ===== Galería ===== */}
           {/* ===== Galería ===== */}
