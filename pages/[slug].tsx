@@ -12,14 +12,33 @@ import { useAppConfig } from "../context/ConfigContext";
 
 import { motion } from "framer-motion";
 import type React from "react";
+import type { GetStaticPaths, GetStaticProps } from "next";
 
-export default function ProductDetail() {
+type ProductPageProps = { initialProduct: Product };
+
+// Generación bajo demanda de slugs nuevos, con revalidación cada 30 minutos.
+export const getStaticPaths: GetStaticPaths = async () => ({
+  paths: [],
+  fallback: "blocking",
+});
+
+export const getStaticProps: GetStaticProps<ProductPageProps> = async ({ params }) => {
+  const slug = String(params?.slug ?? "").toLowerCase();
+  const { fetchProducts } = await import("../lib/fetchProducts");
+  const products = await fetchProducts();
+  const initialProduct = products.find((item) => item.slug.toLowerCase() === slug);
+
+  if (!initialProduct) return { notFound: true, revalidate: 60 };
+  return { props: { initialProduct }, revalidate: 1800 };
+};
+
+export default function ProductDetail({ initialProduct }: ProductPageProps) {
   const router = useRouter();
   const { slug } = router.query;
   const { addToCart } = useCart();
 
   const { products, loading: productsLoading } = useProducts();
-  const { config, loading: configLoading } = useAppConfig();
+  const { config } = useAppConfig();
 
   // Normaliza el flag showOfferBadge si existe
   const featureFlags = config
@@ -32,18 +51,19 @@ export default function ProductDetail() {
   const offerBadge = config?.offerBadge ?? null;
 
   // Loading global para este componente
-  const loading = productsLoading || configLoading;
+  const loading = productsLoading && !initialProduct;
 
   const [mainUrl, setMainUrl] = useState<string>("");
 
   const product = useMemo(() => {
-    if (!slug || !products?.length) return undefined;
+    if (!slug) return initialProduct;
     const s = String(slug).toLowerCase();
-    return products.find((p) => p.slug.toLowerCase() === s);
-  }, [slug, products]);
+    return products.find((p) => p.slug.toLowerCase() === s) ?? initialProduct;
+  }, [slug, products, initialProduct]);
 
   const variants = useMemo(() => {
     if (!product) return [];
+    if (!products.length) return [product];
 
     const productKey = product.name.trim().toLowerCase().replace(/\s+/g, " ");
 
