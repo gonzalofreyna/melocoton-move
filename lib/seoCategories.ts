@@ -5,17 +5,8 @@ import type { SeoCategoryProps } from "../components/SeoCategoryPage";
 export type SeoCategory = "mats" | "socks";
 
 export function matchesSeoCategory(product: Product, kind: SeoCategory): boolean {
-  const category = product.category.toLowerCase();
-  const name = product.name.toLowerCase();
-  const slug = product.slug.toLowerCase();
-  if (kind === "mats") {
-    return ["mat", "mats", "tapetes", "tapete"].includes(category) ||
-      /^(mat[a-z0-9]|tapete-)/.test(slug) ||
-      /tapete|yoga mat/.test(name);
-  }
-  return ["calcetas", "calcetines", "socks"].includes(category) ||
-    /^(basic|curly|calcetines-|calcetas-)/.test(slug) ||
-    /calcetines|calcetas/.test(name);
+  const category = product.category.trim().toLowerCase();
+  return category === (kind === "mats" ? "mat" : "calcetas");
 }
 
 export function seoCategoryProps(kind: SeoCategory): GetStaticProps<SeoCategoryProps> {
