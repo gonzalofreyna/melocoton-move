@@ -25,7 +25,7 @@ export const getStaticPaths: GetStaticPaths = async () => ({
 export const getStaticProps: GetStaticProps<ProductPageProps> = async ({ params }) => {
   const slug = String(params?.slug ?? "").toLowerCase();
   const { fetchProducts } = await import("../lib/fetchProducts");
-  const products = await fetchProducts();
+  const products = await fetchProducts({ fresh: true });
   const initialProduct = products.find((item) => item.slug.toLowerCase() === slug);
 
   if (!initialProduct) return { notFound: true, revalidate: 60 };
