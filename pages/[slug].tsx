@@ -7,6 +7,7 @@ import { useCart } from "../context/CartContext";
 
 import type { Product } from "../lib/fetchProducts";
 import { resolveImage } from "../lib/resolveImage";
+import { categoryHref } from "../lib/categoryHref";
 import { useProducts } from "../context/ProductsContext";
 import { useAppConfig } from "../context/ConfigContext";
 
@@ -201,7 +202,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
         "@type": "ListItem",
         position: 2,
         name: product.category,
-        item: `${SITE_URL}/category/${encodeURIComponent(product.category)}`,
+        item: `${SITE_URL}${categoryHref(product.category)}`,
       },
       { "@type": "ListItem", position: 3, name: product.name, item: canonical },
     ],
