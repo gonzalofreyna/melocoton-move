@@ -49,18 +49,19 @@ if (!API_PRODUCTS_URL) {
   throw new Error("Falta NEXT_PUBLIC_API_PRODUCTS_URL");
 }
 
-// ⚡️ NUEVO: cache en memoria y dedupe
+// Caché temporal para navegación. Las páginas SEO pueden solicitar datos frescos.
+const CACHE_MS = 30 * 60 * 1000;
 let cache: Product[] | null = null;
+let cacheExpiresAt = 0;
 let inFlight: Promise<Product[]> | null = null;
-// 🕒 Valor que cambia cada 30 minutos → invalida caché automáticamente
-const VERSION_KEY = Math.floor(Date.now() / (30 * 60 * 1000));
 
-export async function fetchProducts(): Promise<Product[]> {
-  if (cache) return cache;
-  if (inFlight) return inFlight;
+export async function fetchProducts(options: { fresh?: boolean } = {}): Promise<Product[]> {
+  if (!options.fresh && cache && Date.now() < cacheExpiresAt) return cache;
+  if (!options.fresh && inFlight) return inFlight;
 
-  inFlight = (async () => {
-    const url = `${API_PRODUCTS_URL}?v=${VERSION_KEY}`;
+  const request = (async () => {
+    const separator = API_PRODUCTS_URL.includes("?") ? "&" : "?";
+    const url = `${API_PRODUCTS_URL}${separator}v=${options.fresh ? Date.now() : Math.floor(Date.now() / CACHE_MS)}`;
     console.log("♻️ Fetching products from", url);
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`Error cargando productos: ${res.status}`);
@@ -179,9 +180,15 @@ export async function fetchProducts(): Promise<Product[]> {
     });
 
     cache = products;
-    inFlight = null;
+    cacheExpiresAt = Date.now() + CACHE_MS;
     return products;
   })();
 
-  return inFlight;
+  if (options.fresh) return request;
+  inFlight = request;
+  try {
+    return await request;
+  } finally {
+    if (inFlight === request) inFlight = null;
+  }
 }

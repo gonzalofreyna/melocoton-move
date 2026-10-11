@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useAppConfig } from "../context/ConfigContext";
+import { categoryHref } from "../lib/categoryHref";
 
 type Props = {
   open: boolean;
@@ -44,7 +45,7 @@ export default function MobileMenu({ open, onClose }: Props) {
     { label: "Inicio", href: "/" },
     {
       label: "Calcetas",
-      href: `/products?category=${encodeURIComponent("calcetas")}`,
+      href: categoryHref("calcetas"),
     },
     {
       label: "Accesorios",
@@ -69,7 +70,7 @@ export default function MobileMenu({ open, onClose }: Props) {
   const navToHref = (item: any): string => {
     const kind = item?.kind || "link";
     if (kind === "category" && item?.category) {
-      return `/products?category=${encodeURIComponent(String(item.category))}`;
+      return categoryHref(String(item.category));
     }
     if (kind === "onSale") return "/products?onSale=1";
     if (kind === "popular") return "/products?popular=1";

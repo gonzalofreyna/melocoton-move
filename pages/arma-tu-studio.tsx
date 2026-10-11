@@ -317,6 +317,7 @@ export default function ArmaTuStudioPage() {
           name="description"
           content="Cotiza y arma tu estudio de pilates, barre o mat pilates con Melocotón Move."
         />
+        <link rel="canonical" href="https://www.melocotonmove.com/arma-tu-studio" />
       </Head>
 
       <main className="min-h-screen bg-white pt-40 px-4 pb-20">
