@@ -202,6 +202,12 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
     },
   };
 
+  const categoryName = product.category === "mat"
+    ? "Tapetes de yoga y Pilates"
+    : product.category === "calcetas"
+      ? "Calcetas antideslizantes para Pilates"
+      : "Productos";
+
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -210,7 +216,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
       {
         "@type": "ListItem",
         position: 2,
-        name: product.category,
+        name: categoryName,
         item: `${SITE_URL}${categoryHref(product.category)}`,
       },
       { "@type": "ListItem", position: 3, name: product.name, item: canonical },
@@ -315,11 +321,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
           <Link href="/" className="hover:underline">Inicio</Link>
           <span aria-hidden="true" className="mx-2">/</span>
           <Link href={categoryHref(product.category)} className="hover:underline">
-            {product.category === "mat"
-              ? "Tapetes de yoga y Pilates"
-              : product.category === "calcetas"
-                ? "Calcetas antideslizantes"
-                : "Productos"}
+            {categoryName}
           </Link>
           <span aria-hidden="true" className="mx-2">/</span>
           <span aria-current="page" className="text-gray-800">{product.name}</span>
