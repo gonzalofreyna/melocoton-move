@@ -162,7 +162,27 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
   // ====== SEO
   const SITE_URL = "https://www.melocotonmove.com";
   const canonical = `${SITE_URL}/${product.slug}`;
-  const title = `${product.name} | Melocotón Move`;
+  // Las variantes Magic Ring y Mini Ball comparten nombre comercial,
+  // pero requieren títulos y descripciones SEO propios por color.
+  const variantColorBySlug: Record<string, string> = {
+    magicringsiliconnegro: "Negro",
+    magicringsiliconnude: "Nude",
+    magicringsiliconrosa: "Rosa",
+    magicringsiliconazul: "Azul",
+    magicringsiliconnaranja: "Naranja",
+    magicringsiliconarena: "Arena",
+    "mini-ball-pilates-negra": "Negra",
+    "mini-ball-pilates-nude": "Nude",
+    "mini-ball-pilates-rosa": "Rosa",
+    "mini-ball-pilates-azul": "Azul",
+    "mini-ball-pilates-naranja": "Naranja",
+    "mini-ball-pilates-arena": "Arena",
+  };
+  const variantColor = variantColorBySlug[product.slug.toLowerCase()];
+  const seoProductName = variantColor
+    ? `${product.name} ${variantColor}`
+    : product.name;
+  const title = `${seoProductName} | Melocotón Move`;
   const categoryKeyword =
     product.category === "mat"
       ? "tapete de yoga y Pilates"
@@ -171,8 +191,8 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
         : "";
   const rawDescription = product.description.replace(/\s+/g, " ").trim();
   const seoLead = categoryKeyword
-    ? `${product.name}: ${categoryKeyword} de Melocotón Move.`
-    : product.name + " de Melocotón Move.";
+    ? `${seoProductName}: ${categoryKeyword} de Melocotón Move.`
+    : seoProductName + " de Melocotón Move.";
   // Las fichas sin texto descriptivo siguen teniendo una descripción específica.
   // Reservamos espacio para el texto real del catálogo sin inventar atributos.
   const remaining = 155 - seoLead.length - 1;
