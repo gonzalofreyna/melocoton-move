@@ -255,7 +255,7 @@ export default function MatCustomizer() {
       if (!previewWrapRef.current) return;
 
       const availableWidth = previewWrapRef.current.clientWidth;
-      setPreviewWidth(Math.min(420, Math.max(280, availableWidth)));
+      setPreviewWidth(Math.min(window.innerWidth < 640 ? 300 : 420, Math.max(240, availableWidth)));
     };
 
     updatePreviewWidth();
@@ -442,34 +442,34 @@ export default function MatCustomizer() {
   };
 
   return (
-    <section className="min-h-screen bg-[#fbf7f2] px-4 py-10">
+    <section className="min-h-screen bg-[#fbf7f2] px-3 pb-10 pt-6 sm:px-4 sm:py-10">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 text-center">
-          <p className="text-sm uppercase tracking-[0.35em] text-gray-500">
+        <div className="mb-5 text-center sm:mb-8">
+          <p className="text-xs uppercase tracking-[0.22em] text-gray-500 sm:text-sm sm:tracking-[0.35em]">
             Personaliza tu práctica
           </p>
-          <h1 className="mt-3 text-4xl font-bold text-gray-900 md:text-5xl">
+          <h1 className="mt-2 text-2xl font-bold text-gray-900 sm:mt-3 sm:text-4xl md:text-5xl">
             Crea tu propio mat
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+          <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:mt-4 sm:text-base">
             Elige forma, color y coloca tu logo exactamente donde lo quieres.
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
-          <div className="contents lg:block lg:rounded-[2rem] lg:bg-white lg:p-8 lg:shadow-sm">
-            <div className="order-1 rounded-[2rem] bg-white p-5 shadow-sm md:p-8 lg:p-0 lg:shadow-none">
-              <div className="mb-8">
+        <div className="grid gap-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
+          <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:bg-white lg:p-8 lg:shadow-sm">
+            <div className="order-2 rounded-2xl bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-5 md:p-8 lg:p-0 lg:shadow-none">
+              <div className="mb-6 sm:mb-8">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                   1. Elige la forma
                 </h2>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   {matShapes.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setShape(item.id)}
-                      className={`rounded-2xl border p-4 transition ${
+                      className={`min-w-0 rounded-xl border p-2 transition sm:rounded-2xl sm:p-4 ${
                         shape === item.id
                           ? "border-gray-900 bg-gray-900 text-white"
                           : "border-gray-200 bg-white text-gray-800 hover:border-gray-400"
@@ -477,7 +477,7 @@ export default function MatCustomizer() {
                       type="button"
                     >
                       <div
-                        className="mx-auto mb-3 h-24 w-14 bg-current"
+                        className="mx-auto mb-2 h-12 w-8 bg-current sm:mb-3 sm:h-24 sm:w-14"
                         style={{
                           borderRadius:
                             item.id === "capsula"
@@ -487,7 +487,7 @@ export default function MatCustomizer() {
                                 : "8px",
                         }}
                       />
-                      <span className="text-sm font-bold uppercase">
+                      <span className="text-[11px] font-bold uppercase sm:text-sm">
                         {item.label}
                       </span>
                     </button>
@@ -495,7 +495,7 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                   2. Elige color o textura
                 </h2>
@@ -505,7 +505,7 @@ export default function MatCustomizer() {
                     Colores sólidos
                   </h3>
 
-                  <div className="grid grid-cols-7 gap-3 sm:grid-cols-10">
+                  <div className="grid grid-cols-6 gap-3 sm:grid-cols-10">
                     {solidColors.map((item) => (
                       <button
                         key={item}
@@ -516,7 +516,7 @@ export default function MatCustomizer() {
                             label: item,
                           })
                         }
-                        className={`h-10 rounded-xl border transition ${
+                        className={`h-11 rounded-xl border transition ${
                           finish.type === "solid" && finish.value === item
                             ? "scale-110 border-gray-900 ring-2 ring-gray-900"
                             : "border-gray-200"
@@ -534,7 +534,7 @@ export default function MatCustomizer() {
                     Texturas premium
                   </h3>
 
-                  <div className="grid grid-cols-5 gap-3 sm:grid-cols-8">
+                  <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
                     {textureFinishes.map((item) => (
                       <button
                         key={item.value}
@@ -559,12 +559,12 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                   3. Sube tu logo o diseño
                 </h2>
 
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center transition hover:border-gray-500">
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-5 text-center transition hover:border-gray-500 sm:rounded-3xl sm:px-5 sm:py-8">
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/svg+xml"
@@ -581,7 +581,7 @@ export default function MatCustomizer() {
                     PNG, JPG, WEBP o SVG. Puedes subir más de una imagen.
                   </span>
 
-                  <span className="mt-4 max-w-md rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-gray-600 shadow-sm">
+                  <span className="mt-3 max-w-md text-xs leading-5 text-gray-600 sm:mt-4 sm:rounded-2xl sm:bg-white sm:px-4 sm:py-3 sm:text-sm sm:leading-6 sm:shadow-sm">
                     Para mejor resultado, sube tu logo en{" "}
                     <strong className="font-semibold text-gray-900">
                       PNG con fondo transparente
@@ -654,7 +654,7 @@ export default function MatCustomizer() {
                 )}
               </div>
             </div>
-            <div className="order-3 mb-8 rounded-3xl border border-gray-200 bg-white p-5">
+            <div className="order-3 mb-4 rounded-2xl border border-gray-200 bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
               <h2 className="mb-4 text-lg font-semibold text-gray-900">
                 4. Cantidad y cotización
               </h2>
@@ -796,9 +796,9 @@ export default function MatCustomizer() {
             </div>
           </div>
 
-          <div className="order-2 w-full min-w-0 lg:sticky lg:top-28 lg:self-start">
-            <div className="w-full rounded-[2rem] bg-white p-3 shadow-sm sm:p-4">
-              <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="order-1 w-full min-w-0 lg:order-2 lg:sticky lg:top-28 lg:self-start">
+            <div className="w-full rounded-2xl bg-white p-3 shadow-sm sm:rounded-[2rem] sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">
                     Vista previa
@@ -815,7 +815,7 @@ export default function MatCustomizer() {
 
               <div
                 ref={previewWrapRef}
-                className="flex w-full justify-center overflow-hidden rounded-[1.5rem] bg-[#f6f1ea]"
+                className="flex w-full justify-center overflow-hidden rounded-xl bg-[#f6f1ea] sm:rounded-[1.5rem]"
               >
                 <div
                   style={{
@@ -878,10 +878,10 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
                 <button
                   onClick={downloadPNG}
-                  className="rounded-full bg-gray-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-gray-700"
+                  className="min-h-11 rounded-xl bg-gray-900 px-3 py-3 text-xs font-bold text-white transition hover:bg-gray-700 sm:rounded-full sm:px-5 sm:text-sm"
                   type="button"
                 >
                   Descargar imagen
@@ -889,7 +889,7 @@ export default function MatCustomizer() {
 
                 <button
                   onClick={downloadPDF}
-                  className="rounded-full border border-gray-300 bg-white px-5 py-3 text-sm font-bold text-gray-900 transition hover:bg-gray-50"
+                  className="min-h-11 rounded-xl border border-gray-300 bg-white px-3 py-3 text-xs font-bold text-gray-900 transition hover:bg-gray-50 sm:rounded-full sm:px-5 sm:text-sm"
                   type="button"
                 >
                   Descargar PDF
