@@ -8,6 +8,7 @@ export default function GuiaCalcetas() {
         <title>Cómo elegir calcetas antideslizantes para Pilates | Melocotón Move</title>
         <meta name="description" content="Aprende qué revisar al elegir calcetas antideslizantes para Pilates, reformer y barre: agarre, ajuste, modelo y cuidados." />
         <link rel="canonical" href="https://www.melocotonmove.com/guia-calcetas-antideslizantes-pilates" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://www.melocotonmove.com/"},{"@type":"ListItem","position":2,"name":"Calcetas antideslizantes","item":"https://www.melocotonmove.com/calcetines-antideslizantes-pilates"},{"@type":"ListItem","position":3,"name":"Guía para elegir calcetas","item":"https://www.melocotonmove.com/guia-calcetas-antideslizantes-pilates"}]}) }} />
       </Head>
       <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-16">
         <article className="mx-auto max-w-3xl text-sm leading-7 text-gray-700 sm:text-base">
