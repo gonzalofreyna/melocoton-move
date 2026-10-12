@@ -15,6 +15,11 @@ export default function TapetesYogaPilates({ products }: SeoCategoryProps) {
       { heading: "¿Qué materiales tienen nuestros tapetes?", body: "Nuestros mats profesionales combinan caucho natural y poliuretano de alto grado. Explora cada ficha para elegir la textura, el diseño y las características que mejor se adaptan a tu práctica." },
       { heading: "Tapetes para yoga, Pilates y estudio", body: "Un buen mat acompaña tus ejercicios de piso, estiramientos y trabajo de control. Revisa las medidas, el grosor y las opciones de personalización disponibles en cada modelo antes de elegir." },
     ]}
+    faqs={[
+      { question: "¿De qué están hechos los tapetes profesionales de Melocotón Move?", answer: "Los mats profesionales de esta colección combinan una superficie de poliuretano de alto grado y una base de caucho natural. Consulta la ficha de cada color o modelo para confirmar sus especificaciones." },
+      { question: "¿Qué grosor tienen los tapetes?", answer: "Los tapetes profesionales de esta colección tienen 5 mm de grosor. Antes de comprar, revisa las medidas y detalles de la ficha del modelo elegido." },
+      { question: "¿Puedo personalizar un tapete de yoga o Pilates?", answer: "Melocotón Move ofrece opciones de personalización mediante grabado láser. Revisa las opciones del producto o la sección de personalización para elegir un diseño." },
+    ]}
     canonicalPath="/tapetes-yoga-pilates"
   />;
 }
