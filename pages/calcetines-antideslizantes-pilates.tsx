@@ -20,6 +20,7 @@ export default function CalcetinesPilates({ products }: SeoCategoryProps) {
       { question: "¿Se pueden usar para Pilates reformer y barre?", answer: "Sí. Las calcetas antideslizantes son una opción habitual para Pilates de piso, reformer y barre. Revisa los requisitos de tu estudio antes de asistir a clase." },
       { question: "¿Qué modelos y colores están disponibles?", answer: "Puedes explorar los modelos Basic y Curly y sus variantes de color en esta página. La disponibilidad de cada variante se muestra en su ficha de producto." },
     ]}
+    guide={{ href: "/guia-calcetas-antideslizantes-pilates", title: "Guía para elegir tus calcetas", description: "Conoce qué revisar sobre agarre, ajuste y modelos para Pilates, reformer y barre." }}
     canonicalPath="/calcetines-antideslizantes-pilates"
   />;
 }
