@@ -166,11 +166,17 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
   // pero requieren títulos y descripciones SEO propios por color.
   const variantColorBySlug: Record<string, string> = {
     magicringsiliconnegro: "Negro",
+    "magic-ring-pilates-negro": "Negro",
     magicringsiliconnude: "Nude",
+    "magic-ring-pilates-nude": "Nude",
     magicringsiliconrosa: "Rosa",
+    "magic-ring-pilates-rosa": "Rosa",
     magicringsiliconazul: "Azul",
+    "magic-ring-pilates-azul": "Azul",
     magicringsiliconnaranja: "Naranja",
+    "magic-ring-pilates-naranja": "Naranja",
     magicringsiliconarena: "Arena",
+    "magic-ring-pilates-arena": "Arena",
     "mini-ball-pilates-negra": "Negra",
     "mini-ball-pilates-nude": "Nude",
     "mini-ball-pilates-rosa": "Rosa",
