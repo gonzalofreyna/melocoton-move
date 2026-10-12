@@ -64,9 +64,9 @@ export default function CreaTuMatPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 sm:text-sm">
             Desde una sola pieza · Personalización láser
           </p>
-          <h2 className="mt-3 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
+          <h1 className="mt-3 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
             Tapetes de yoga y Pilates personalizados con tu logo en México
-          </h2>
+          </h1>
           <p className="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
             Crea un tapete profesional con base de caucho natural y superficie de poliuretano
             de alto grado. Elige forma, color o textura y añade tu logo desde una sola unidad,
