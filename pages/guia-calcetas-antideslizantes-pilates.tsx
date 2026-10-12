@@ -21,8 +21,8 @@ export default function GuiaCalcetas() {
             <p>Busca una superficie antideslizante distribuida en la zona de apoyo del pie. El agarre puede ayudar a reducir el deslizamiento en determinadas superficies, pero no elimina el riesgo de resbalar.</p>
           </section>
           <section className="mt-4 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
-            <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">2. Prioriza el ajuste y la comodidad</h2>
-            <p>Una calceta debe ajustarse sin resultar incómoda durante los movimientos. Consulta las tallas e imágenes del modelo antes de elegirlo.</p>
+            <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">2. Conoce nuestro ajuste unitalla</h2>
+            <p>Todas las calcetas antideslizantes de Melocotón Move son unitalla. Revisa las fotografías y el diseño de cada modelo para elegir el que prefieras; el ajuste puede variar según la forma del pie.</p>
           </section>
           <section className="mt-4 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
             <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">3. Compara modelos y materiales</h2>
