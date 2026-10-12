@@ -247,6 +247,7 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [promotion, setPromotion] = useState<MatPromotion>("fiveOffMsi");
+  const [finishPickerOpen, setFinishPickerOpen] = useState(false);
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -255,7 +256,7 @@ export default function MatCustomizer() {
       if (!previewWrapRef.current) return;
 
       const availableWidth = previewWrapRef.current.clientWidth;
-      setPreviewWidth(Math.min(window.innerWidth < 640 ? 300 : 420, Math.max(240, availableWidth)));
+      setPreviewWidth(Math.min(window.innerWidth < 640 ? 170 : 420, Math.max(160, availableWidth)));
     };
 
     updatePreviewWidth();
@@ -444,14 +445,14 @@ export default function MatCustomizer() {
   return (
     <section className="min-h-screen bg-[#fbf7f2] px-3 pb-10 pt-6 sm:px-4 sm:py-10">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-5 text-center sm:mb-8">
+        <div className="mb-4 text-center sm:mb-8">
           <p className="text-xs uppercase tracking-[0.22em] text-gray-500 sm:text-sm sm:tracking-[0.35em]">
             Personaliza tu práctica
           </p>
-          <h1 className="mt-2 text-2xl font-bold text-gray-900 sm:mt-3 sm:text-4xl md:text-5xl">
+          <h1 className="mt-2 text-xl font-bold text-gray-900 sm:mt-3 sm:text-4xl md:text-5xl">
             Crea tu propio mat
           </h1>
-          <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:mt-4 sm:text-base">
+          <p className="mx-auto mt-1 max-w-2xl text-xs leading-5 text-gray-600 sm:mt-4 sm:text-base">
             Elige forma, color y coloca tu logo exactamente donde lo quieres.
           </p>
         </div>
@@ -495,76 +496,86 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-6 sm:mb-8">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900">
+              <div className="mb-5 sm:mb-8">
+                <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   2. Elige color o textura
                 </h2>
-
-                <div className="mb-6">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">
-                    Colores sólidos
-                  </h3>
-
-                  <div className="grid grid-cols-6 gap-3 sm:grid-cols-10">
-                    {solidColors.map((item) => (
-                      <button
-                        key={item}
-                        onClick={() =>
-                          setFinish({
-                            type: "solid",
-                            value: item,
-                            label: item,
-                          })
-                        }
-                        className={`h-11 rounded-xl border transition ${
-                          finish.type === "solid" && finish.value === item
-                            ? "scale-110 border-gray-900 ring-2 ring-gray-900"
-                            : "border-gray-200"
-                        }`}
-                        style={{ backgroundColor: item }}
-                        type="button"
-                        aria-label={`Elegir color ${item}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">
-                    Texturas premium
-                  </h3>
-
-                  <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
-                    {textureFinishes.map((item) => (
-                      <button
-                        key={item.value}
-                        onClick={() => setFinish(item)}
-                        className={`h-16 overflow-hidden rounded-xl border transition ${
-                          finish.type === "texture" &&
-                          finish.value === item.value
-                            ? "scale-105 border-gray-900 ring-2 ring-gray-900"
-                            : "border-gray-200"
-                        }`}
-                        type="button"
-                        aria-label={`Elegir ${item.label}`}
-                      >
-                        <img
-                          src={item.value}
-                          alt={item.label}
-                          className="h-full w-full object-cover"
+                <button
+                  type="button"
+                  aria-expanded={finishPickerOpen}
+                  aria-controls="mat-finish-options"
+                  onClick={() => setFinishPickerOpen((open) => !open)}
+                  className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-gray-300 bg-[#fbf7f2] px-3 py-2 text-left"
+                >
+                  {finish.type === "solid" ? (
+                    <span className="h-8 w-8 shrink-0 rounded-lg border border-gray-300" style={{ backgroundColor: finish.value }} />
+                  ) : (
+                    <img src={finish.value} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs text-gray-500">Acabado seleccionado</span>
+                    <span className="block truncate text-sm font-semibold text-gray-900">{finish.label}</span>
+                  </span>
+                  <span aria-hidden="true" className="text-sm font-semibold text-gray-700">{finishPickerOpen ? "Cerrar −" : "Cambiar +"}</span>
+                </button>
+                {finishPickerOpen && (
+                  <div id="mat-finish-options" className="mt-3 rounded-xl border border-gray-200 p-3">
+                    <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">Colores sólidos</h3>
+                    <div className="grid grid-cols-6 gap-2 sm:grid-cols-10 sm:gap-3">
+                      {solidColors.map((item) => (
+                        <button
+                          key={item}
+                          onClick={() => {
+                            setFinish({ type: "solid", value: item, label: item });
+                            setFinishPickerOpen(false);
+                          }}
+                          className={`h-11 rounded-xl border transition ${
+                            finish.type === "solid" && finish.value === item
+                              ? "border-gray-900 ring-2 ring-gray-900"
+                              : "border-gray-200"
+                          }`}
+                          style={{ backgroundColor: item }}
+                          type="button"
+                          aria-label={`Elegir color ${item}`}
+                          aria-pressed={finish.type === "solid" && finish.value === item}
                         />
-                      </button>
-                    ))}
+                      ))}
+                    </div>
+                    <h3 className="mb-3 mt-5 text-xs font-bold uppercase tracking-wide text-gray-500">Texturas premium</h3>
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
+                      {textureFinishes.map((item) => (
+                        <button
+                          key={item.value}
+                          onClick={() => {
+                            setFinish(item);
+                            setFinishPickerOpen(false);
+                          }}
+                          className={`h-14 overflow-hidden rounded-xl border transition ${
+                            finish.type === "texture" && finish.value === item.value
+                              ? "border-gray-900 ring-2 ring-gray-900"
+                              : "border-gray-200"
+                          }`}
+                          type="button"
+                          aria-label={`Elegir ${item.label}`}
+                          aria-pressed={finish.type === "texture" && finish.value === item.value}
+                        >
+                          <img src={item.value} alt={item.label} className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+                <p aria-live="polite" className="mt-2 text-xs text-gray-600">
+                  {finish.type === "solid" ? "Color aplicado a la vista previa." : "Textura aplicada a la vista previa."}
+                </p>
               </div>
 
-              <div className="mb-6 sm:mb-8">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900">
+              <div className="mb-4 sm:mb-8">
+                <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   3. Sube tu logo o diseño
                 </h2>
 
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-5 text-center transition hover:border-gray-500 sm:rounded-3xl sm:px-5 sm:py-8">
+                <label className="flex min-h-14 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-center transition hover:border-gray-500 sm:rounded-3xl sm:px-5 sm:py-8">
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/svg+xml"
@@ -581,7 +592,7 @@ export default function MatCustomizer() {
                     PNG, JPG, WEBP o SVG. Puedes subir más de una imagen.
                   </span>
 
-                  <span className="mt-3 max-w-md text-xs leading-5 text-gray-600 sm:mt-4 sm:rounded-2xl sm:bg-white sm:px-4 sm:py-3 sm:text-sm sm:leading-6 sm:shadow-sm">
+                  <span className="mt-3 hidden max-w-md text-xs leading-5 text-gray-600 sm:block sm:rounded-2xl sm:bg-white sm:px-4 sm:py-3 sm:text-sm sm:leading-6 sm:shadow-sm">
                     Para mejor resultado, sube tu logo en{" "}
                     <strong className="font-semibold text-gray-900">
                       PNG con fondo transparente
@@ -798,17 +809,17 @@ export default function MatCustomizer() {
 
           <div className="order-1 w-full min-w-0 lg:order-2 lg:sticky lg:top-28 lg:self-start">
             <div className="w-full rounded-2xl bg-white p-3 shadow-sm sm:rounded-[2rem] sm:p-4">
-              <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
+              <div className="mb-2 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-sm font-bold text-gray-900 sm:text-lg">
                     Vista previa
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs text-gray-500 sm:text-sm">
                     Mat real: 183 cm x 70 cm
                   </p>
                 </div>
 
-                <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase text-gray-600">
+                <div className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-semibold uppercase text-gray-600 sm:px-3 sm:text-xs">
                   {shape}
                 </div>
               </div>
@@ -878,7 +889,7 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
                 <button
                   onClick={downloadPNG}
                   className="min-h-11 rounded-xl bg-gray-900 px-3 py-3 text-xs font-bold text-white transition hover:bg-gray-700 sm:rounded-full sm:px-5 sm:text-sm"
