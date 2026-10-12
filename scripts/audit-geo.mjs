@@ -3,12 +3,13 @@
 // node scripts/audit-geo.mjs
 const base = process.env.GEO_AUDIT_URL || "http://localhost:3000";
 const checks = [
-  { path: "/", required: ["Melocotón Move"], schema: "Organization" },
+  { path: "/", required: ["Descubre Melocotón Move: yoga", "Ver tapetes de yoga y Pilates", "Ver calcetas antideslizantes", "Personalizar mi mat"], schema: "Organization" },
   { path: "/aboutus", required: ["¿Qué es Melocotón Move?", "tapetes de yoga y Pilates", "calcetas antideslizantes"] },
-  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates"] },
+  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates", "/crea-tu-mat", "Diseñar mi mat personalizado"] },
   { path: "/calcetines-antideslizantes-pilates", required: ["Preguntas frecuentes", "¿Se pueden usar para Pilates reformer y barre?", "¿Dónde comprar calcetas antideslizantes para Pilates en México?", "modelos Basic y Curly", "/guia-calcetas-antideslizantes-pilates"] },
-  { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates"] },
+  { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates", "Diseñar mi tapete personalizado", "/crea-tu-mat"] },
   { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
+  { path: "/crea-tu-mat", required: ["Desde una sola pieza", "Personalización láser", "Tapetes de yoga y Pilates personalizados con tu logo en México", "/tapetes-yoga-pilates"] },
 ];
 const errors = [];
 const read = async (path) => {
@@ -19,8 +20,13 @@ const read = async (path) => {
 for (const { path, required, schema } of checks) {
   try {
     const html = await read(path);
+    // Evita falsos positivos de contenido que existe solo en scripts o datos de hidratación.
+    const visibleHtml = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
     for (const value of required) {
-      if (!html.includes(value)) errors.push(path + ": falta contenido " + value);
+      if (!visibleHtml.includes(value)) errors.push(path + ": falta contenido HTML visible " + value);
+    }
+    if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
+      errors.push("/crea-tu-mat: falta H1 visible en el HTML inicial");
     }
     if (schema) {
       const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
@@ -33,7 +39,19 @@ for (const { path, required, schema } of checks) {
       }
       if (!valid) errors.push(path + ": falta Organization JSON-LD válido");
     }
-    if (path.startsWith("/guia-")) {
+    if (path === "/") {
+      const ldScripts = [...html.matchAll(/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>([\s\S]*?)<\/script>/gi)];
+      const ldItems = ldScripts.flatMap((match) => {
+        try { return [JSON.parse(match[1])]; } catch { return []; }
+      });
+      const website = ldItems.find((item) => item["@type"] === "WebSite");
+      if (website?.potentialAction?.target !== "https://www.melocotonmove.com/products?search={search_term_string}") {
+        errors.push("/: WebSite SearchAction apunta a una ruta incorrecta");
+      }
+      const organizations = ldItems.filter((item) => item["@type"] === "Organization");
+      if (organizations.length !== 1) errors.push("/: debe haber una sola Organization JSON-LD");
+    }
+    if (path.startsWith("/guia-") || path === "/crea-tu-mat") {
       const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
       const breadcrumbs = scripts.flatMap((match) => {
         try { return [JSON.parse(match[1])]; } catch { return []; }
@@ -59,5 +77,5 @@ if (errors.length) {
   console.error("Incidencias GEO (" + errors.length + "):\n- " + errors.join("\n- "));
   process.exitCode = 1;
 } else {
-  console.log("Auditoría GEO local superada: 6 páginas, robots.txt y sitemap.");
+  console.log(`Auditoría GEO local superada: ${checks.length} páginas, robots.txt y sitemap.`);
 }

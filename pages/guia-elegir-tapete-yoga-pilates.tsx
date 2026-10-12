@@ -31,7 +31,8 @@ export default function GuiaTapetes() {
           </section>
           <section className="mt-4 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
             <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">4. ¿Buscas un tapete personalizado?</h2>
-            <p>Melocotón Move ofrece opciones de personalización mediante grabado láser. Revisa qué modelos admiten personalización y las opciones disponibles antes de realizar tu pedido.</p>
+            <p>Melocotón Move permite personalizar un mat profesional desde una sola pieza con grabado láser. Puedes elegir la forma, el color o textura y colocar tu logo en una vista previa antes de enviar la solicitud de compra.</p>
+            <Link href="/crea-tu-mat" className="inline-flex min-h-11 items-center font-semibold text-brand-blue underline underline-offset-4">Diseñar mi tapete personalizado</Link>
           </section>
           <section className="mt-10 rounded-2xl bg-white p-5 shadow-sm sm:p-7">
             <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-xl">Explora los tapetes disponibles</h2>

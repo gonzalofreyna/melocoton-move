@@ -16,10 +16,11 @@ type Props = SeoCategoryProps & {
   contentSections?: { heading: string; body: string }[];
   faqs?: { question: string; answer: string }[];
   guide?: { href: string; title: string; description: string };
+  customizer?: { href: string; title: string; description: string };
 };
 
 export default function SeoCategoryPage({
-  products, title, description, heading, intro, canonicalPath, contentSections = [], faqs = [], guide,
+  products, title, description, heading, intro, canonicalPath, contentSections = [], faqs = [], guide, customizer,
 }: Props) {
   const { config } = useAppConfig();
   const offerBadge = config?.offerBadge ?? ({ enabled: false } as OfferBadgeConfig);
@@ -69,6 +70,13 @@ export default function SeoCategoryPage({
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+          {customizer && (
+            <section className="mx-auto mt-8 max-w-4xl rounded-2xl border border-gray-200 bg-[#fbf7f2] p-5 sm:mt-10 sm:p-7">
+              <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-xl">{customizer.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-gray-700 sm:text-base">{customizer.description}</p>
+              <Link className="mt-4 inline-flex min-h-11 items-center font-semibold text-brand-blue underline underline-offset-4" href={customizer.href}>Diseñar mi mat personalizado</Link>
             </section>
           )}
           {guide && (

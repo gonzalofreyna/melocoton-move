@@ -33,23 +33,11 @@ export default function Home() {
           content="Descubre tapetes de yoga y Pilates, calcetines antideslizantes y accesorios para tu práctica. Diseños exclusivos en Melocotón Move México."
         />
         <link rel="canonical" href="https://www.melocotonmove.com/" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "@id": "https://www.melocotonmove.com/#organization",
-              name: "Melocotón Move",
-              url: "https://www.melocotonmove.com/",
-              description: "Marca en México de tapetes de yoga y Pilates, calcetas antideslizantes y accesorios para la práctica.",
-              sameAs: ["https://www.instagram.com/melocoton.move/"],
-            }),
-          }}
-        />
+
       </Head>
-      {!configLoading && (
       <main className="flex flex-col items-center text-center bg-gray-50">
+      {!configLoading && (
+      <>
       {/* Popup de promociones SOLO en Home */}
       <PromoModal />
 
@@ -93,8 +81,27 @@ export default function Home() {
           </div>
         </section>
       )}
-      </main>
+      </>
       )}
+      {/* Contenido y enlaces en HTML inicial, sin esperar las APIs de catálogo/configuración. */}
+      <section aria-labelledby="home-brand-intro" className="w-full bg-white px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mx-auto max-w-3xl">
+          <h2 id="home-brand-intro" className="text-xl font-semibold leading-snug text-brand-blue sm:text-2xl">
+            Descubre Melocotón Move: yoga, Pilates y personalización en México
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-gray-700 sm:text-base">
+            En Melocotón Move encontrarás tapetes profesionales de yoga y Pilates,
+            calcetas antideslizantes para reformer y barre y accesorios para tu práctica.
+            También puedes personalizar un mat con tu logo desde una sola pieza.
+          </p>
+          <nav aria-label="Explora Melocotón Move" className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-semibold text-brand-blue">
+            <Link className="underline underline-offset-4" href="/tapetes-yoga-pilates">Ver tapetes de yoga y Pilates</Link>
+            <Link className="underline underline-offset-4" href="/calcetines-antideslizantes-pilates">Ver calcetas antideslizantes</Link>
+            <Link className="underline underline-offset-4" href="/crea-tu-mat">Personalizar mi mat</Link>
+          </nav>
+        </div>
+      </section>
+      </main>
     </>
   );
 }
