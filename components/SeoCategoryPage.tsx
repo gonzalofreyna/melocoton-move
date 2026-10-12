@@ -13,10 +13,11 @@ type Props = SeoCategoryProps & {
   intro: string;
   canonicalPath: string;
   contentSections?: { heading: string; body: string }[];
+  faqs?: { question: string; answer: string }[];
 };
 
 export default function SeoCategoryPage({
-  products, title, description, heading, intro, canonicalPath, contentSections = [],
+  products, title, description, heading, intro, canonicalPath, contentSections = [], faqs = [],
 }: Props) {
   const { config } = useAppConfig();
   const offerBadge = config?.offerBadge ?? ({ enabled: false } as OfferBadgeConfig);
@@ -64,6 +65,19 @@ export default function SeoCategoryPage({
                     <h3 className="text-lg font-semibold text-brand-blue">{section.heading}</h3>
                     <p className="mt-2 leading-relaxed text-gray-600">{section.body}</p>
                   </div>
+                ))}
+              </div>
+            </section>
+          )}
+          {faqs.length > 0 && (
+            <section aria-labelledby="category-faq-title" className="mx-auto mt-12 max-w-4xl border-t border-gray-200 pt-10">
+              <h2 id="category-faq-title" className="text-2xl font-bold text-brand-blue">Preguntas frecuentes</h2>
+              <div className="mt-5 divide-y divide-gray-200">
+                {faqs.map(({ question, answer }) => (
+                  <details key={question} className="py-4" open>
+                    <summary className="cursor-pointer font-semibold text-brand-blue">{question}</summary>
+                    <p className="mt-2 leading-relaxed text-gray-600">{answer}</p>
+                  </details>
                 ))}
               </div>
             </section>
