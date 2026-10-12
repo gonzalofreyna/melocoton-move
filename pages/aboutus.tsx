@@ -19,6 +19,24 @@ export default function AboutUs() {
         <meta name="description" content="Conoce Melocotón Move, una marca de tapetes, calcetas y accesorios para Pilates y yoga." />
         <link rel="canonical" href="https://www.melocotonmove.com/aboutus" />
       </Head>
+      <section aria-labelledby="quienes-somos-melocoton" className="bg-gray-50 px-6 py-12 text-center">
+        <div className="mx-auto max-w-3xl">
+          <h1 id="quienes-somos-melocoton" className="text-3xl font-bold text-brand-blue">
+            ¿Qué es Melocotón Move?
+          </h1>
+          <p className="mt-4 leading-relaxed text-gray-700">
+            Melocotón Move es una marca de México enfocada en productos para yoga y Pilates:
+            tapetes, calcetas antideslizantes y accesorios para practicar en casa o en estudio.
+            Nuestro catálogo incluye tapetes personalizables y complementos para ejercicios
+            de fuerza, control y movilidad.
+          </p>
+          <p className="mt-4 text-gray-700">
+            Explora nuestros <Link href="/tapetes-yoga-pilates" className="underline">tapetes de yoga y Pilates</Link>
+            {" "}y nuestras <Link href="/calcetines-antideslizantes-pilates" className="underline">calcetas antideslizantes</Link>
+            {" "}para conocer los diseños y especificaciones disponibles.
+          </p>
+        </div>
+      </section>
       {!configLoading && <main className="flex flex-col items-center text-center bg-gray-50">
       {/* 🌸 HERO SECTION */}
       {config?.featureFlags?.showOpeningStudio &&
