@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 import ProductCard from "./ProductCard";
 import { useAppConfig } from "../context/ConfigContext";
 import type { OfferBadgeConfig, AppConfig } from "../lib/fetchConfig";
@@ -14,10 +15,11 @@ type Props = SeoCategoryProps & {
   canonicalPath: string;
   contentSections?: { heading: string; body: string }[];
   faqs?: { question: string; answer: string }[];
+  guide?: { href: string; title: string; description: string };
 };
 
 export default function SeoCategoryPage({
-  products, title, description, heading, intro, canonicalPath, contentSections = [], faqs = [],
+  products, title, description, heading, intro, canonicalPath, contentSections = [], faqs = [], guide,
 }: Props) {
   const { config } = useAppConfig();
   const offerBadge = config?.offerBadge ?? ({ enabled: false } as OfferBadgeConfig);
@@ -67,6 +69,13 @@ export default function SeoCategoryPage({
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+          {guide && (
+            <section className="mx-auto mt-10 max-w-4xl rounded-xl border border-gray-200 bg-white p-6">
+              <h2 className="text-xl font-semibold text-brand-blue">{guide.title}</h2>
+              <p className="mt-2 text-gray-600">{guide.description}</p>
+              <Link className="mt-4 inline-block font-semibold text-brand-blue underline" href={guide.href}>Leer la guía completa</Link>
             </section>
           )}
           {faqs.length > 0 && (
