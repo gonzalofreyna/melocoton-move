@@ -34,7 +34,7 @@ for (const { path, required, schema } of checks) {
       if (!valid) errors.push(path + ": falta Organization JSON-LD válido");
     }
     if (path.startsWith("/guia-")) {
-      const scripts = [...html.matchAll(/<script[^>]*type=["']application\\/ld\\+json["'][^>]*>([\\s\\S]*?)<\\/script>/gi)];
+      const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
       const breadcrumbs = scripts.flatMap((match) => {
         try { return [JSON.parse(match[1])]; } catch { return []; }
       }).find((item) => item["@type"] === "BreadcrumbList");
