@@ -440,9 +440,9 @@ export default function MatCustomizer() {
           <p className="text-xs uppercase tracking-[0.22em] text-gray-500 sm:text-sm sm:tracking-[0.35em]">
             Personaliza tu práctica
           </p>
-          <h1 className="mt-2 text-xl font-bold text-gray-900 sm:mt-3 sm:text-4xl md:text-5xl">
+          <h2 className="mt-2 text-xl font-bold text-gray-900 sm:mt-3 sm:text-4xl md:text-5xl">
             Crea tu propio mat
-          </h1>
+          </h2>
           <p className="mx-auto mt-1 max-w-2xl text-xs leading-5 text-gray-600 sm:mt-4 sm:text-base">
             Elige forma, color y coloca tu logo exactamente donde lo quieres.
           </p>
