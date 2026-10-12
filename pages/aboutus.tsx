@@ -19,11 +19,12 @@ export default function AboutUs() {
         <meta name="description" content="Conoce Melocotón Move, una marca de tapetes, calcetas y accesorios para Pilates y yoga." />
         <link rel="canonical" href="https://www.melocotonmove.com/aboutus" />
       </Head>
+      <main className="bg-gray-50">
       <section aria-labelledby="quienes-somos-melocoton" className="bg-gray-50 px-6 py-12 text-center">
         <div className="mx-auto max-w-3xl">
-          <h2 id="quienes-somos-melocoton" className="text-3xl font-bold text-brand-blue">
+          <h1 id="quienes-somos-melocoton" className="text-3xl font-bold text-brand-blue">
             ¿Qué es Melocotón Move?
-          </h2>
+          </h1>
           <p className="mt-4 leading-relaxed text-gray-700">
             Melocotón Move es una marca de México enfocada en productos para yoga y Pilates:
             tapetes, calcetas antideslizantes y accesorios para practicar en casa o en estudio.
@@ -37,7 +38,7 @@ export default function AboutUs() {
           </p>
         </div>
       </section>
-      {!configLoading && <main className="flex flex-col items-center text-center bg-gray-50">
+      {!configLoading && <div className="flex flex-col items-center text-center bg-gray-50">
       {/* 🌸 HERO SECTION */}
       {config?.featureFlags?.showOpeningStudio &&
         config?.openingStudio?.enabled && (
@@ -54,14 +55,14 @@ export default function AboutUs() {
 
             {/* ✨ Contenido hero */}
             <div className="relative z-10 flex flex-col items-center justify-center text-center py-32 px-6 sm:py-44">
-              <motion.h1
+              <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
                 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg mb-6 tracking-tight"
               >
                 {config.openingStudio.title}
-              </motion.h1>
+              </motion.h2>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
@@ -143,7 +144,8 @@ export default function AboutUs() {
           `}</style>
         </section>
       )}
-    </main>}
+    </div>}
+      </main>
     </>
   );
 }
