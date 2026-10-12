@@ -21,9 +21,9 @@ export default function AboutUs() {
       </Head>
       <section aria-labelledby="quienes-somos-melocoton" className="bg-gray-50 px-6 py-12 text-center">
         <div className="mx-auto max-w-3xl">
-          <h1 id="quienes-somos-melocoton" className="text-3xl font-bold text-brand-blue">
+          <h2 id="quienes-somos-melocoton" className="text-3xl font-bold text-brand-blue">
             ¿Qué es Melocotón Move?
-          </h1>
+          </h2>
           <p className="mt-4 leading-relaxed text-gray-700">
             Melocotón Move es una marca de México enfocada en productos para yoga y Pilates:
             tapetes, calcetas antideslizantes y accesorios para practicar en casa o en estudio.
