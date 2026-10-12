@@ -7,19 +7,24 @@ export default function Document() {
   const orgLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
     name: "Melocotón Move",
-    url: SITE_URL,
+    url: `${SITE_URL}/`,
     logo: `${SITE_URL}/images/logomelocoton.png`,
+    description: "Marca en México de tapetes de yoga y Pilates, calcetas antideslizantes y accesorios para la práctica.",
+    sameAs: ["https://www.instagram.com/melocoton.move/"],
   };
 
   const webLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    url: SITE_URL,
+    "@id": `${SITE_URL}/#website`,
+    url: `${SITE_URL}/`,
     name: "Melocotón Move",
+    publisher: { "@id": `${SITE_URL}/#organization` },
     potentialAction: {
       "@type": "SearchAction",
-      target: `${SITE_URL}/search?q={search_term_string}`,
+      target: `${SITE_URL}/products?search={search_term_string}`,
       "query-input": "required name=search_term_string",
     },
   };
