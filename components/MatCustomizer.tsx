@@ -235,6 +235,7 @@ function MatTexture({
 export default function MatCustomizer() {
   const stageRef = useRef<any>(null);
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
+  const logoControlsRef = useRef<HTMLDivElement | null>(null);
 
   const [shape, setShape] = useState<MatShape>("capsula");
   const [finish, setFinish] = useState<MatFinish>({
@@ -339,6 +340,11 @@ export default function MatCustomizer() {
 
         setLogos((prev) => [...prev, newLogo]);
         setSelectedLogoId(newLogo.id);
+        if (window.innerWidth < 1024) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => logoControlsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+          });
+        }
       };
 
       reader.readAsDataURL(file);
@@ -609,60 +615,7 @@ export default function MatCustomizer() {
                   </div>
                 )}
 
-                {selectedLogo && (
-                  <div className="mt-4 rounded-3xl border border-gray-200 bg-white p-5">
-                    <h3 className="mb-4 font-semibold text-gray-900">
-                      Ajustar logo seleccionado
-                    </h3>
 
-                    <label className="mb-4 block">
-                      <span className="mb-2 block text-sm text-gray-600">
-                        Tamaño del logo: {selectedLogo.widthPercent}% del ancho
-                        del mat
-                      </span>
-                      <input
-                        type="range"
-                        min="5"
-                        max="100"
-                        value={selectedLogo.widthPercent}
-                        onChange={(e) =>
-                          updateLogo({
-                            ...selectedLogo,
-                            widthPercent: Number(e.target.value),
-                          })
-                        }
-                        className="w-full"
-                      />
-                    </label>
-
-                    <label className="mb-4 block">
-                      <span className="mb-2 block text-sm text-gray-600">
-                        Rotación: {Math.round(selectedLogo.rotation)}°
-                      </span>
-                      <input
-                        type="range"
-                        min="-180"
-                        max="180"
-                        value={selectedLogo.rotation}
-                        onChange={(e) =>
-                          updateLogo({
-                            ...selectedLogo,
-                            rotation: Number(e.target.value),
-                          })
-                        }
-                        className="w-full"
-                      />
-                    </label>
-
-                    <button
-                      onClick={removeSelectedLogo}
-                      className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
-                      type="button"
-                    >
-                      Eliminar logo
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
             <div className="order-3 mb-4 rounded-2xl border border-gray-200 bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
@@ -888,6 +841,43 @@ export default function MatCustomizer() {
                   </Stage>
                 </div>
               </div>
+
+              {selectedLogo && (
+                <div ref={logoControlsRef} className="mt-3 rounded-xl border border-gray-200 bg-[#fbf7f2] p-3 sm:mt-4 sm:p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">Ajusta tu logo</h3>
+                      <p className="text-xs text-gray-500">Los cambios se ven arriba, en tu mat.</p>
+                    </div>
+                    <button type="button" onClick={removeSelectedLogo} className="shrink-0 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600">
+                      Eliminar
+                    </button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1 flex justify-between gap-2 text-xs font-medium text-gray-700">
+                        <span>Tamaño</span><span>{selectedLogo.widthPercent}%</span>
+                      </span>
+                      <input type="range" min="5" max="100" value={selectedLogo.widthPercent}
+                        aria-label="Tamaño del logo"
+                        onChange={(e) => updateLogo({ ...selectedLogo, widthPercent: Number(e.target.value) })}
+                        className="h-8 w-full accent-gray-900" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 flex justify-between gap-2 text-xs font-medium text-gray-700">
+                        <span>Rotación</span><span>{Math.round(selectedLogo.rotation)}°</span>
+                      </span>
+                      <input type="range" min="-180" max="180" value={selectedLogo.rotation}
+                        aria-label="Rotación del logo"
+                        onChange={(e) => updateLogo({ ...selectedLogo, rotation: Number(e.target.value) })}
+                        className="h-8 w-full accent-gray-900" />
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-gray-500">
+                    También puedes tocar y arrastrar el logo sobre el mat.
+                  </p>
+                </div>
+              )}
 
               <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
                 <button
