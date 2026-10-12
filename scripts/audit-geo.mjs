@@ -25,6 +25,9 @@ for (const { path, required, schema } of checks) {
     for (const value of required) {
       if (!visibleHtml.includes(value)) errors.push(path + ": falta contenido HTML visible " + value);
     }
+    if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
+      errors.push("/crea-tu-mat: falta H1 visible en el HTML inicial");
+    }
     if (schema) {
       const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
       let valid = false;
