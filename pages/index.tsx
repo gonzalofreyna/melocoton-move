@@ -33,6 +33,20 @@ export default function Home() {
           content="Descubre tapetes de yoga y Pilates, calcetines antideslizantes y accesorios para tu práctica. Diseños exclusivos en Melocotón Move México."
         />
         <link rel="canonical" href="https://www.melocotonmove.com/" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "@id": "https://www.melocotonmove.com/#organization",
+              name: "Melocotón Move",
+              url: "https://www.melocotonmove.com/",
+              description: "Marca en México de tapetes de yoga y Pilates, calcetas antideslizantes y accesorios para la práctica.",
+              sameAs: ["https://www.instagram.com/melocoton.move/"],
+            }),
+          }}
+        />
       </Head>
       {!configLoading && (
       <main className="flex flex-col items-center text-center bg-gray-50">
