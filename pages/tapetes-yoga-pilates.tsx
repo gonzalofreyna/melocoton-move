@@ -20,6 +20,7 @@ export default function TapetesYogaPilates({ products }: SeoCategoryProps) {
       { question: "¿Qué grosor tienen los tapetes?", answer: "Los tapetes profesionales de esta colección tienen 5 mm de grosor. Antes de comprar, revisa las medidas y detalles de la ficha del modelo elegido." },
       { question: "¿Puedo personalizar un tapete de yoga o Pilates?", answer: "Melocotón Move ofrece opciones de personalización mediante grabado láser. Revisa las opciones del producto o la sección de personalización para elegir un diseño." },
     ]}
+    guide={{ href: "/guia-elegir-tapete-yoga-pilates", title: "Guía para elegir tu tapete", description: "Compara materiales, grosor, medidas y opciones de personalización antes de comprar." }}
     canonicalPath="/tapetes-yoga-pilates"
   />;
 }
