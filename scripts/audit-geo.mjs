@@ -6,9 +6,9 @@ const checks = [
   { path: "/", required: ["Melocotón Move"], schema: "Organization" },
   { path: "/aboutus", required: ["¿Qué es Melocotón Move?", "tapetes de yoga y Pilates", "calcetas antideslizantes"] },
   { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates"] },
-  { path: "/calcetines-antideslizantes-pilates", required: ["Preguntas frecuentes", "¿Se pueden usar para Pilates reformer y barre?", "/guia-calcetas-antideslizantes-pilates"] },
+  { path: "/calcetines-antideslizantes-pilates", required: ["Preguntas frecuentes", "¿Se pueden usar para Pilates reformer y barre?", "¿Dónde comprar calcetas antideslizantes para Pilates en México?", "modelos Basic y Curly", "/guia-calcetas-antideslizantes-pilates"] },
   { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates"] },
-  { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "/calcetines-antideslizantes-pilates"] },
+  { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
 ];
 const errors = [];
 const read = async (path) => {

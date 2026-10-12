@@ -216,6 +216,9 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
     description: product.description,
     sku: product.sku,
     brand: { "@type": "Brand", name: product.brand || "Melocotón Move" },
+    ...(product.category === "calcetas"
+      ? { category: "Calcetas antideslizantes para Pilates", size: "Unitalla" }
+      : {}),
     offers: {
       "@type": "Offer",
       priceCurrency: "MXN",
@@ -519,6 +522,17 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
               <p className="text-gray-600 whitespace-pre-line text-sm sm:text-base">
                 {product.description}
               </p>
+            )}
+
+            {product.category === "calcetas" && (
+              <section aria-label="Talla y guía de calcetas" className="rounded-xl border border-gray-200 bg-[#fbf7f2] p-4">
+                <p className="text-sm text-gray-800">
+                  <strong>Talla: Unitalla.</strong> Consulta el diseño y la composición de esta variante en su ficha antes de elegir.
+                </p>
+                <Link href="/guia-calcetas-antideslizantes-pilates" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand-blue underline underline-offset-4">
+                  Cómo elegir calcetas para Pilates reformer y barre
+                </Link>
+              </section>
             )}
 
             {Array.isArray(product.highlights) &&
