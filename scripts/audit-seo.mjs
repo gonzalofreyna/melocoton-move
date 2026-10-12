@@ -48,6 +48,10 @@ try {
       else {
         if (product.offers?.url !== site + path) errors.push(`${path}: URL de oferta incorrecta`);
         if (!product.name) errors.push(`${path}: Product sin nombre`);
+        if (product.category === "Calcetas antideslizantes para Pilates") {
+          if (product.size !== "Unitalla") errors.push(`${path}: calcetas sin talla unitalla en Product JSON-LD`);
+          if (!html.includes("Talla: Unitalla.")) errors.push(`${path}: calcetas sin talla visible en la ficha`);
+        }
       }
       if (!breadcrumb) errors.push(`${path}: falta JSON-LD BreadcrumbList`);
     }
