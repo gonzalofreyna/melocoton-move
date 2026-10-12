@@ -17,7 +17,6 @@ type MatShape = "capsula" | "clasico" | "bala";
 type MatFinish =
   | { type: "solid"; value: string; label: string }
   | { type: "texture"; value: string; label: string };
-type MatPromotion = "fiveOffMsi" | "buy5Pay4";
 type LogoItem = {
   id: string;
   src: string;
@@ -247,7 +246,6 @@ export default function MatCustomizer() {
   const [selectedLogoId, setSelectedLogoId] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [promotion, setPromotion] = useState<MatPromotion>("fiveOffMsi");
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
 
   const [previewWidth, setPreviewWidth] = useState(420);
@@ -283,24 +281,11 @@ export default function MatCustomizer() {
   const selectedLogo = logos.find((logo) => logo.id === selectedLogoId);
   const safeQuantity = Math.min(99, Math.max(1, Math.floor(quantity || 1)));
 
-  const paidQuantity =
-    promotion === "buy5Pay4"
-      ? safeQuantity - Math.floor(safeQuantity / 5)
-      : safeQuantity;
-
+  const paidQuantity = safeQuantity - Math.floor(safeQuantity / 5);
   const subtotalBeforePromo = MAT_PRICE * safeQuantity;
-
-  const estimatedTotal =
-    promotion === "fiveOffMsi"
-      ? subtotalBeforePromo * 0.95
-      : MAT_PRICE * paidQuantity;
-
+  const estimatedTotal = MAT_PRICE * paidQuantity;
   const savings = subtotalBeforePromo - estimatedTotal;
-
-  const promoLabel =
-    promotion === "fiveOffMsi"
-      ? "5% OFF + MSI"
-      : `5x4: pagas ${paidQuantity} de ${safeQuantity}`;
+  const promoLabel = `5x4: pagas ${paidQuantity} de ${safeQuantity}`;
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-MX", {
@@ -662,50 +647,9 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-5 sm:gap-3">
-                <label
-                  className={`flex min-h-20 cursor-pointer flex-col justify-center rounded-xl border p-3 transition sm:rounded-2xl sm:p-4 ${
-                    promotion === "fiveOffMsi"
-                      ? "border-gray-900 bg-gray-900 text-white"
-                      : "border-gray-200 bg-white text-gray-800 hover:border-gray-400"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="matPromotion"
-                    value="fiveOffMsi"
-                    checked={promotion === "fiveOffMsi"}
-                    onChange={() => setPromotion("fiveOffMsi")}
-                    className="sr-only"
-                  />
-
-                  <span className="block text-sm font-bold">5% OFF + MSI</span>
-                  <span className="mt-1 block text-[11px] leading-4 opacity-80 sm:text-xs">
-                    Se descuenta 5% sobre el total.
-                  </span>
-                </label>
-
-                <label
-                  className={`cursor-pointer rounded-2xl border p-4 transition ${
-                    promotion === "buy5Pay4"
-                      ? "border-gray-900 bg-gray-900 text-white"
-                      : "border-gray-200 bg-white text-gray-800 hover:border-gray-400"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="matPromotion"
-                    value="buy5Pay4"
-                    checked={promotion === "buy5Pay4"}
-                    onChange={() => setPromotion("buy5Pay4")}
-                    className="sr-only"
-                  />
-
-                  <span className="block text-sm font-bold">5x4</span>
-                  <span className="mt-1 block text-xs opacity-80">
-                    Por cada 5 mats, pagas solo 4.
-                  </span>
-                </label>
+              <div className="mb-4 rounded-xl border border-gray-200 bg-[#fbf7f2] px-4 py-3 sm:mb-5">
+                <p className="text-sm font-bold text-gray-900">Promoción 5x4</p>
+                <p className="mt-1 text-xs leading-5 text-gray-600">Por cada 5 mats, pagas solo 4. Se aplica automáticamente al elegir 5 o más.</p>
               </div>
 
               <div className="rounded-xl bg-[#fbf7f2] p-3 sm:rounded-2xl sm:p-4">
@@ -719,7 +663,7 @@ export default function MatCustomizer() {
                   <span>{promoLabel}</span>
                 </div>
 
-                {promotion === "buy5Pay4" && (
+                {safeQuantity >= 5 && (
                   <div className="mt-2 flex justify-between text-sm text-gray-600">
                     <span>Mats a pagar</span>
                     <span>{paidQuantity}</span>
