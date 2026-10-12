@@ -8,6 +8,7 @@ export default function GuiaTapetes() {
         <title>Cómo elegir un tapete de yoga y Pilates | Melocotón Move</title>
         <meta name="description" content="Guía para elegir un tapete de yoga y Pilates: materiales, grosor, dimensiones, uso y personalización. Consejos de Melocotón Move." />
         <link rel="canonical" href="https://www.melocotonmove.com/guia-elegir-tapete-yoga-pilates" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://www.melocotonmove.com/"},{"@type":"ListItem","position":2,"name":"Tapetes de yoga y Pilates","item":"https://www.melocotonmove.com/tapetes-yoga-pilates"},{"@type":"ListItem","position":3,"name":"Guía para elegir tapetes","item":"https://www.melocotonmove.com/guia-elegir-tapete-yoga-pilates"}]}) }} />
       </Head>
       <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-16">
         <article className="mx-auto max-w-3xl text-sm leading-7 text-gray-700 sm:text-base">
