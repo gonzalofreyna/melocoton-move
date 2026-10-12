@@ -666,23 +666,23 @@ export default function MatCustomizer() {
               </div>
             </div>
             <div className="order-3 mb-4 rounded-2xl border border-gray-200 bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
+              <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                 4. Cantidad y cotización
               </h2>
 
-              <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
                 <div>
-                  <p className="text-sm text-gray-500">Precio por mat</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xs text-gray-500 sm:text-sm">Precio por mat</p>
+                  <p className="text-lg font-bold text-gray-900 sm:text-2xl">
                     {formatMoney(MAT_PRICE)}
                   </p>
                 </div>
 
-                <div className="flex items-center overflow-hidden rounded-2xl border border-gray-300 bg-white">
+                <div className="flex shrink-0 items-center overflow-hidden rounded-xl border border-gray-300 bg-white sm:rounded-2xl">
                   <button
                     type="button"
                     onClick={() => updateMatQuantity(safeQuantity - 1)}
-                    className="h-11 w-11 text-xl font-bold text-gray-700 hover:bg-gray-100"
+                    className="h-12 w-11 text-xl font-bold text-gray-700 hover:bg-gray-100"
                     aria-label="Disminuir cantidad"
                   >
                     −
@@ -694,13 +694,13 @@ export default function MatCustomizer() {
                     max={99}
                     value={safeQuantity}
                     onChange={(e) => updateMatQuantity(Number(e.target.value))}
-                    className="h-11 w-16 border-x border-gray-200 text-center font-semibold outline-none"
+                    className="h-12 w-12 border-x border-gray-200 text-center font-semibold outline-none sm:w-16"
                   />
 
                   <button
                     type="button"
                     onClick={() => updateMatQuantity(safeQuantity + 1)}
-                    className="h-11 w-11 text-xl font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40"
+                    className="h-12 w-11 text-xl font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40"
                     aria-label="Aumentar cantidad"
                     disabled={safeQuantity >= 99}
                   >
@@ -709,9 +709,9 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-5 grid gap-3 sm:grid-cols-2">
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-5 sm:gap-3">
                 <label
-                  className={`cursor-pointer rounded-2xl border p-4 transition ${
+                  className={`flex min-h-20 cursor-pointer flex-col justify-center rounded-xl border p-3 transition sm:rounded-2xl sm:p-4 ${
                     promotion === "fiveOffMsi"
                       ? "border-gray-900 bg-gray-900 text-white"
                       : "border-gray-200 bg-white text-gray-800 hover:border-gray-400"
@@ -727,7 +727,7 @@ export default function MatCustomizer() {
                   />
 
                   <span className="block text-sm font-bold">5% OFF + MSI</span>
-                  <span className="mt-1 block text-xs opacity-80">
+                  <span className="mt-1 block text-[11px] leading-4 opacity-80 sm:text-xs">
                     Se descuenta 5% sobre el total.
                   </span>
                 </label>
@@ -755,7 +755,7 @@ export default function MatCustomizer() {
                 </label>
               </div>
 
-              <div className="rounded-2xl bg-[#fbf7f2] p-4">
+              <div className="rounded-xl bg-[#fbf7f2] p-3 sm:rounded-2xl sm:p-4">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Cantidad</span>
                   <span>{safeQuantity}</span>
@@ -785,7 +785,7 @@ export default function MatCustomizer() {
                   </div>
                 )}
 
-                <div className="mt-3 flex justify-between border-t border-gray-200 pt-3 text-lg font-bold text-gray-900">
+                <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-200 pt-3 text-base font-bold text-gray-900 sm:text-lg">
                   <span>Total estimado</span>
                   <span>{formatMoney(estimatedTotal)}</span>
                 </div>
@@ -794,12 +794,12 @@ export default function MatCustomizer() {
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
-                className="mt-4 w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-gray-700"
+                className="mt-3 min-h-12 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-gray-700 sm:mt-4 sm:rounded-full sm:px-5"
               >
                 Solicitar y comprar
               </button>
 
-              <p className="mt-3 text-center text-xs leading-5 text-gray-500">
+              <p className="mt-2 text-center text-[11px] leading-5 text-gray-500 sm:mt-3 sm:text-xs">
                 Al continuar, se descargará la imagen de tu diseño y se abrirá
                 WhatsApp con tu cotización. Adjunta la imagen descargada en el
                 chat.
