@@ -9,33 +9,33 @@ export default function GuiaTapetes() {
         <meta name="description" content="Guía para elegir un tapete de yoga y Pilates: materiales, grosor, dimensiones, uso y personalización. Consejos de Melocotón Move." />
         <link rel="canonical" href="https://www.melocotonmove.com/guia-elegir-tapete-yoga-pilates" />
       </Head>
-      <main className="bg-gray-50 px-6 py-16">
-        <article className="mx-auto max-w-3xl text-gray-700">
-          <nav aria-label="Ruta de navegación" className="mb-6 text-sm">
+      <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-16">
+        <article className="mx-auto max-w-3xl text-sm leading-7 text-gray-700 sm:text-base">
+          <nav aria-label="Ruta de navegación" className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-gray-600 sm:text-sm">
             <Link className="underline" href="/">Inicio</Link> / <Link className="underline" href="/tapetes-yoga-pilates">Tapetes de yoga y Pilates</Link> / Guía de compra
           </nav>
-          <h1 className="text-3xl sm:text-4xl font-bold text-brand-blue">Cómo elegir un tapete de yoga y Pilates</h1>
-          <p className="mt-5 leading-relaxed">Para elegir un mat, piensa primero en el tipo de ejercicios que realizas, el espacio disponible y la sensación que buscas al apoyar manos, pies y rodillas. Compara las especificaciones de cada producto antes de decidir.</p>
-          <section className="mt-10 space-y-3">
-            <h2 className="text-2xl font-semibold text-brand-blue">1. Revisa los materiales</h2>
+          <h1 className="text-2xl font-bold leading-tight text-brand-blue sm:text-4xl">Cómo elegir un tapete de yoga y Pilates</h1>
+          <p className="mt-4 text-base leading-7 sm:mt-5 sm:text-lg sm:leading-8">Para elegir un mat, piensa primero en el tipo de ejercicios que realizas, el espacio disponible y la sensación que buscas al apoyar manos, pies y rodillas. Compara las especificaciones de cada producto antes de decidir.</p>
+          <section className="mt-9 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-10 sm:p-7">
+            <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">1. Revisa los materiales</h2>
             <p>Los tapetes profesionales de Melocotón Move combinan una superficie de poliuretano de alto grado con una base de caucho natural. La sensación de contacto y el mantenimiento pueden variar entre materiales; consulta los detalles de cada modelo y sigue sus indicaciones de cuidado.</p>
           </section>
-          <section className="mt-9 space-y-3">
-            <h2 className="text-2xl font-semibold text-brand-blue">2. Elige el grosor y las dimensiones</h2>
+          <section className="mt-4 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
+            <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">2. Elige el grosor y las dimensiones</h2>
             <p>En la colección de mats profesionales encontrarás opciones de 5 mm. Además del grosor, comprueba el largo y ancho indicados en la ficha: necesitas espacio suficiente para estirarte y hacer los movimientos de tu rutina.</p>
           </section>
-          <section className="mt-9 space-y-3">
-            <h2 className="text-2xl font-semibold text-brand-blue">3. Considera dónde vas a practicar</h2>
+          <section className="mt-4 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
+            <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">3. Considera dónde vas a practicar</h2>
             <p>Para practicar en casa, revisa las dimensiones de tu espacio. Para llevar un mat al estudio, considera también su peso, el modo de transporte y las recomendaciones de tu instructor.</p>
           </section>
-          <section className="mt-9 space-y-3">
-            <h2 className="text-2xl font-semibold text-brand-blue">4. ¿Buscas un tapete personalizado?</h2>
+          <section className="mt-4 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
+            <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">4. ¿Buscas un tapete personalizado?</h2>
             <p>Melocotón Move ofrece opciones de personalización mediante grabado láser. Revisa qué modelos admiten personalización y las opciones disponibles antes de realizar tu pedido.</p>
           </section>
-          <section className="mt-10 border-t border-gray-200 pt-8">
-            <h2 className="text-xl font-semibold text-brand-blue">Explora los tapetes disponibles</h2>
+          <section className="mt-10 rounded-2xl bg-white p-5 shadow-sm sm:p-7">
+            <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-xl">Explora los tapetes disponibles</h2>
             <p className="mt-2">Compara colores, formas y especificaciones directamente en nuestro catálogo.</p>
-            <Link href="/tapetes-yoga-pilates" className="mt-4 inline-block rounded-lg bg-brand-blue px-5 py-3 font-semibold text-white">Ver tapetes de yoga y Pilates</Link>
+            <Link href="/tapetes-yoga-pilates" className="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-brand-blue px-5 py-3 text-center font-semibold text-white sm:inline-flex sm:w-auto">Ver tapetes de yoga y Pilates</Link>
           </section>
         </article>
       </main>
