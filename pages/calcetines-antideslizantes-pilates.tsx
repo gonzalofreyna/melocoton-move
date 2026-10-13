@@ -7,6 +7,7 @@ export const getStaticProps = seoCategoryProps("socks");
 export default function CalcetinesPilates({ products }: SeoCategoryProps) {
   return <SeoCategoryPage
     products={products}
+    productCategory="calcetas"
     title="Calcetas Antideslizantes para Pilates | Melocotón Move México"
     description="Compra en México calcetas antideslizantes Melocotón Move para Pilates reformer, piso y barre. Modelos Basic y Curly, ajuste unitalla y distintos colores."
     heading="Calcetas antideslizantes para Pilates, reformer y barre"

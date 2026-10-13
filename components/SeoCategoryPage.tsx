@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import ProductCard from "./ProductCard";
+import { useProducts } from "../context/ProductsContext";
 import { useAppConfig } from "../context/ConfigContext";
 import type { OfferBadgeConfig, AppConfig } from "../lib/fetchConfig";
 import type { Product } from "../lib/fetchProducts";
@@ -13,6 +14,7 @@ type Props = SeoCategoryProps & {
   heading: string;
   intro: string;
   canonicalPath: string;
+  productCategory: "mat" | "calcetas";
   contentSections?: { heading: string; body: string }[];
   faqs?: { question: string; answer: string }[];
   guide?: { href: string; title: string; description: string };
@@ -20,13 +22,20 @@ type Props = SeoCategoryProps & {
 };
 
 export default function SeoCategoryPage({
-  products, title, description, heading, intro, canonicalPath, contentSections = [], faqs = [], guide, customizer,
+  products, title, description, heading, intro, canonicalPath, productCategory, contentSections = [], faqs = [], guide, customizer,
 }: Props) {
   const { config } = useAppConfig();
+  const { products: liveProducts, loading: liveLoading, error: liveError } = useProducts();
   const offerBadge = config?.offerBadge ?? ({ enabled: false } as OfferBadgeConfig);
   const featureFlags = config?.featureFlags ?? ({} as AppConfig["featureFlags"]);
+  // Los productos pre-renderizados mantienen SEO y la carga inicial.
+  // En cuanto responde la API en el navegador, precios/stock/variantes se
+  // toman de la misma fuente actualizada que usan /products y el carrito.
+  const displayProducts = !liveLoading && !liveError
+    ? liveProducts.filter((item) => item.category.trim().toLowerCase() === productCategory)
+    : products;
   const groups = new Map<string, Product[]>();
-  for (const product of products) {
+  for (const product of displayProducts) {
     const key = product.name.trim().toLowerCase();
     groups.set(key, [...(groups.get(key) ?? []), product]);
   }
