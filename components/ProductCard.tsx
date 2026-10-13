@@ -23,7 +23,11 @@ export default function ProductCard({
   featureFlags,
 }: Props) {
   const { addToCart } = useCart();
-  const [selectedProduct, setSelectedProduct] = useState<Product>(product);
+  // Guardamos solo la variante seleccionada: el precio y stock deben venir
+  // siempre de las props más recientes (API/ISR), no de un objeto congelado.
+  const [selectedSlug, setSelectedSlug] = useState(product.slug);
+  const selectedProduct =
+    variants?.find((variant) => variant.slug === selectedSlug) ?? product;
   const finalPrice = selectedProduct.discountPrice ?? selectedProduct.fullPrice;
   const img = resolveImage(selectedProduct.image);
 
@@ -106,7 +110,7 @@ export default function ProductCard({
                 <button
                   key={variant.slug}
                   type="button"
-                  onClick={() => setSelectedProduct(variant)}
+                  onClick={() => setSelectedSlug(variant.slug)}
                   aria-label={`Seleccionar ${variant.name}`}
                   className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border shadow-sm transition-all ${
                     isSelected
