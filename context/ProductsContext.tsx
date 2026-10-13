@@ -36,7 +36,8 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchProducts();
+      // Precios y descuentos no deben reutilizar el caché de navegación de 30 min.
+      const data = await fetchProducts({ fresh: true });
 
       // 🆕 Ahora cada producto incluye `shippingType` y `freeShipping` normalizados.
       setProducts(data);
