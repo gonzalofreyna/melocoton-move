@@ -22,14 +22,14 @@ export default function CategoriasSection({
   if (!Array.isArray(categories) || categories.length === 0) return null;
 
   return (
-    <section className="py-24 px-6 bg-white w-full">
+    <section className="mm-section bg-brand-cream px-4 sm:px-6">
       {/* 🩷 Título principal */}
       <motion.h2
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="text-4xl font-bold text-brand-blue mb-16 text-center tracking-tight"
+        className="mm-heading mb-10 text-center text-4xl sm:mb-14 sm:text-5xl"
       >
         {title}
       </motion.h2>
@@ -107,7 +107,7 @@ export default function CategoriasSection({
                     w-full
                     h-full
                     object-cover
-                    rounded-3xl
+                    rounded-2xl
                     transition-transform
                     duration-700
                     sm:hover:scale-105  // ✅ hover solo en desktop
@@ -137,7 +137,7 @@ export default function CategoriasSection({
                 </div>
 
                 {/* 🏷️ Nombre debajo */}
-                <p className="mt-5 text-base sm:text-lg font-semibold text-brand-blue text-center">
+                <p className="mt-5 text-sm sm:text-lg font-medium tracking-[0.03em] text-brand-ink text-center">
                   {cat.name}
                 </p>
               </motion.div>
