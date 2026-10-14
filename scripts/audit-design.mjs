@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const home = read("pages/index.tsx");
 const hero = read("components/HeroSection.tsx");
+const app = read("pages/_app.tsx");
+const header = read("components/Header.tsx");
 const tailwind = read("tailwind.config.js");
 const css = read("styles/globals.css");
 const productCard = read("components/ProductCard.tsx");
@@ -16,6 +18,8 @@ const checks = [
   ["fondo blanco puro", tailwind.includes('cream: "#FFFFFF"') && css.includes("--mm-cream: #ffffff;") && css.includes("background: var(--mm-cream)")],
   ["tipografía de título", tailwind.includes("display:") && css.includes(".mm-heading")],
   ["componentes unificados", [".mm-card", ".mm-button", ".mm-button-outline", ".mm-field"].every((key) => css.includes(key))],
+  ["offset del header responsive", app.includes("onHeightChange={setHeaderOffset}") && app.includes("paddingTop: headerOffset") && !app.includes('className="flex-1 pt-32"')],
+  ["medición del header estable", header.includes("header.offsetTop + header.offsetHeight") && header.includes("new ResizeObserver(updateOffset)") && header.includes("ref={headerRef}")],
   ["Hero en HTML inicial", home.includes("<HeroSection />") && !home.includes("showHero && <HeroSection")],
   ["único H1 del Hero", hero.includes("idx === mainTitleIndex") && hero.includes('<h1 className=') && hero.includes('<h2 className=')],
   ["H1 SSR dentro del Hero", hero.includes('<section aria-label="Hero de Melocotón Move" className="sr-only">') && hero.includes("Melocotón Move: tapetes de yoga y Pilates en México")],
