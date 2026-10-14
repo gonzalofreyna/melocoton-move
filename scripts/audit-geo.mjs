@@ -26,6 +26,17 @@ for (const { path, required, schema } of checks) {
     for (const value of required) {
       if (!visibleHtml.includes(value)) errors.push(path + ": falta contenido HTML visible " + value);
     }
+    if (path === "/melocoton-en-movimiento") {
+      const videos = [...visibleHtml.matchAll(/<source\b[^>]*\bsrc="(https:\/\/melocoton-move-assets\.s3\.us-east-1\.amazonaws\.com\/videos\/customers\/[^"]+\.mp4)"/gi)]
+        .map((m) => m[1]);
+      if (videos.length !== 9 || new Set(videos).size !== 9) {
+        errors.push("/melocoton-en-movimiento: deben aparecer 9 videos S3 únicos en el HTML inicial");
+      }
+      const posters = [...visibleHtml.matchAll(/\bposter="(https:\/\/melocoton-move-assets\.s3\.us-east-1\.amazonaws\.com\/videos\/customers\/[^"]+-poster\.webp)"/gi)];
+      if (posters.length !== 9) {
+        errors.push("/melocoton-en-movimiento: deben existir 9 referencias a portadas WebP");
+      }
+    }
     if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
       errors.push("/crea-tu-mat: falta H1 visible en el HTML inicial");
     }
