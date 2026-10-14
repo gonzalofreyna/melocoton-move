@@ -28,7 +28,7 @@ export default function OpeningStudioSection({
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="overflow-hidden rounded-2xl shadow-md"
+          className="overflow-hidden rounded-2xl border border-brand-line shadow-editorial"
         >
           <img
             src={image}
@@ -44,13 +44,13 @@ export default function OpeningStudioSection({
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-left"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-brand-blue mb-4">
+          <h2 className="mm-heading mb-4 text-3xl sm:text-5xl">
             {title}
           </h2>
           <p className="text-gray-600 leading-relaxed mb-8">{description}</p>
           <a
             href={buttonHref}
-            className="inline-block bg-brand-blue text-white font-semibold px-6 py-3 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-transform transform hover:scale-105 shadow-md"
+            className="mm-button"
           >
             {buttonText}
           </a>
