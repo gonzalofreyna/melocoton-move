@@ -111,9 +111,6 @@ export default function MelocotonEnMovimientoPage() {
                   Descubre nuestra comunidad y los productos de Melocotón Move
                   a través de una selección de videos.
                 </p>
-                <p className="mt-2 text-xs text-gray-500 sm:text-sm">
-                  El video destacado inicia sin sonido. Puedes activarlo desde el reproductor.
-                </p>
                 <div className="mt-7 hidden flex-wrap gap-5 text-sm font-semibold text-brand-blue lg:flex">
                   <Link className="underline underline-offset-4" href="/tapetes-yoga-pilates">Explorar tapetes</Link>
                   <Link className="underline underline-offset-4" href="/crea-tu-mat">Personalizar mi mat</Link>
@@ -137,7 +134,7 @@ export default function MelocotonEnMovimientoPage() {
               </p>
             </div>
 
-            <div className="-mx-0 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-5 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-6 sm:pb-0 md:grid-cols-3 lg:grid-cols-4 lg:px-10">
+            <div className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-5 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-6 sm:pb-0 md:grid-cols-3 lg:grid-cols-4 lg:px-10">
               {otherIds.map((id, offset) => (
                 <VideoCard key={id} id={id} index={offset + 1} />
               ))}
