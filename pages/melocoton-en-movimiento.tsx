@@ -2,8 +2,8 @@ import Head from "next/head";
 import Link from "next/link";
 
 // Los nueve videos provienen de los enlaces S3 entregados por Melocotón Move.
-// Las portadas siguen los nombres locales preparados con FFmpeg; comprobar
-// que todas las WebP estén en S3 antes de aprobar el PR.
+// Los MP4 están en /videos/customers/ y las portadas WebP en /videos/customers/portada/.
+// Confirmar acceso HTTP público a ambos tipos de recurso antes del merge.
 const MEDIA_BASE =
   "https://melocoton-move-assets.s3.us-east-1.amazonaws.com/videos/customers/";
 
@@ -27,7 +27,7 @@ type VideoCardProps = {
 
 function VideoCard({ id, index, featured = false }: VideoCardProps) {
   const src = `${MEDIA_BASE}${id}.mp4`;
-  const poster = `${MEDIA_BASE}${id}-poster.webp`;
+  const poster = `${MEDIA_BASE}portada/${id}-poster.webp`;
 
   return (
     <figure className={featured ? "mx-auto w-full max-w-[430px]" : "w-full min-w-0"}>
