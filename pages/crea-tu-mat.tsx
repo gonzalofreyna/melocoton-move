@@ -72,6 +72,17 @@ export default function CreaTuMatPage() {
             de alto grado. Elige forma, color o textura y añade tu logo desde una sola unidad,
             tanto para tu práctica como para tu estudio.
           </p>
+          <section aria-labelledby="formas-mat-disponibles" className="mt-5 rounded-xl border border-gray-200 bg-white/75 p-4 sm:p-5">
+            <h2 id="formas-mat-disponibles" className="text-base font-semibold text-gray-900 sm:text-lg">
+              Tres formas para personalizar tu mat
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-gray-700">
+              <strong>Cápsula:</strong> extremos redondeados.{" "}
+              <strong>Bala:</strong> un extremo redondeado y otro más recto.{" "}
+              <strong>Clásico:</strong> contorno rectangular de esquinas suavizadas.
+              Elige cualquiera de estas formas, selecciona color o textura y agrega tu logo con grabado láser desde una sola pieza.
+            </p>
+          </section>
           <p className="mt-3 text-sm leading-6 text-gray-600 sm:text-base">
             Diseña tu mat en el personalizador de abajo. Al finalizar, descarga la vista previa
             y envía tu solicitud de compra por WhatsApp.
