@@ -1,6 +1,7 @@
 // pages/products.tsx
 import { useRouter } from "next/router";
 import Head from "next/head";
+import Link from "next/link";
 import { useMemo } from "react";
 import ProductCard from "../components/ProductCard";
 import { useProducts } from "../context/ProductsContext";
@@ -120,9 +121,18 @@ export default function ProductsPage() {
         <link rel="canonical" href="https://www.melocotonmove.com/products" />
       </Head>
       <main className="flex min-h-screen flex-col items-center bg-brand-cream px-4 py-12 sm:px-6 sm:py-20">
-      <h1 className="mm-heading mb-12 text-center text-4xl sm:text-5xl">
+      <h1 className="mm-heading mb-6 text-center text-4xl sm:text-5xl">
         {title}
       </h1>
+      {/* Estos enlaces se prerenderizan aunque el catálogo cargue en el navegador. */}
+      <nav
+        aria-label="Explora nuestras categorías de Pilates y yoga"
+        className="mb-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs sm:mb-12 sm:text-sm"
+      >
+        <Link className="mm-text-link" href="/tapetes-yoga-pilates">Tapetes de yoga y Pilates</Link>
+        <Link className="mm-text-link" href="/calcetines-antideslizantes-pilates">Calcetas antideslizantes</Link>
+        <Link className="mm-text-link" href="/crea-tu-mat">Personaliza tu mat</Link>
+      </nav>
 
       {isLoading && <p className="text-gray-500">Cargando productos…</p>}
       {anyError && !isLoading && (
