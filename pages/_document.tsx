@@ -51,7 +51,7 @@ export default function Document() {
         />
 
         {/* Tipografías nativas del sistema definidas por Tailwind.
-            Sin petición externa de Poppins, que no utiliza el diseño actual. */}
+            Sin peticiones externas a Google Fonts para cargar fuentes no utilizadas. */}
 
         {/* JSON-LD global */}
         <script
