@@ -89,6 +89,15 @@ try {
       } else {
         const entries = collection.mainEntity.itemListElement || [];
         if (!entries.length) errors.push(path + ": ItemList sin productos");
+        const hydration = html.match(/<script\b[^>]*\bid=["\x27]__NEXT_DATA__["\x27][^>]*>([\s\S]*?)<\/script>/i);
+        let categoryProducts = [];
+        try { categoryProducts = JSON.parse(hydration?.[1] ?? "{}")?.props?.pageProps?.products ?? []; }
+        catch { errors.push(path + ": hidratación de categoría inválida"); }
+        const expectedSlugs = categoryProducts.filter((item) => item.category === (path === "/tapetes-yoga-pilates" ? "mat" : "calcetas")).map((item) => item.slug);
+        const actualSlugs = entries.map((item) => item.url?.slice(site.length + 1));
+        if (expectedSlugs.length !== actualSlugs.length || expectedSlugs.some((slug) => !actualSlugs.includes(slug))) {
+          errors.push(path + ": ItemList no enumera todas las variantes del catálogo");
+        }
         const urls = new Set();
         for (const [index, entry] of entries.entries()) {
           if (entry["@type"] !== "ListItem" || entry.position !== index + 1 ||
