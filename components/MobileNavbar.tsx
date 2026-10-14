@@ -46,7 +46,7 @@ export default function MobileNavbar() {
   rounded-full
   bg-[#FFD6CC]/55
   backdrop-blur-lg
-  border border-white/35
+  border border-brand-line
   shadow-[0_10px_30px_rgba(91,58,50,0.14)]
   flex justify-around items-center
   px-3 py-3
