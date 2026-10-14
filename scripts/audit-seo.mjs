@@ -89,6 +89,15 @@ try {
       } else {
         const entries = collection.mainEntity.itemListElement || [];
         if (!entries.length) errors.push(path + ": ItemList sin productos");
+        const hydration = html.match(/<script\b[^>]*\bid=["\x27]__NEXT_DATA__["\x27][^>]*>([\s\S]*?)<\/script>/i);
+        let categoryProducts = [];
+        try { categoryProducts = JSON.parse(hydration?.[1] ?? "{}")?.props?.pageProps?.products ?? []; }
+        catch { errors.push(path + ": hidratación de categoría inválida"); }
+        const expectedSlugs = categoryProducts.filter((item) => item.category === (path === "/tapetes-yoga-pilates" ? "mat" : "calcetas")).map((item) => item.slug);
+        const actualSlugs = entries.map((item) => item.url?.slice(site.length + 1));
+        if (expectedSlugs.length !== actualSlugs.length || expectedSlugs.some((slug) => !actualSlugs.includes(slug))) {
+          errors.push(path + ": ItemList no enumera todas las variantes del catálogo");
+        }
         const urls = new Set();
         for (const [index, entry] of entries.entries()) {
           if (entry["@type"] !== "ListItem" || entry.position !== index + 1 ||
@@ -144,6 +153,20 @@ try {
         if (product.offers?.priceCurrency !== "MXN") errors.push(path + ": moneda JSON-LD incorrecta");
         if (!almostEqual(product.offers?.price, price)) errors.push(path + ": precio JSON-LD diferente del producto inicial");
         if (!visibleText(html).includes(price.toFixed(2) + " MXN")) errors.push(path + ": precio no visible en el HTML inicial");
+        if (initialProduct.category === "mat" && /^Mat Profesional\b/i.test(initialProduct.name)) {
+          const seoTitle = text(html, "title");
+          if (!seoTitle.includes("Tapete Yoga y Pilates")) errors.push(path + ": título de mat sin intención de búsqueda Yoga y Pilates");
+        }
+        if (initialProduct.category === "calcetas" && /^Calceta(?:s)? Antiderrapante(?:s)?\b/i.test(initialProduct.name)) {
+          if (!text(html, "title").includes("Calcetas Antideslizantes")) errors.push(path + ": título de calcetas sin término antideslizantes");
+        }
+        if (initialProduct.slug.startsWith("mini-ball-pilates-")) {
+          const color = initialProduct.slug.slice("mini-ball-pilates-".length);
+          const title = text(html, "title").toLowerCase();
+          if (!title.startsWith("mini ball pilates 20 cm ") || !title.includes(color)) {
+            errors.push(path + ": título Mini Ball sin Pilates, medida o color");
+          }
+        }
         const h1 = text(html, "h1");
         if (!h1 || h1 !== product.name) errors.push(path + ": H1 y nombre JSON-LD diferentes");
         if (breadcrumb?.itemListElement?.[2]?.name !== product.name) errors.push(path + ": breadcrumb sin nombre de variante correcto");
@@ -157,6 +180,17 @@ try {
         if (product.weight?.value !== expectedWeight ||
             (expectedWeight != null && product.weight?.unitCode !== "GRM")) {
           errors.push(path + ": peso JSON-LD distinto del catálogo");
+        }
+        const initialRelated = (() => {
+          try { return JSON.parse(hydration[1])?.props?.pageProps?.initialRelated; }
+          catch { return null; }
+        })();
+        if (!Array.isArray(initialRelated)) {
+          errors.push(path + ": faltan relacionados iniciales en la ficha");
+        } else {
+          for (const related of initialRelated) {
+            if (!html.includes(`href="/${related.slug}"`)) errors.push(path + ": falta enlace SSR a relacionado " + related.slug);
+          }
         }
         const initialVariants = (() => {
           try { return JSON.parse(hydration[1])?.props?.pageProps?.initialVariants; }

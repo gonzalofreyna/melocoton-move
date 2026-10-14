@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 import type React from "react";
 import type { GetStaticPaths, GetStaticProps } from "next";
 
-type ProductPageProps = { initialProduct: Product; initialVariants: Product[] };
+type ProductPageProps = { initialProduct: Product; initialVariants: Product[]; initialRelated: Product[] };
 
 // Generación bajo demanda de slugs nuevos, con revalidación cada 30 minutos.
 export const getStaticPaths: GetStaticPaths = async () => ({
@@ -35,16 +35,19 @@ export const getStaticProps: GetStaticProps<ProductPageProps> = async ({ params 
   const initialVariants = products.filter((item) =>
     item.name.trim().toLowerCase().replace(/\s+/g, " ") === productKey,
   );
+  const relatedSlugs = new Set(initialProduct.related ?? []);
+  const initialRelated = products.filter((item) => relatedSlugs.has(item.slug) && item.slug !== initialProduct.slug);
   return {
     props: {
       initialProduct: JSON.parse(JSON.stringify(initialProduct)) as Product,
       initialVariants: JSON.parse(JSON.stringify(initialVariants)) as Product[],
+      initialRelated: JSON.parse(JSON.stringify(initialRelated)) as Product[],
     },
     revalidate: 1800,
   };
 };
 
-export default function ProductDetail({ initialProduct, initialVariants }: ProductPageProps) {
+export default function ProductDetail({ initialProduct, initialVariants, initialRelated }: ProductPageProps) {
   const router = useRouter();
   const { slug } = router.query;
   const { addToCart } = useCart();
@@ -199,7 +202,18 @@ export default function ProductDetail({ initialProduct, initialVariants }: Produ
   const seoProductName = variantColor
     ? `${product.name} ${variantColor}`
     : product.name;
-  const title = `${seoProductName} | Melocotón Move`;
+  // El título de mats comunica la intención de búsqueda sin modificar el nombre comercial visible.
+  const seoTitleName = product.category === "mat" && /^Mat Profesional\b/i.test(seoProductName)
+    ? seoProductName.replace(/^Mat Profesional\b/i, "Tapete Yoga y Pilates")
+    : seoProductName;
+  const commercialTitleName = product.category === "calcetas"
+    ? seoTitleName.replace(/^Calceta(?:s)? Antiderrapante(?:s)?\b/i, "Calcetas Antideslizantes")
+    : seoTitleName;
+  // Títulos concisos de Mini Ball: intención Pilates, medida y color reales.
+  const searchTitleName = product.slug.toLowerCase().startsWith("mini-ball-pilates-") && variantColor
+    ? `Mini Ball Pilates 20 cm ${variantColor}`
+    : commercialTitleName;
+  const title = `${searchTitleName} | Melocotón Move`;
   const categoryKeyword =
     product.category === "mat"
       ? "tapete de yoga y Pilates"
@@ -341,8 +355,10 @@ export default function ProductDetail({ initialProduct, initialVariants }: Produ
   ) : null;
 
   const relatedSlugs = product.related ?? [];
+  // Conservar los enlaces a productos relacionados en el HTML inicial.
+  const relatedCatalog = products.length ? products : [initialProduct, ...initialRelated];
   const related = relatedSlugs
-    .map((s) => products.find((p) => p.slug === s))
+    .map((s) => relatedCatalog.find((p) => p.slug === s))
     .filter(Boolean) as Product[];
 
   return (
