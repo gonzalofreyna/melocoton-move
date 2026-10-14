@@ -41,18 +41,18 @@ export default function SearchModal({
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl overflow-hidden rounded-3xl border border-brand-line bg-brand-cream shadow-editorial-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 🔎 Input de búsqueda */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between border-b border-brand-line p-5">
           <input
             type="text"
             placeholder="Buscar productos..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
-            className="w-full outline-none text-base md:text-lg px-2 text-gray-800 placeholder-gray-400"
+            className="w-full bg-transparent px-2 text-base text-brand-ink outline-none placeholder:text-brand-muted md:text-lg"
           />
           <button
             onClick={onClose}
@@ -77,14 +77,14 @@ export default function SearchModal({
                   <Link
                     href={`/${p.slug}`} // 👈 ya sin /products/
                     onClick={onClose}
-                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-all duration-150"
+                    className="flex items-center gap-4 rounded-2xl p-3 transition-colors duration-150 hover:bg-brand-sand"
                   >
                     {/* 🖼️ Imagen */}
                     <div className="flex-shrink-0">
                       <img
                         src={p.image}
                         alt={p.name}
-                        className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm"
+                        className="h-16 w-16 rounded-xl border border-brand-line object-cover"
                         loading="lazy"
                       />
                     </div>
