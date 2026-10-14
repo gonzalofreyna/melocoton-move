@@ -116,7 +116,7 @@ export default function CategoriasSection({
                       src={overlaySrc}
                       alt={`${cat.name} overlay`}
                       className="
-                      opacity-0 sm:hover:opacity-90  // ✅ hover solo desktop
+                      opacity-0 sm:hover:opacity-90
                       w-[70%] h-[70%] lg:w-[85%] lg:h-[85%]
                       transition-all duration-700 ease-out
                       filter brightness-[300%] saturate-150
