@@ -20,7 +20,7 @@ export default function Logo({ className = "" }) {
           maskRepeat: "no-repeat",
           maskSize: "contain",
           maskPosition: "center",
-          background: "linear-gradient(270deg, #1A120Eff, #1A120Eff)",
+          background: "#3E3236",
           backgroundSize: "400% 400%",
           backgroundPosition: "0% 50%",
         }}
