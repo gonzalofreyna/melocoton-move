@@ -77,6 +77,16 @@
 .featured-products-swiper .swiper-button-prev::after,
 .featured-products-swiper .swiper-button-next::after { font-size: 13px; font-weight: 600; }
 
+/* Product cards: gesto táctil + sobre la foto; CTA editorial con cursor.
+   El color de fondo de la imagen sigue siendo blanco puro. */
+.mm-product-quick-add { display: flex; }
+.mm-product-desktop-buy { display: none; }
+
+@media (hover: hover) and (min-width: 1024px) {
+  .mm-product-quick-add { display: none; }
+  .mm-product-desktop-buy { display: flex; }
+}
+
 .melocoton-hero .swiper-pagination { bottom: 25px !important; }
 .melocoton-hero .swiper-pagination-bullet {
   width: 22px; height: 3px; border-radius: 4px;
