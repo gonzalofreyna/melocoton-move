@@ -33,7 +33,7 @@ try {
     else titles.set(title, path);
     if (!description) errors.push(`${path}: falta meta description`);
     if (url !== site + (path === "/" ? "/" : path)) errors.push(`${path}: canonical incorrecta: ${url}`);
-    const isProduct = !["/", "/products", "/aboutus", "/contact", "/arma-tu-studio", "/crea-tu-mat", "/tapetes-yoga-pilates", "/calcetines-antideslizantes-pilates", "/guia-elegir-tapete-yoga-pilates", "/guia-calcetas-antideslizantes-pilates"].includes(path);
+    const isProduct = !["/", "/products", "/aboutus", "/contact", "/arma-tu-studio", "/crea-tu-mat", "/melocoton-en-movimiento", "/tapetes-yoga-pilates", "/calcetines-antideslizantes-pilates", "/guia-elegir-tapete-yoga-pilates", "/guia-calcetas-antideslizantes-pilates"].includes(path);
     if (isProduct) {
       products++;
       const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
