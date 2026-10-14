@@ -198,33 +198,14 @@ export default function MelocotonEnMovimientoPage() {
               Para ejercicios de reformer y barre, descubre nuestra colección de
               calcetas antideslizantes para Pilates.
             </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-3 text-sm font-semibold text-brand-blue">
+            <nav aria-label="Explorar productos y guías" className="mt-6 flex flex-col items-center justify-center gap-4 text-sm font-semibold text-brand-blue sm:flex-row sm:flex-wrap sm:gap-6">
               <Link className="underline underline-offset-4" href="/tapetes-yoga-pilates">Explorar mats</Link>
               <Link className="underline underline-offset-4" href="/calcetines-antideslizantes-pilates">Ver calcetas de Pilates</Link>
               <Link className="underline underline-offset-4" href="/crea-tu-mat">Crear mi mat</Link>
-            </div>
-          </section>
-
-          <section className="mx-4 mt-10 max-w-3xl border-t border-gray-200 pt-9 text-center sm:mx-auto sm:mt-14 sm:px-6">
-            <h2 className="text-xl font-semibold text-brand-blue">
-              Descubre los tapetes y accesorios de Melocotón Move
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
-              Explora nuestros tapetes de yoga y Pilates, conoce los materiales
-              de cada modelo o diseña un mat con tu logo desde una pieza.
-            </p>
-            <nav aria-label="Explorar productos" className="mt-6 flex flex-col items-center justify-center gap-4 text-sm font-semibold text-brand-blue sm:flex-row sm:flex-wrap sm:gap-6">
-              <Link className="underline underline-offset-4" href="/tapetes-yoga-pilates">
-                Ver tapetes
-              </Link>
-              <Link className="underline underline-offset-4" href="/crea-tu-mat">
-                Personalizar mi mat
-              </Link>
-              <Link className="underline underline-offset-4" href="/guia-elegir-tapete-yoga-pilates">
-                Guía de materiales y elección
-              </Link>
+              <Link className="underline underline-offset-4" href="/guia-elegir-tapete-yoga-pilates">Guía de materiales y elección</Link>
             </nav>
           </section>
+
         </div>
       </main>
     </>
