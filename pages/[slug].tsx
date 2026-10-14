@@ -546,6 +546,20 @@ export default function ProductDetail({ initialProduct, initialVariants }: Produ
               </p>
             )}
 
+            {product.category === "mat" && (
+              <nav
+                aria-label="Información para elegir y personalizar tu mat"
+                className="flex flex-wrap gap-x-6 gap-y-2 text-xs sm:text-sm"
+              >
+                <Link className="mm-text-link" href="/guia-elegir-tapete-yoga-pilates">
+                  Cómo elegir tu tapete
+                </Link>
+                <Link className="mm-text-link" href="/crea-tu-mat">
+                  Personaliza un mat con tu logo
+                </Link>
+              </nav>
+            )}
+
             {product.category === "calcetas" && (
               <section aria-label="Talla y guía de calcetas" className="rounded-2xl border border-brand-line bg-brand-sand p-5">
                 <p className="text-sm text-gray-800">
