@@ -206,7 +206,10 @@ export default function ProductDetail({ initialProduct, initialVariants, initial
   const seoTitleName = product.category === "mat" && /^Mat Profesional\b/i.test(seoProductName)
     ? seoProductName.replace(/^Mat Profesional\b/i, "Tapete Yoga y Pilates")
     : seoProductName;
-  const title = `${seoTitleName} | Melocotón Move`;
+  const commercialTitleName = product.category === "calcetas"
+    ? seoTitleName.replace(/^Calceta(?:s)? Antiderrapante(?:s)?\b/i, "Calcetas Antideslizantes")
+    : seoTitleName;
+  const title = `${commercialTitleName} | Melocotón Move`;
   const categoryKeyword =
     product.category === "mat"
       ? "tapete de yoga y Pilates"
