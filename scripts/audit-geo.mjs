@@ -10,7 +10,7 @@ const checks = [
   { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates", "Diseñar mi tapete personalizado", "/crea-tu-mat"] },
   { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
   { path: "/crea-tu-mat", required: ["Desde una sola pieza", "Personalización láser", "Tapetes de yoga y Pilates personalizados con tu logo en México", "/tapetes-yoga-pilates"] },
-  { path: "/melocoton-en-movimiento", required: ["Melocotón en movimiento", "Historias que nos inspiran", "/tapetes-yoga-pilates", "4125f23c3a9141589692e1587489afbe.mp4"] },
+  { path: "/melocoton-en-movimiento", required: ["Melocotón en movimiento", "Historias que nos inspiran", "Del movimiento a tu práctica", "/tapetes-yoga-pilates", "/calcetines-antideslizantes-pilates", "4125f23c3a9141589692e1587489afbe.mp4"] },
 ];
 const errors = [];
 const read = async (path) => {
@@ -46,6 +46,26 @@ for (const { path, required, schema } of checks) {
       const expectedPosters = videos.map((video) => video.replace("/videos/customers/", "/videos/customers/portada/").replace(/\.mp4$/i, "-poster.webp"));
       if (posters.length !== 9 || new Set(posters).size !== 9 || expectedPosters.some((poster) => !posters.includes(poster))) {
         errors.push("/melocoton-en-movimiento: faltan portadas WebP en /videos/customers/portada/ o no corresponden a los MP4");
+      }
+      const seoTitle = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "";
+      if (!seoTitle.includes("Videos de Pilates y yoga") || seoTitle.length > 60) {
+        errors.push("/melocoton-en-movimiento: título SEO ausente o demasiado extenso");
+      }
+      const ogImage = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)?.[1] ?? "";
+      if (ogImage !== posters[0]) errors.push("/melocoton-en-movimiento: og:image debe usar la portada del video principal");
+      if (!html.includes('name="twitter:card"')) errors.push("/melocoton-en-movimiento: falta twitter:card");
+      const jsonLd = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+        .flatMap((match) => { try { return [JSON.parse(match[1])]; } catch { errors.push("/melocoton-en-movimiento: JSON-LD inválido"); return []; } });
+      const breadcrumb = jsonLd.find((item) => item["@type"] === "BreadcrumbList");
+      if (breadcrumb?.itemListElement?.length !== 2 ||
+          breadcrumb.itemListElement?.[1]?.item !== "https://www.melocotonmove.com/melocoton-en-movimiento") {
+        errors.push("/melocoton-en-movimiento: falta BreadcrumbList válido");
+      }
+      for (const item of jsonLd.filter((item) => item["@type"] === "VideoObject")) {
+        if (!item.name?.trim() || !item.description?.trim() || !/^\d{4}-\d{2}-\d{2}/.test(item.uploadDate || "") ||
+            !videos.includes(item.contentUrl) || !posters.includes(item.thumbnailUrl)) {
+          errors.push("/melocoton-en-movimiento: VideoObject sin metadatos verificables o video válido");
+        }
       }
     }
     if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
