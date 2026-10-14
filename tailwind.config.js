@@ -16,7 +16,7 @@ module.exports = {
           wine: "#674650",
           ink: "#30292B",
           muted: "#736764",
-          cream: "#FAF8F5",
+          cream: "#FFFFFF",
           sand: "#F0EAE4",
           blush: "#EBD9D1",
           line: "#E5DBD3",
