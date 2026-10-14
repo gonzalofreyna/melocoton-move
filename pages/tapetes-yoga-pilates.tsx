@@ -15,11 +15,13 @@ export default function TapetesYogaPilates({ products }: SeoCategoryProps) {
     contentSections={[
       { heading: "¿Qué materiales tienen nuestros tapetes?", body: "Nuestros mats profesionales combinan caucho natural y poliuretano de alto grado. Explora cada ficha para elegir la textura, el diseño y las características que mejor se adaptan a tu práctica." },
       { heading: "Tapetes para yoga, Pilates y estudio", body: "Un buen mat acompaña tus ejercicios de piso, estiramientos y trabajo de control. Revisa las medidas, el grosor y las opciones de personalización disponibles en cada modelo antes de elegir." },
+      { heading: "Tapetes en forma de bala, cápsula o clásica", body: "Además del color y la textura, puedes elegir el contorno de tu mat: forma de bala con un extremo redondeado, cápsula con dos extremos redondeados o clásica con esquinas suavizadas. Compara las opciones disponibles y personaliza tu tapete desde una sola pieza." },
     ]}
     faqs={[
       { question: "¿De qué están hechos los tapetes profesionales de Melocotón Move?", answer: "Los mats profesionales de esta colección combinan una superficie de poliuretano de alto grado y una base de caucho natural. Consulta la ficha de cada color o modelo para confirmar sus especificaciones." },
       { question: "¿Qué grosor tienen los tapetes?", answer: "Los tapetes profesionales de esta colección tienen 5 mm de grosor. Antes de comprar, revisa las medidas y detalles de la ficha del modelo elegido." },
       { question: "¿Puedo personalizar un tapete de yoga o Pilates?", answer: "Melocotón Move ofrece opciones de personalización mediante grabado láser. Revisa las opciones del producto o la sección de personalización para elegir un diseño." },
+      { question: "¿Qué es un tapete de yoga o Pilates en forma de bala?", answer: "La forma de bala tiene un extremo redondeado y otro más recto. También puedes elegir la forma cápsula, redondeada en ambos extremos, o la clásica. Consulta las opciones en Crea tu mat." },
     ]}
     customizer={{ href: "/crea-tu-mat", title: "Personaliza tu tapete con logo desde una pieza", description: "Elige la forma, el color o la textura de tu mat profesional y añade un diseño mediante grabado láser. Puedes crear la vista previa y enviar tu solicitud desde una sola unidad." }}
     guide={{ href: "/guia-elegir-tapete-yoga-pilates", title: "Guía para elegir tu tapete", description: "Compara materiales, grosor, medidas y opciones de personalización antes de comprar." }}
