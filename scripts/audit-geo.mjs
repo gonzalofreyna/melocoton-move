@@ -84,7 +84,7 @@ for (const { path, required, schema } of checks) {
     }
     if (path === "/") {
       // El HTML inicial debe contener exactamente un H1, dentro del Hero
-      // y antes de la tarjeta editorial; el carrusel llega después por JS.
+      // y antes de la sección editorial; el carrusel llega después por JS.
       const h1Matches = [...visibleHtml.matchAll(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi)];
       if (h1Matches.length !== 1) {
         errors.push("/: se espera exactamente un H1 en el HTML inicial; encontrados " + h1Matches.length);
