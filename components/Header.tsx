@@ -29,6 +29,16 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
   const visible = useScrollVisibility();
   const { cartCount, toggleCart } = useCart();
   const router = useRouter();
+  const isHome = router.pathname === "/";
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 70);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+  const overlayHeader = isHome && !scrolled;
+  const headerInk = overlayHeader ? "text-white" : "text-brand-blue";
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
@@ -136,13 +146,13 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="fixed left-0 top-8 z-40 grid w-full grid-cols-3 items-center gap-2 border-b border-brand-line bg-white/95 px-4 py-2.5 shadow-[0_4px_22px_rgba(48,41,43,0.06)] backdrop-blur-md md:px-6 md:py-3"
+            className={`fixed left-0 top-9 z-40 grid w-full grid-cols-3 items-center gap-2 px-4 py-2.5 transition-colors duration-300 md:px-6 md:py-3 ${overlayHeader ? "border-b border-transparent bg-transparent text-white [&_nav]:!text-white [&_nav_a]:!text-white" : "border-b border-brand-line bg-white/95 text-brand-blue shadow-[0_4px_22px_rgba(48,41,43,0.06)] backdrop-blur-md"}`}
           >
             {/* 🍑 Columna izquierda: navegación */}
             <div className="flex items-center">
               {/* 🔹 Menú hamburguesa solo visible hasta 1024px */}
               <button
-                className="text-brand-blue focus:outline-none lg:hidden"
+                className={`${headerInk} focus:outline-none lg:hidden`}
                 onClick={() => setDrawerOpen((v) => !v)}
                 aria-label={drawerOpen ? "Cerrar menú" : "Abrir menú"}
                 aria-haspopup="dialog"
@@ -168,14 +178,14 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
                 className="flex items-center justify-center"
                 aria-label="Inicio"
               >
-                <Logo className="h-auto w-[190px] transition-opacity hover:opacity-80 sm:w-[250px] lg:w-[290px]" />
+                <Logo tone={overlayHeader ? "light" : "dark"} className="h-auto w-[150px] transition-opacity hover:opacity-80 sm:w-[190px] lg:w-[210px]" />
               </Link>
             </div>
 
             {/* 🔍 Columna derecha: búsqueda y acciones */}
-            <div className="flex justify-end items-center space-x-4 text-brand-blue relative min-w-0">
+            <div className={`flex justify-end items-center gap-3 sm:gap-4 ${headerInk} relative min-w-0`}>
               {/* 🔎 Búsqueda desktop */}
-              <div className="relative hidden min-[900px]:block w-[220px] lg:w-[280px] xl:w-[320px] flex-shrink-0">
+              <div className={`relative ${overlayHeader ? "hidden" : "hidden min-[900px]:block"} w-[220px] lg:w-[280px] xl:w-[320px] flex-shrink-0`}>
                 <input
                   ref={inputRef}
                   type="text"
@@ -253,7 +263,7 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
               {/* 🔍 Ícono búsqueda móvil */}
               <button
                 onClick={() => setOpenSearchModal(true)}
-                className="block min-[900px]:hidden"
+                className={overlayHeader ? "block" : "block min-[900px]:hidden"}
                 aria-label="Abrir búsqueda"
               >
                 <MagnifyingGlassIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
@@ -261,14 +271,14 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
 
               {/* 👤 Contacto */}
               <Link href="/contact" aria-label="Contacto">
-                <UserIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
+                <UserIcon className="hidden h-7 w-7 hover:text-brand-beige transition-colors sm:block" />
               </Link>
 
               {/* 🛒 Carrito (solo visible en escritorio) */}
               <button
                 onClick={toggleCart}
                 aria-label="Abrir carrito"
-                className="relative hidden min-[900px]:block" // 👈 se oculta en móvil
+                className="relative block" // carrito visible en header editorial
               >
                 <ShoppingCartIcon className="h-7 w-7 hover:text-brand-beige transition-colors" />
                 {cartCount > 0 && (
