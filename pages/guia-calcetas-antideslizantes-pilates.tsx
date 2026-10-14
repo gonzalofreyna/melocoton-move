@@ -10,12 +10,12 @@ export default function GuiaCalcetas() {
         <link rel="canonical" href="https://www.melocotonmove.com/guia-calcetas-antideslizantes-pilates" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://www.melocotonmove.com/"},{"@type":"ListItem","position":2,"name":"Calcetas antideslizantes","item":"https://www.melocotonmove.com/calcetines-antideslizantes-pilates"},{"@type":"ListItem","position":3,"name":"Guía para elegir calcetas","item":"https://www.melocotonmove.com/guia-calcetas-antideslizantes-pilates"}]}) }} />
       </Head>
-      <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-16">
+      <main className="min-h-screen bg-brand-cream px-4 py-10 sm:px-6 sm:py-16">
         <article className="mx-auto max-w-3xl text-sm leading-7 text-gray-700 sm:text-base">
           <nav aria-label="Ruta de navegación" className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-gray-600 sm:text-sm">
             <Link className="underline" href="/">Inicio</Link> / <Link className="underline" href="/calcetines-antideslizantes-pilates">Calcetas antideslizantes</Link> / Guía de compra
           </nav>
-          <h1 className="text-2xl font-bold leading-tight text-brand-blue sm:text-4xl">Cómo elegir calcetas antideslizantes para Pilates</h1>
+          <h1 className="mm-heading text-3xl sm:text-5xl">Cómo elegir calcetas antideslizantes para Pilates</h1>
           <p className="mt-4 text-base leading-7 sm:mt-5 sm:text-lg sm:leading-8">Si buscas calcetas antideslizantes para Pilates de piso, reformer o barre en México, compara el agarre de la planta, el ajuste y la composición. Melocotón Move ofrece modelos unitalla como Basic y Curly; esta guía te ayuda a elegir antes de comprar.</p>
           <section className="mt-9 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-10 sm:p-7">
             <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">1. Comprueba el agarre de la planta</h2>
