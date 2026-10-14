@@ -32,9 +32,11 @@ for (const { path, required, schema } of checks) {
       if (videos.length !== 9 || new Set(videos).size !== 9) {
         errors.push("/melocoton-en-movimiento: deben aparecer 9 videos S3 únicos en el HTML inicial");
       }
-      const posters = [...visibleHtml.matchAll(/\bposter="(https:\/\/melocoton-move-assets\.s3\.us-east-1\.amazonaws\.com\/videos\/customers\/[^"]+-poster\.webp)"/gi)];
-      if (posters.length !== 9) {
-        errors.push("/melocoton-en-movimiento: deben existir 9 referencias a portadas WebP");
+      const posters = [...visibleHtml.matchAll(/\bposter="(https:\/\/melocoton-move-assets\.s3\.us-east-1\.amazonaws\.com\/videos\/customers\/portada\/[^"]+-poster\.webp)"/gi)]
+        .map((m) => m[1]);
+      const expectedPosters = videos.map((video) => video.replace("/videos/customers/", "/videos/customers/portada/").replace(/\.mp4$/i, "-poster.webp"));
+      if (posters.length !== 9 || new Set(posters).size !== 9 || expectedPosters.some((poster) => !posters.includes(poster))) {
+        errors.push("/melocoton-en-movimiento: faltan portadas WebP en /videos/customers/portada/ o no corresponden a los MP4");
       }
     }
     if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
