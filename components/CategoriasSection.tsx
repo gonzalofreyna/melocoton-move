@@ -36,20 +36,7 @@ export default function CategoriasSection({
 
       {/* 🧩 Scroll horizontal en móvil / grid en desktop */}
       <div
-        className="
-          flex
-          sm:grid
-          gap-6
-          sm:gap-10
-          lg:gap-20
-          sm:grid-cols-2
-          lg:grid-cols-3
-          overflow-x-auto
-          overflow-y-hidden        // 👈 elimina scroll vertical
-          sm:overflow-visible
-          pb-4
-          scrollbar-hide
-        "
+        className="mx-auto flex max-w-7xl snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide sm:grid sm:grid-cols-2 sm:gap-7 sm:overflow-visible lg:grid-cols-3 lg:gap-10"
         style={{
           WebkitOverflowScrolling: "touch", // ✅ mantiene el scroll fluido en iOS
           touchAction: "pan-y pan-x", // ✅ permite ambos gestos (vertical y horizontal)
@@ -63,7 +50,8 @@ export default function CategoriasSection({
               href={cat.href}
               className="
     flex-shrink-0
-    w-[70%]
+    w-[76%]
+    snap-start
     sm:w-auto
     flex
     flex-col
@@ -91,10 +79,11 @@ export default function CategoriasSection({
                   relative
                   w-full
                   aspect-square
-                  rounded-3xl
+                  rounded-2xl
                   overflow-hidden
-                  shadow-lg
-                  sm:hover:shadow-xl  // ✅ hover solo en desktop
+                  border border-brand-line
+                  shadow-editorial
+                  sm:hover:shadow-editorial-lg
                   transition-all
                   duration-700
                   ease-out
@@ -110,7 +99,7 @@ export default function CategoriasSection({
                     rounded-2xl
                     transition-transform
                     duration-700
-                    sm:hover:scale-105  // ✅ hover solo en desktop
+                    sm:hover:scale-105
                   "
                   />
 
@@ -119,7 +108,7 @@ export default function CategoriasSection({
                     className="
                     absolute inset-0 flex items-center justify-center
                     bg-black/0
-                    sm:hover:bg-black/20  // ✅ hover solo desktop
+                    sm:hover:bg-black/20
                     transition-all duration-700
                   "
                   >
