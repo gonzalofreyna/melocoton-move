@@ -60,6 +60,7 @@ const solidColors = [
   "#A89EAD",
   "#66676D",
   "#8B604E",
+  "#741D32", // Vino marrón / guinda
   "#60456A",
   "#FFF0C3",
   "#AED0DB",
@@ -67,6 +68,9 @@ const solidColors = [
   "#C97643",
   "#F3B5BE",
 ];
+const solidColorNames: Record<string, string> = {
+  "#741D32": "Vino marrón",
+};
 const textureFinishes: MatFinish[] = Array.from({ length: 15 }, (_, index) => ({
   type: "texture",
   value: `/images/mat_textures/${index + 1}.webp`,
@@ -517,7 +521,7 @@ export default function MatCustomizer() {
                         <button
                           key={item}
                           onClick={() => {
-                            setFinish({ type: "solid", value: item, label: item });
+                            setFinish({ type: "solid", value: item, label: solidColorNames[item] ?? item });
                             setFinishPickerOpen(false);
                           }}
                           className={`h-11 rounded-xl border transition ${
@@ -527,7 +531,7 @@ export default function MatCustomizer() {
                           }`}
                           style={{ backgroundColor: item }}
                           type="button"
-                          aria-label={`Elegir color ${item}`}
+                          aria-label={`Elegir color ${solidColorNames[item] ?? item}`}
                           aria-pressed={finish.type === "solid" && finish.value === item}
                         />
                       ))}
