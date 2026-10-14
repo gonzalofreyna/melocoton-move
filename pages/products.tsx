@@ -119,8 +119,8 @@ export default function ProductsPage() {
         />
         <link rel="canonical" href="https://www.melocotonmove.com/products" />
       </Head>
-      <main className="flex flex-col items-center px-6 py-16 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl sm:text-4xl font-extrabold text-brand-blue mb-12">
+      <main className="flex min-h-screen flex-col items-center bg-brand-cream px-4 py-12 sm:px-6 sm:py-20">
+      <h1 className="mm-heading mb-12 text-center text-4xl sm:text-5xl">
         {title}
       </h1>
 
@@ -139,7 +139,7 @@ export default function ProductsPage() {
               No se encontraron productos.
             </p>
           ) : (
-            <div className="grid gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full max-w-7xl">
+            <div className="grid w-full max-w-7xl grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
               {groupedProducts.map((variants) => {
                 const product = variants[0];
 
