@@ -23,7 +23,13 @@ const checks = [
   ["menos movimiento", hero.includes("prefers-reduced-motion") && hero.includes("video.pause()")],
   ["sección editorial detrás de Hero", home.indexOf("<HeroSection />") >= 0 && home.indexOf("<HeroSection />") < home.indexOf('aria-labelledby="home-melocoton-movimiento"')],
   ["fondo solicitado de editorial", home.includes('aria-labelledby="home-melocoton-movimiento" className="w-full bg-gray-50')],
-  ["cards del catálogo", productCard.includes("mm-card") && category.includes("mm-heading")],
+  ["cards del catálogo", productCard.includes('className="group flex h-full min-w-0 flex-col') && category.includes("mm-heading")],
+  ["fotografía blanca y redondeada", productCard.includes("aspect-[3/4]") && productCard.includes("rounded-[24px] bg-white")],
+  ["imagen lleva a ficha de variante", productCard.includes("href={productHref}") && productCard.includes("selectedProduct.slug")],
+  ["comprar en escritorio y + táctil", productCard.includes("mm-product-desktop-buy") && productCard.includes("Comprar ahora") && productCard.includes("mm-product-quick-add") && css.includes("@media (hover: hover) and (min-width: 1024px)")],
+  ["comprar reutiliza carrito existente", productCard.includes("addToCart({") && productCard.includes("maxStock: stock")],
+  ["variantes actualizan imagen, precio y stock", productCard.includes("setSelectedSlug(variant.slug)") && productCard.includes("selectedProduct.image") && productCard.includes("selectedProduct.discountPrice") && productCard.includes("selectedProduct.stock")],
+  ["favoritos de navegador", productCard.includes("FAVORITES_KEY") && productCard.includes("aria-pressed={isFavorite}")],
   ["personalizador intacto y visualmente integrado", editor.includes("MAT_PRICE = 1499") && editor.includes("bg-brand-cream") && editor.includes("WHATSAPP_PHONE")],
 ];
 
