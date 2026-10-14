@@ -157,6 +157,9 @@ try {
           const seoTitle = text(html, "title");
           if (!seoTitle.includes("Tapete Yoga y Pilates")) errors.push(path + ": título de mat sin intención de búsqueda Yoga y Pilates");
         }
+        if (initialProduct.category === "calcetas" && /^Calceta(?:s)? Antiderrapante(?:s)?\b/i.test(initialProduct.name)) {
+          if (!text(html, "title").includes("Calcetas Antideslizantes")) errors.push(path + ": título de calcetas sin término antideslizantes");
+        }
         const h1 = text(html, "h1");
         if (!h1 || h1 !== product.name) errors.push(path + ": H1 y nombre JSON-LD diferentes");
         if (breadcrumb?.itemListElement?.[2]?.name !== product.name) errors.push(path + ": breadcrumb sin nombre de variante correcto");
