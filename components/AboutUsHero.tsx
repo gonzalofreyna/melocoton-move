@@ -26,15 +26,7 @@ export default function AboutUsHero() {
       >
         <Link
           href="/aboutus"
-          className="
-            inline-flex items-center justify-center 
-            px-8 py-3 rounded-full font-medium 
-            text-sm md:text-base 
-            text-brand-blue border border-brand-blue 
-            bg-white shadow-sm
-            hover:bg-brand-melon hover:shadow-md hover:scale-105 
-            transition-all duration-300 ease-out
-          "
+          className="mm-button-outline border-brand-wine bg-white/70"
         >
           Nosotros →
         </Link>
