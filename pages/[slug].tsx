@@ -480,7 +480,8 @@ export default function ProductDetail({ initialProduct, initialVariants }: Produ
                         href={`/${variant.slug}`}
                         aria-label={`Ver ${variant.name} en color ${color}`}
                         aria-current={isSelected ? "page" : undefined}
-                        className={`w-7 h-7 rounded-full border transition-all ${
+                        title={variant.name}
+                        className={`inline-block h-7 w-7 shrink-0 rounded-full border transition-all ${
                           isSelected
                             ? "ring-2 ring-brand-blue ring-offset-2 border-white"
                             : "border-gray-300 hover:scale-110"
