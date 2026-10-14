@@ -53,11 +53,12 @@ export default function SeoCategoryPage({
     inLanguage: "es-MX",
     mainEntity: {
       "@type": "ItemList",
-      itemListElement: grouped.map((variants, index) => ({
+      // Enumerar todas las variantes reales, no solo la primera tarjeta de cada grupo.
+      itemListElement: grouped.flatMap((variants) => variants).map((variant, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        name: variants[0].name,
-        url: `${siteUrl}/${variants[0].slug}`,
+        name: variant.name,
+        url: `${siteUrl}/${variant.slug}`,
       })),
     },
   };
