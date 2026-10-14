@@ -362,7 +362,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
           {/* ===== Galería ===== */}
           {/* ===== Galería ===== */}
           <div className="space-y-4">
-            <div className="mm-card relative flex items-center justify-center bg-brand-cream p-4 sm:p-7">
+            <div className="mm-card relative flex items-center justify-center bg-white p-4 sm:p-7">
               {BadgeOverlay}
               <motion.img
                 key={effectiveMainUrl}
