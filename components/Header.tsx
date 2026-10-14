@@ -142,7 +142,7 @@ export default function Header() {
                 className="flex items-center justify-center"
                 aria-label="Inicio"
               >
-                <Logo className="w-[240px] md:w-[300px] lg:w-[360px] h-auto hover:opacity-90 transition-opacity" />
+                <Logo className="h-auto w-[190px] transition-opacity hover:opacity-80 sm:w-[250px] lg:w-[290px]" />
               </Link>
             </div>
 
