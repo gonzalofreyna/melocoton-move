@@ -16,7 +16,7 @@ Fuente única: `tailwind.config.js`, `styles/globals.css`.
 | `brand-blue` | `#3E3236` | Nombre heredado; acciones oscuras, nav |
 | `brand-wine` | `#674650` | Acentos, promociones, precios |
 | `brand-beige` | `#C9A38F` | Acentos arena, compatibilidad legacy |
-| `brand-cream` | `#FAF8F5` | Fondos de páginas |
+| `brand-cream` | `#FFFFFF` | Fondo blanco puro predeterminado; integra fotos sobre fondo blanco |
 | `brand-sand` | `#F0EAE4` | Alternancia de secciones |
 | `brand-blush` | `#EBD9D1` | Acento suave |
 | `brand-line` | `#E5DBD3` | Bordes y separadores |
