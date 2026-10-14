@@ -162,6 +162,17 @@ try {
             (expectedWeight != null && product.weight?.unitCode !== "GRM")) {
           errors.push(path + ": peso JSON-LD distinto del catálogo");
         }
+        const initialRelated = (() => {
+          try { return JSON.parse(hydration[1])?.props?.pageProps?.initialRelated; }
+          catch { return null; }
+        })();
+        if (!Array.isArray(initialRelated)) {
+          errors.push(path + ": faltan relacionados iniciales en la ficha");
+        } else {
+          for (const related of initialRelated) {
+            if (!html.includes(`href="/${related.slug}"`)) errors.push(path + ": falta enlace SSR a relacionado " + related.slug);
+          }
+        }
         const initialVariants = (() => {
           try { return JSON.parse(hydration[1])?.props?.pageProps?.initialVariants; }
           catch { return null; }
