@@ -66,7 +66,7 @@ export default function ProductCard({
           href={`/${selectedProduct.slug}`}
           aria-label={`Ir a ${selectedProduct.name}`}
         >
-          <div className="aspect-square flex w-full cursor-pointer items-center justify-center bg-brand-cream p-3 sm:p-5">
+          <div className="aspect-square flex w-full cursor-pointer items-center justify-center bg-white p-3 sm:p-5">
             <img
               src={img}
               alt={selectedProduct.name}
