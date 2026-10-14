@@ -13,6 +13,7 @@ const editor = read("components/MatCustomizer.tsx");
 
 const checks = [
   ["paleta única", ["wine:", "cream:", "sand:", "blush:", "line:", "ink:"].every((key) => tailwind.includes(key))],
+  ["fondo blanco puro", tailwind.includes('cream: "#FFFFFF"') && css.includes("--mm-cream: #ffffff;") && css.includes("background: var(--mm-cream)")],
   ["tipografía de título", tailwind.includes("display:") && css.includes(".mm-heading")],
   ["componentes unificados", [".mm-card", ".mm-button", ".mm-button-outline", ".mm-field"].every((key) => css.includes(key))],
   ["Hero en HTML inicial", home.includes("<HeroSection />") && !home.includes("showHero && <HeroSection")],
