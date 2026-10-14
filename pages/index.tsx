@@ -98,6 +98,7 @@ export default function Home() {
             <Link className="underline underline-offset-4" href="/tapetes-yoga-pilates">Ver tapetes de yoga y Pilates</Link>
             <Link className="underline underline-offset-4" href="/calcetines-antideslizantes-pilates">Ver calcetas antideslizantes</Link>
             <Link className="underline underline-offset-4" href="/crea-tu-mat">Personalizar mi mat</Link>
+            <Link className="underline underline-offset-4" href="/melocoton-en-movimiento">Ver Melocotón en movimiento</Link>
           </nav>
         </div>
       </section>
