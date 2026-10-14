@@ -28,7 +28,7 @@ export default function TopBanner() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4 }}
-      className="fixed top-0 left-0 w-full animate-gradient text-white z-50"
+      className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-brand-wine text-white"
     >
       <div className="flex justify-center items-center h-[36px] text-[13px] sm:text-sm font-medium overflow-hidden relative">
         <AnimatePresence mode="wait">
