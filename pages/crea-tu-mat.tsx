@@ -30,7 +30,7 @@ export default function CreaTuMatPage() {
   return (
     <>
       <Head>
-        <title>Tapete de Yoga y Pilates Personalizado con Logo | Melocotón Move</title>
+        <title>Tapetes Personalizados con Logo | Melocotón Move</title>
         <meta
           name="description"
           content="Personaliza un tapete profesional de yoga y Pilates con tu logo desde una pieza en México. Caucho natural y poliuretano, grabado láser y diseño a tu gusto."
