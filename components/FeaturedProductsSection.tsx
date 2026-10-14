@@ -36,10 +36,9 @@ export default function FeaturedProductsSection() {
   );
 
   return (
-    <section className="py-16 sm:py-20 px-4 sm:px-6 bg-white w-full">
-      <h2 className="text-2xl sm:text-3xl font-bold text-brand-blue mb-8 sm:mb-12">
-        Destacados
-      </h2>
+    <section className="mm-section bg-white px-4 text-center sm:px-6">
+      <p className="mm-eyebrow mb-3">Selección Melocotón</p>
+      <h2 className="mm-heading mb-8 text-4xl sm:mb-12 sm:text-5xl">Nuestros favoritos</h2>
 
       {loading ? (
         <p className="text-gray-500">Cargando productos…</p>
@@ -49,7 +48,7 @@ export default function FeaturedProductsSection() {
         <>
           {/* 🌀 Swiper con breakpoints responsive */}
           <Swiper
-            className="max-w-6xl mx-auto custom-swiper featured-products-swiper py-4"
+            className="mx-auto max-w-6xl custom-swiper featured-products-swiper py-4"
             modules={[Navigation]}
             spaceBetween={16}
             loop={true}
@@ -80,7 +79,7 @@ export default function FeaturedProductsSection() {
           {/* CTA Ver Todo */}
           <Link
             href="/products"
-            className="mt-10 sm:mt-12 inline-flex items-center gap-2 text-sm sm:text-base font-semibold text-brand-blue hover:text-brand-beige transition-colors"
+            className="mm-text-link mt-10 sm:mt-12"
           >
             Ver todos
             <span aria-hidden="true">→</span>
