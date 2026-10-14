@@ -19,10 +19,10 @@ export default function AboutUs() {
         <meta name="description" content="Conoce Melocotón Move, una marca de tapetes, calcetas y accesorios para Pilates y yoga." />
         <link rel="canonical" href="https://www.melocotonmove.com/aboutus" />
       </Head>
-      <main className="bg-gray-50">
-      <section aria-labelledby="quienes-somos-melocoton" className="bg-gray-50 px-6 py-12 text-center">
+      <main className="bg-brand-cream">
+      <section aria-labelledby="quienes-somos-melocoton" className="bg-brand-cream px-6 py-14 text-center sm:py-20">
         <div className="mx-auto max-w-3xl">
-          <h1 id="quienes-somos-melocoton" className="text-3xl font-bold text-brand-blue">
+          <h1 id="quienes-somos-melocoton" className="mm-heading text-4xl sm:text-5xl">
             ¿Qué es Melocotón Move?
           </h1>
           <p className="mt-4 leading-relaxed text-gray-700">
@@ -36,7 +36,7 @@ export default function AboutUs() {
             {" "}y nuestras <Link href="/calcetines-antideslizantes-pilates" className="underline">calcetas antideslizantes</Link>
             {" "}para conocer los diseños y especificaciones disponibles.
           </p>
-          <section aria-labelledby="diferencias-melocoton" className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 text-left sm:p-7">
+          <section aria-labelledby="diferencias-melocoton" className="mm-card mt-8 p-5 text-left sm:p-7">
             <h2 id="diferencias-melocoton" className="text-xl font-semibold text-brand-blue">
               ¿Qué ofrece Melocotón Move para tu práctica?
             </h2>
@@ -76,7 +76,7 @@ export default function AboutUs() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
-                className="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg mb-6 tracking-tight"
+                className="font-display mb-6 text-4xl font-normal tracking-tight text-white drop-shadow-lg sm:text-6xl"
               >
                 {config.openingStudio.title}
               </motion.h2>
@@ -95,7 +95,7 @@ export default function AboutUs() {
                   config.openingStudio.buttonHref ||
                   "/products?category=reformer"
                 }
-                className="inline-block bg-brand-beige text-brand-blue px-6 py-3 rounded-xl font-semibold hover:bg-white hover:text-brand-blue transition-colors shadow-lg"
+                className="mm-button border-white bg-white text-brand-blue hover:bg-brand-blush"
               >
                 <motion.span
                   initial={{ opacity: 0, y: 20 }}
@@ -117,7 +117,7 @@ export default function AboutUs() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl font-bold text-brand-blue mb-14 tracking-tight"
+            className="mm-heading mb-14 text-4xl sm:text-5xl"
           >
             {config.benefits.header}
           </motion.h2>
@@ -138,7 +138,7 @@ export default function AboutUs() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, delay: idx * 0.15 }}
-                className="flex-shrink-0 w-[80%] sm:w-auto bg-gradient-to-br from-brand-beige/20 to-white border border-brand-beige/40 rounded-3xl shadow-sm hover:shadow-lg p-8 text-left scroll-snap-align-start transition-all duration-500 ease-out"
+                className="mm-card w-[80%] flex-shrink-0 snap-start bg-white p-8 text-left sm:w-auto"
               >
                 <h3 className="text-xl font-semibold text-brand-blue mb-3">
                   {benefit.title}

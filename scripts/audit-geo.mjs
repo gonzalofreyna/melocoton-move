@@ -83,6 +83,19 @@ for (const { path, required, schema } of checks) {
       if (!valid) errors.push(path + ": falta Organization JSON-LD válido");
     }
     if (path === "/") {
+      // El HTML inicial debe contener exactamente un H1, dentro del Hero
+      // y antes de la sección editorial; el carrusel llega después por JS.
+      const h1Matches = [...visibleHtml.matchAll(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi)];
+      if (h1Matches.length !== 1) {
+        errors.push("/: se espera exactamente un H1 en el HTML inicial; encontrados " + h1Matches.length);
+      }
+      const heroSection = visibleHtml.match(/<section\b[^>]*aria-label=["']Hero de Melocotón Move["'][^>]*>([\s\S]*?)<\/section>/i);
+      if (!heroSection || !/<h1\b[^>]*>[\s\S]*?<\/h1>/i.test(heroSection[1])) {
+        errors.push("/: falta H1 dentro del Hero en el HTML inicial");
+      }
+      if (heroSection && visibleHtml.indexOf(heroSection[0]) > visibleHtml.indexOf('id="home-melocoton-movimiento"')) {
+        errors.push("/: el H1 del Hero debe estar antes del enlace editorial");
+      }
       const ldScripts = [...html.matchAll(/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>([\s\S]*?)<\/script>/gi)];
       const ldItems = ldScripts.flatMap((match) => {
         try { return [JSON.parse(match[1])]; } catch { return []; }

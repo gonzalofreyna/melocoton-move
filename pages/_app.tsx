@@ -2,6 +2,7 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Head from "next/head";
+import { useState } from "react";
 
 // 🧩 Componentes globales
 import Header from "../components/Header";
@@ -19,6 +20,7 @@ import { ProductsProvider } from "../context/ProductsContext";
 /** ===== AppShell: UI principal ===== */
 function AppShell({ Component, pageProps }: AppProps) {
   const { config } = useAppConfig();
+  const [headerOffset, setHeaderOffset] = useState<number | null>(null);
   const ig = config?.instagramStrip;
 
   const IG_USER =
@@ -36,9 +38,14 @@ function AppShell({ Component, pageProps }: AppProps) {
 
       <div className="flex flex-col min-h-screen">
         <TopBanner />
-        <Header />
+        <Header onHeightChange={setHeaderOffset} />
 
-        <main className="flex-1 pt-32">
+        {/* Reserva la altura real del header fijo. Los valores responsive
+            son fallback SSR antes de medirlo con ResizeObserver. */}
+        <main
+          className="flex-1 pt-[119px] sm:pt-[144px] lg:pt-[157px]"
+          style={headerOffset === null ? undefined : { paddingTop: headerOffset }}
+        >
           <Component {...pageProps} />
         </main>
 

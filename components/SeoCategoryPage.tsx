@@ -46,12 +46,12 @@ export default function SeoCategoryPage({
         <meta name="description" content={description} />
         <link rel="canonical" href={`https://www.melocotonmove.com${canonicalPath}`} />
       </Head>
-      <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-16">
+      <main className="min-h-screen bg-brand-cream px-4 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-7xl">
-          <h1 className="text-2xl leading-tight sm:text-4xl font-bold text-brand-blue text-center">{heading}</h1>
+          <h1 className="mm-heading text-center text-3xl sm:text-5xl">{heading}</h1>
           <p className="mx-auto mt-4 max-w-3xl text-center text-sm leading-6 text-gray-600 sm:mt-5 sm:text-base">{intro}</p>
           {productCategory === "mat" && (
-            <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-[#e8ddd5] bg-white px-4 py-4 text-center sm:mt-8 sm:px-6">
+            <div className="mm-card mx-auto mt-8 max-w-3xl px-4 py-5 text-center sm:px-6">
               <p className="text-sm leading-6 text-gray-700">
                 ¿Quieres ver más de Melocotón Move en movimiento?
               </p>
@@ -92,25 +92,25 @@ export default function SeoCategoryPage({
             </section>
           )}
           {customizer && (
-            <section className="mx-auto mt-8 max-w-4xl rounded-2xl border border-gray-200 bg-[#fbf7f2] p-5 sm:mt-10 sm:p-7">
+            <section className="mx-auto mt-8 max-w-4xl rounded-2xl border border-brand-line bg-brand-sand p-5 sm:mt-10 sm:p-7">
               <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-xl">{customizer.title}</h2>
               <p className="mt-2 text-sm leading-6 text-gray-700 sm:text-base">{customizer.description}</p>
               <Link className="mt-4 inline-flex min-h-11 items-center font-semibold text-brand-blue underline underline-offset-4" href={customizer.href}>Diseñar mi mat personalizado</Link>
             </section>
           )}
           {guide && (
-            <section className="mx-auto mt-8 max-w-4xl rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-10 sm:p-7">
+            <section className="mm-card mx-auto mt-8 max-w-4xl p-5 sm:mt-10 sm:p-7">
               <h2 className="text-lg leading-snug font-semibold text-brand-blue sm:text-xl">{guide.title}</h2>
               <p className="mt-2 text-sm leading-6 text-gray-600 sm:text-base">{guide.description}</p>
-              <Link className="mt-5 flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-blue px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-brand-beige hover:text-brand-blue sm:inline-flex sm:w-auto" href={guide.href}>Leer la guía completa</Link>
+              <Link className="mm-button mt-5 w-full sm:w-auto" href={guide.href}>Leer la guía completa</Link>
             </section>
           )}
           {faqs.length > 0 && (
             <section aria-labelledby="category-faq-title" className="mx-auto mt-10 max-w-4xl border-t border-gray-200 pt-8 sm:mt-12 sm:pt-10">
-              <h2 id="category-faq-title" className="text-xl font-bold text-brand-blue sm:text-2xl">Preguntas frecuentes</h2>
+              <h2 id="category-faq-title" className="mm-heading text-2xl sm:text-3xl">Preguntas frecuentes</h2>
               <div className="mt-5 space-y-3">
                 {faqs.map(({ question, answer }) => (
-                  <details key={question} className="group rounded-xl border border-gray-200 bg-white px-4 py-1 sm:px-5">
+                  <details key={question} className="group rounded-2xl border border-brand-line bg-white px-4 py-1 sm:px-5">
                     <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-semibold leading-6 text-brand-blue marker:content-none sm:text-base [&::-webkit-details-marker]:hidden">{question}<span aria-hidden="true" className="shrink-0 text-xl font-normal group-open:rotate-45">+</span></summary>
                     <p className="pb-4 text-sm leading-6 text-gray-600 sm:text-base sm:leading-7">{answer}</p>
                   </details>

@@ -348,7 +348,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
         />
       </Head>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
         <nav aria-label="Ruta de navegación" className="mb-6 text-sm text-gray-600">
           <Link href="/" className="hover:underline">Inicio</Link>
           <span aria-hidden="true" className="mx-2">/</span>
@@ -362,7 +362,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
           {/* ===== Galería ===== */}
           {/* ===== Galería ===== */}
           <div className="space-y-4">
-            <div className="relative bg-white rounded-2xl p-4 sm:p-6 shadow-md flex items-center justify-center">
+            <div className="mm-card relative flex items-center justify-center bg-white p-4 sm:p-7">
               {BadgeOverlay}
               <motion.img
                 key={effectiveMainUrl}
@@ -476,7 +476,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
               <div>
                 {hasValidDiscount ? (
                   <>
-                    <p className="text-brand-blue font-bold text-2xl">
+                    <p className="text-brand-ink text-2xl font-semibold">
                       {(disc as number).toFixed(2)} MXN
                     </p>
                     <p className="text-gray-400 line-through">
@@ -484,7 +484,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
                     </p>
                   </>
                 ) : (
-                  <p className="text-brand-beige font-bold text-2xl">
+                  <p className="text-brand-wine text-2xl font-semibold">
                     {full.toFixed(2)} MXN
                   </p>
                 )}
@@ -506,7 +506,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
                   })
                 }
                 disabled={stock != null && stock <= 0}
-                className="bg-brand-blue text-white py-3 px-6 rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-colors disabled:opacity-50"
+                className="mm-button px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Agregar al carrito
               </button>
@@ -516,7 +516,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
           {/* ===== Detalles ===== */}
           <div className="flex flex-col space-y-5 self-start">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-brand-blue">
+              <h1 className="mm-heading text-3xl sm:text-4xl">
                 {seoProductName}
               </h1>
             </div>
@@ -528,7 +528,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
             )}
 
             {product.category === "calcetas" && (
-              <section aria-label="Talla y guía de calcetas" className="rounded-xl border border-gray-200 bg-[#fbf7f2] p-4">
+              <section aria-label="Talla y guía de calcetas" className="rounded-2xl border border-brand-line bg-brand-sand p-5">
                 <p className="text-sm text-gray-800">
                   <strong>Talla: Unitalla.</strong> Consulta el diseño y la composición de esta variante en su ficha antes de elegir.
                 </p>

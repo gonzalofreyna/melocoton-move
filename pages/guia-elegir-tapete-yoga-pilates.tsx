@@ -10,12 +10,12 @@ export default function GuiaTapetes() {
         <link rel="canonical" href="https://www.melocotonmove.com/guia-elegir-tapete-yoga-pilates" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://www.melocotonmove.com/"},{"@type":"ListItem","position":2,"name":"Tapetes de yoga y Pilates","item":"https://www.melocotonmove.com/tapetes-yoga-pilates"},{"@type":"ListItem","position":3,"name":"Guía para elegir tapetes","item":"https://www.melocotonmove.com/guia-elegir-tapete-yoga-pilates"}]}) }} />
       </Head>
-      <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-16">
+      <main className="min-h-screen bg-brand-cream px-4 py-10 sm:px-6 sm:py-16">
         <article className="mx-auto max-w-3xl text-sm leading-7 text-gray-700 sm:text-base">
           <nav aria-label="Ruta de navegación" className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-gray-600 sm:text-sm">
             <Link className="underline" href="/">Inicio</Link> / <Link className="underline" href="/tapetes-yoga-pilates">Tapetes de yoga y Pilates</Link> / Guía de compra
           </nav>
-          <h1 className="text-2xl font-bold leading-tight text-brand-blue sm:text-4xl">Cómo elegir un tapete de yoga y Pilates</h1>
+          <h1 className="mm-heading text-3xl sm:text-5xl">Cómo elegir un tapete de yoga y Pilates</h1>
           <p className="mt-4 text-base leading-7 sm:mt-5 sm:text-lg sm:leading-8">Para elegir un mat, piensa primero en el tipo de ejercicios que realizas, el espacio disponible y la sensación que buscas al apoyar manos, pies y rodillas. Compara las especificaciones de cada producto antes de decidir.</p>
           <section className="mt-9 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-10 sm:p-7">
             <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">1. Revisa los materiales</h2>

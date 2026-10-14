@@ -18,7 +18,7 @@ import DesktopNav from "./DesktopNav";
 import Logo from "../components/Logo";
 import SearchModal from "./SearchModal"; // 👈 importa el nuevo modal
 
-export default function Header() {
+export default function Header({ onHeightChange }: { onHeightChange?: (offset: number) => void }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -31,6 +31,31 @@ export default function Header() {
   const router = useRouter();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+
+  // Un header fixed queda fuera del flujo. Medimos su extremo inferior real
+  // para que el contenido empiece justo debajo, sin huecos ni solapamientos.
+  // offsetTop/offsetHeight ignoran el transform temporal de Framer Motion.
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    const updateOffset = () => {
+      onHeightChange?.(Math.ceil(header.offsetTop + header.offsetHeight));
+    };
+
+    updateOffset();
+    const observer = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(updateOffset)
+      : null;
+    observer?.observe(header);
+    window.addEventListener("resize", updateOffset);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateOffset);
+    };
+  }, [visible, onHeightChange]);
 
   // 🔄 Cargar productos para sugerencias (desktop)
   useEffect(() => {
@@ -106,11 +131,12 @@ export default function Header() {
       <AnimatePresence>
         {visible && (
           <motion.header
+            ref={headerRef}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="fixed top-8 left-0 w-full z-40 bg-white shadow-md grid grid-cols-3 items-center px-4 md:px-6 py-3 gap-2"
+            className="fixed left-0 top-8 z-40 grid w-full grid-cols-3 items-center gap-2 border-b border-brand-line bg-white/95 px-4 py-2.5 shadow-[0_4px_22px_rgba(48,41,43,0.06)] backdrop-blur-md md:px-6 md:py-3"
           >
             {/* 🍑 Columna izquierda: navegación */}
             <div className="flex items-center">
@@ -142,7 +168,7 @@ export default function Header() {
                 className="flex items-center justify-center"
                 aria-label="Inicio"
               >
-                <Logo className="w-[240px] md:w-[300px] lg:w-[360px] h-auto hover:opacity-90 transition-opacity" />
+                <Logo className="h-auto w-[190px] transition-opacity hover:opacity-80 sm:w-[250px] lg:w-[290px]" />
               </Link>
             </div>
 
@@ -160,7 +186,7 @@ export default function Header() {
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Buscar..."
-                  className="w-full border border-gray-300 rounded-xl px-3 py-1 text-sm focus:outline-none focus:ring focus:border-brand-blue"
+                  className="mm-field w-full rounded-full border-brand-line px-4 py-2 text-sm focus:border-brand-wine"
                   aria-label="Buscar productos"
                   autoComplete="off"
                 />
@@ -174,7 +200,7 @@ export default function Header() {
                 </button>
 
                 {showSuggestions && searchTerm && (
-                  <div className="absolute z-50 top-full left-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-xl w-full text-left max-h-96 overflow-y-auto divide-y divide-gray-100">
+                  <div className="absolute left-0 top-full z-50 mt-2 max-h-96 w-full divide-y divide-brand-line overflow-y-auto rounded-2xl border border-brand-line bg-white text-left shadow-editorial-lg">
                     {loading ? (
                       <p className="px-4 py-2 text-sm text-gray-500">
                         Cargando…

@@ -22,34 +22,21 @@ export default function CategoriasSection({
   if (!Array.isArray(categories) || categories.length === 0) return null;
 
   return (
-    <section className="py-24 px-6 bg-white w-full">
+    <section className="mm-section bg-brand-cream px-4 sm:px-6">
       {/* 🩷 Título principal */}
       <motion.h2
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="text-4xl font-bold text-brand-blue mb-16 text-center tracking-tight"
+        className="mm-heading mb-10 text-center text-4xl sm:mb-14 sm:text-5xl"
       >
         {title}
       </motion.h2>
 
       {/* 🧩 Scroll horizontal en móvil / grid en desktop */}
       <div
-        className="
-          flex
-          sm:grid
-          gap-6
-          sm:gap-10
-          lg:gap-20
-          sm:grid-cols-2
-          lg:grid-cols-3
-          overflow-x-auto
-          overflow-y-hidden        // 👈 elimina scroll vertical
-          sm:overflow-visible
-          pb-4
-          scrollbar-hide
-        "
+        className="mx-auto flex max-w-7xl snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide sm:grid sm:grid-cols-2 sm:gap-7 sm:overflow-visible lg:grid-cols-3 lg:gap-10"
         style={{
           WebkitOverflowScrolling: "touch", // ✅ mantiene el scroll fluido en iOS
           touchAction: "pan-y pan-x", // ✅ permite ambos gestos (vertical y horizontal)
@@ -63,7 +50,8 @@ export default function CategoriasSection({
               href={cat.href}
               className="
     flex-shrink-0
-    w-[70%]
+    w-[76%]
+    snap-start
     sm:w-auto
     flex
     flex-col
@@ -91,10 +79,11 @@ export default function CategoriasSection({
                   relative
                   w-full
                   aspect-square
-                  rounded-3xl
+                  rounded-2xl
                   overflow-hidden
-                  shadow-lg
-                  sm:hover:shadow-xl  // ✅ hover solo en desktop
+                  border border-brand-line
+                  shadow-editorial
+                  sm:hover:shadow-editorial-lg
                   transition-all
                   duration-700
                   ease-out
@@ -107,10 +96,10 @@ export default function CategoriasSection({
                     w-full
                     h-full
                     object-cover
-                    rounded-3xl
+                    rounded-2xl
                     transition-transform
                     duration-700
-                    sm:hover:scale-105  // ✅ hover solo en desktop
+                    sm:hover:scale-105
                   "
                   />
 
@@ -119,7 +108,7 @@ export default function CategoriasSection({
                     className="
                     absolute inset-0 flex items-center justify-center
                     bg-black/0
-                    sm:hover:bg-black/20  // ✅ hover solo desktop
+                    sm:hover:bg-black/20
                     transition-all duration-700
                   "
                   >
@@ -127,7 +116,7 @@ export default function CategoriasSection({
                       src={overlaySrc}
                       alt={`${cat.name} overlay`}
                       className="
-                      opacity-0 sm:hover:opacity-90  // ✅ hover solo desktop
+                      opacity-0 sm:hover:opacity-90
                       w-[70%] h-[70%] lg:w-[85%] lg:h-[85%]
                       transition-all duration-700 ease-out
                       filter brightness-[300%] saturate-150
@@ -137,7 +126,7 @@ export default function CategoriasSection({
                 </div>
 
                 {/* 🏷️ Nombre debajo */}
-                <p className="mt-5 text-base sm:text-lg font-semibold text-brand-blue text-center">
+                <p className="mt-5 text-sm sm:text-lg font-medium tracking-[0.03em] text-brand-ink text-center">
                   {cat.name}
                 </p>
               </motion.div>

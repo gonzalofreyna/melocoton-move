@@ -520,7 +520,7 @@ export default function MiniCart() {
         }`}
       >
         {/* Header */}
-        <div className="flex justify-between items-center px-4 py-4 sm:px-5 sm:py-5 border-b border-neutral-200/80 bg-white/80 backdrop-blur-sm">
+        <div className="flex justify-between items-center px-4 py-4 sm:px-5 sm:py-5 border-b border-brand-line bg-white/80 backdrop-blur-sm">
           <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.02em] text-brand-blue">
             Tu carrito
           </h2>
@@ -568,9 +568,9 @@ export default function MiniCart() {
 
           {/* Footer */}
           {cart.length > 0 && (
-            <div className="border-t border-neutral-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5 space-y-4 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]">
+            <div className="border-t border-brand-line bg-white px-4 py-4 sm:px-5 sm:py-5 space-y-4 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]">
               {!hasCustomShipping && (
-                <div className="rounded-2xl border border-neutral-200 bg-[#FFFDF9] p-4 space-y-3 shadow-sm">
+                <div className="rounded-2xl border border-brand-line bg-brand-cream p-4 space-y-3 shadow-sm">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold tracking-[-0.01em] text-brand-blue">
                       Calcula tu envío
@@ -591,7 +591,7 @@ export default function MiniCart() {
                         e.target.value.replace(/\D/g, "").slice(0, 5),
                       )
                     }
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
+                    className="w-full rounded-xl border border-brand-line bg-white px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
                   />
 
                   {postalCodeLoading && (
@@ -611,7 +611,7 @@ export default function MiniCart() {
                       value={areaLevel1}
                       onChange={(e) => setAreaLevel1(e.target.value)}
                       readOnly={!postalCodeMsg}
-                      className={`rounded-xl border border-neutral-200 px-3.5 py-3 text-sm text-gray-700 ${
+                      className={`rounded-xl border border-brand-line px-3.5 py-3 text-sm text-gray-700 ${
                         postalCodeMsg ? "bg-white" : "bg-neutral-50"
                       }`}
                     />
@@ -622,7 +622,7 @@ export default function MiniCart() {
                       value={areaLevel2}
                       onChange={(e) => setAreaLevel2(e.target.value)}
                       readOnly={!postalCodeMsg}
-                      className={`rounded-xl border border-neutral-200 px-3.5 py-3 text-sm text-gray-700 ${
+                      className={`rounded-xl border border-brand-line px-3.5 py-3 text-sm text-gray-700 ${
                         postalCodeMsg ? "bg-white" : "bg-neutral-50"
                       }`}
                     />
@@ -631,7 +631,7 @@ export default function MiniCart() {
                     <select
                       value={areaLevel3}
                       onChange={(e) => setAreaLevel3(e.target.value)}
-                      className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm text-gray-800 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
+                      className="w-full rounded-xl border border-brand-line bg-white px-3.5 py-3 text-sm text-gray-800 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
                     >
                       <option value="">Selecciona tu colonia</option>
 
@@ -648,7 +648,7 @@ export default function MiniCart() {
                       value={areaLevel3}
                       onChange={(e) => setAreaLevel3(e.target.value)}
                       disabled={postalCodeLoading}
-                      className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 disabled:bg-neutral-50"
+                      className="w-full rounded-xl border border-brand-line bg-white px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10 disabled:bg-neutral-50"
                     />
                   )}
 
@@ -697,7 +697,7 @@ export default function MiniCart() {
                           className={`block rounded-2xl border p-3.5 cursor-pointer transition shadow-sm ${
                             selectedRateId === rate.id
                               ? "border-brand-blue bg-brand-blue/[0.04] shadow-[0_6px_20px_rgba(37,99,235,0.10)]"
-                              : "border-neutral-200 bg-white hover:border-neutral-300"
+                              : "border-brand-line bg-white hover:border-neutral-300"
                           }`}
                         >
                           <div className="flex items-start gap-3">
@@ -741,7 +741,7 @@ export default function MiniCart() {
                 </div>
               )}
               {/* Totales */}
-              <div className="rounded-2xl bg-[#FCFBF8] border border-neutral-200 px-4 py-4 space-y-2 text-sm">
+              <div className="rounded-2xl bg-brand-cream border border-brand-line px-4 py-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-700">Subtotal</span>
                   <span>{MX.format(subtotal)}</span>
@@ -767,7 +767,7 @@ export default function MiniCart() {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center border-t border-neutral-200 pt-3 mt-3 text-base font-semibold text-brand-blue">
+                <div className="flex justify-between items-center border-t border-brand-line pt-3 mt-3 text-base font-semibold text-brand-blue">
                   <span>Total</span>
                   <span>{MX.format(total)}</span>
                 </div>
@@ -781,11 +781,11 @@ export default function MiniCart() {
                     placeholder="Cupón"
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value)}
-                    className="flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
+                    className="flex-1 rounded-xl border border-brand-line bg-white px-3.5 py-3 text-sm outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/10"
                   />
                   <button
                     onClick={handleApplyCoupon}
-                    className="w-full sm:w-auto bg-brand-blue text-white px-4 py-3 rounded-xl text-sm font-medium hover:bg-brand-beige hover:text-brand-blue transition"
+                    className="mm-button w-full sm:w-auto"
                   >
                     Aplicar
                   </button>

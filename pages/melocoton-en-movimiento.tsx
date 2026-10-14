@@ -130,7 +130,7 @@ export default function MelocotonEnMovimientoPage() {
           <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
         ))}
       </Head>
-      <main className="min-h-screen bg-[#fbf8f5] pb-16 pt-5 text-gray-800 sm:pb-20 sm:pt-10">
+      <main className="min-h-screen bg-brand-cream pb-16 pt-8 text-brand-ink sm:pb-20 sm:pt-12">
         <div className="mx-auto w-full max-w-7xl">
           <nav aria-label="Ruta de navegación" className="mb-5 px-4 text-xs text-gray-600 sm:mb-10 sm:px-6 sm:text-sm lg:px-10">
             <Link href="/" className="underline underline-offset-4">Inicio</Link>
@@ -144,7 +144,7 @@ export default function MelocotonEnMovimientoPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.19em] text-[#81645f] sm:text-xs">
                   Una comunidad en movimiento
                 </p>
-                <h1 className="mt-2 text-[clamp(1.7rem,7vw,2.25rem)] font-semibold leading-tight tracking-tight text-brand-blue sm:text-5xl">
+                <h1 className="mt-2 mm-heading text-4xl sm:text-6xl">
                   Melocotón en movimiento
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-600 sm:mt-5 sm:text-base sm:leading-8 lg:mx-0">
@@ -165,7 +165,7 @@ export default function MelocotonEnMovimientoPage() {
 
           <section aria-labelledby="mas-videos" className="mt-12 sm:mt-20">
             <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-              <h2 id="mas-videos" className="text-2xl font-semibold text-brand-blue sm:text-3xl">
+              <h2 id="mas-videos" className="mm-heading text-3xl sm:text-4xl">
                 Historias que nos inspiran
               </h2>
               <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
@@ -182,7 +182,7 @@ export default function MelocotonEnMovimientoPage() {
           </section>
 
           <section aria-labelledby="conoce-nuestra-practica" className="mx-4 mt-14 max-w-3xl border-t border-gray-200 pt-9 sm:mx-auto sm:mt-20 sm:px-6">
-            <h2 id="conoce-nuestra-practica" className="text-center text-xl font-semibold text-brand-blue sm:text-2xl">
+            <h2 id="conoce-nuestra-practica" className="mm-heading text-center text-2xl sm:text-3xl">
               Del movimiento a tu práctica
             </h2>
             <p className="mt-4 text-sm leading-7 text-gray-700 sm:text-base sm:leading-8">

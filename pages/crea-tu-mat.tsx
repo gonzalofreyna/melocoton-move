@@ -52,7 +52,7 @@ export default function CreaTuMatPage() {
         />
       </Head>
 
-      <section className="bg-[#fbf7f2] px-4 pt-8 sm:px-6 sm:pt-12" aria-label="Tapetes personalizados de Melocotón Move">
+      <section className="bg-brand-cream px-4 pt-10 sm:px-6 sm:pt-16" aria-label="Tapetes personalizados de Melocotón Move">
         <div className="mx-auto max-w-3xl">
           <nav aria-label="Ruta de navegación" className="mb-5 text-xs text-gray-600 sm:text-sm">
             <Link href="/" className="underline underline-offset-2">Inicio</Link>
@@ -61,19 +61,19 @@ export default function CreaTuMatPage() {
             <span className="mx-2">/</span>
             <span>Personaliza tu mat</span>
           </nav>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 sm:text-sm">
+          <p className="mm-eyebrow">
             Desde una sola pieza · Personalización láser
           </p>
-          <h1 className="mt-3 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
+          <h1 className="mm-heading mt-4 text-3xl sm:text-5xl">
             Tapetes de yoga y Pilates personalizados con tu logo en México
           </h1>
-          <p className="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
+          <p className="mm-copy mt-5">
             Crea un tapete profesional con base de caucho natural y superficie de poliuretano
             de alto grado. Elige forma, color o textura y añade tu logo desde una sola unidad,
             tanto para tu práctica como para tu estudio.
           </p>
-          <section aria-labelledby="formas-mat-disponibles" className="mt-5 rounded-xl border border-gray-200 bg-white/75 p-4 sm:p-5">
-            <h2 id="formas-mat-disponibles" className="text-base font-semibold text-gray-900 sm:text-lg">
+          <section aria-labelledby="formas-mat-disponibles" className="mm-card mt-8 p-5 sm:p-7">
+            <h2 id="formas-mat-disponibles" className="font-display text-xl font-normal text-brand-ink sm:text-2xl">
               Tres formas para personalizar tu mat
             </h2>
             <p className="mt-2 text-sm leading-7 text-gray-700">
@@ -92,14 +92,14 @@ export default function CreaTuMatPage() {
 
       <MatCustomizer />
 
-      <section aria-labelledby="personalizacion-preguntas" className="bg-[#fbf7f2] px-4 pb-14 pt-3 sm:px-6 sm:pb-20">
+      <section aria-labelledby="personalizacion-preguntas" className="bg-brand-cream px-4 pb-14 pt-3 sm:px-6 sm:pb-20">
         <div className="mx-auto max-w-3xl">
-          <h2 id="personalizacion-preguntas" className="text-xl font-bold text-gray-900 sm:text-2xl">
+          <h2 id="personalizacion-preguntas" className="mm-heading text-2xl sm:text-3xl">
             Preguntas frecuentes sobre tapetes personalizados
           </h2>
           <div className="mt-5 space-y-3">
             {faqs.map(({ question, answer }) => (
-              <details key={question} className="group rounded-2xl border border-gray-200 bg-white px-4 py-1 sm:px-5">
+              <details key={question} className="group rounded-2xl border border-brand-line bg-white px-4 py-1 sm:px-5">
                 <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-sm font-semibold leading-6 text-gray-900 sm:text-base [&::-webkit-details-marker]:hidden">
                   {question}
                   <span aria-hidden="true" className="shrink-0 text-xl font-normal group-open:rotate-45">+</span>

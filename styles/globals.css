@@ -6,82 +6,96 @@
 @import "swiper/css/pagination";
 @import "swiper/css/navigation";
 
-body {
-  @apply font-sans;
+:root {
+  color-scheme: light;
+  --mm-ink: #30292b;
+  --mm-muted: #736764;
+  --mm-wine: #674650;
+  --mm-cream: #ffffff;
+  --mm-sand: #f0eae4;
+  --mm-blush: #ebd9d1;
+  --mm-line: #e5dbd3;
 }
 
-.custom-swiper .swiper-pagination {
-  display: none;
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply font-sans antialiased;
+    background: var(--mm-cream);
+    color: var(--mm-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: #ebd9d1; color: #30292b; }
+  :focus-visible { outline: 2px solid var(--mm-wine); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
 }
 
-/* 🌈 Animación sutil tipo Bala */
+@layer components {
+  .mm-container { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10; }
+  .mm-section { @apply w-full py-14 sm:py-20 lg:py-24; }
+  .mm-heading { @apply font-display font-normal tracking-[-0.025em] leading-[1.08] text-brand-ink; }
+  .mm-eyebrow { @apply text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-brand-wine; }
+  .mm-copy { @apply text-sm sm:text-base leading-7 sm:leading-8 text-brand-muted; }
+  .mm-card { @apply overflow-hidden rounded-2xl border border-brand-line bg-white transition-all duration-300; box-shadow: 0 8px 30px -20px rgba(48,41,43,.16); }
+  .mm-card:hover { box-shadow: 0 20px 48px -24px rgba(48,41,43,.23); }
+  .mm-button { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-blue bg-brand-blue px-7 py-3 text-xs sm:text-sm font-semibold tracking-[0.045em] text-white transition-colors duration-300 hover:border-brand-wine hover:bg-brand-wine focus-visible:outline-offset-4; }
+  .mm-button-outline { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-line bg-transparent px-7 py-3 text-xs sm:text-sm font-semibold tracking-[0.045em] text-brand-blue transition-colors duration-300 hover:border-brand-blue hover:bg-brand-blue hover:text-white focus-visible:outline-offset-4; }
+  .mm-text-link { @apply inline-flex items-center gap-2 border-b border-current pb-1 text-xs sm:text-sm font-semibold tracking-[0.07em] text-brand-blue transition-colors hover:text-brand-wine; }
+  .mm-field { @apply min-h-11 rounded-xl border border-brand-line bg-white px-4 py-2 text-brand-ink outline-none transition-colors focus:border-brand-wine focus:ring-1 focus:ring-brand-wine; }
+}
+
+/* Swiper controla altura por componente, no imponemos display en todos los carruseles. */
+.custom-swiper .swiper-pagination { display: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+
 @keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
-
-@keyframes logoGradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-logo-gradient {
-  animation: logoGradientShift 12s linear infinite;
-}
-
 .animate-gradient {
-  background: linear-gradient(270deg, #b3bdc2, #93b2bf, #8f8ea6, #5d5d6d);
-
-  background-size: 300% 300%;
-  animation: gradientShift 10s ease-in-out infinite;
+  background: #674650;
+  background-size: 100% 100%;
 }
+.animate-logo-gradient { animation: none; }
 
-/* Oculta scrollbars horizontales y verticales de cualquier contenedor */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-.scrollbar-hide {
-  -ms-overflow-style: none; /* IE y Edge antiguos */
-  scrollbar-width: none; /* Firefox */
-}
-
-/* 💅 Corrige alturas inconsistentes en Swiper */
-.swiper-slide {
-  height: auto !important; /* permite que el contenido defina su altura */
-  display: flex !important; /* iguala el comportamiento interno */
-  align-items: stretch !important; /* las cards se estiran a la misma altura */
-}
-
+.featured-products-swiper .swiper-slide { height: auto; display: flex; align-items: stretch; }
 .featured-products-swiper .swiper-button-prev,
 .featured-products-swiper .swiper-button-next {
-  color: #9ca3af;
-  transition:
-    color 0.2s ease,
-    opacity 0.2s ease;
+  color: #674650;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: rgba(250,248,245,.92);
+  border: 1px solid #e5dbd3;
+  transition: opacity .2s ease, background-color .2s ease;
 }
-
 .featured-products-swiper .swiper-button-prev:hover,
-.featured-products-swiper .swiper-button-next:hover {
-  color: #6b7280;
+.featured-products-swiper .swiper-button-next:hover { background: #f0eae4; }
+.featured-products-swiper .swiper-button-prev::after,
+.featured-products-swiper .swiper-button-next::after { font-size: 13px; font-weight: 600; }
+
+/* Product cards: gesto táctil + sobre la foto; CTA editorial con cursor.
+   El color de fondo de la imagen sigue siendo blanco puro. */
+.mm-product-quick-add { display: flex; }
+.mm-product-desktop-buy { display: none; }
+
+@media (hover: hover) and (min-width: 1024px) {
+  .mm-product-quick-add { display: none; }
+  .mm-product-desktop-buy { display: flex; }
 }
 
-.featured-products-swiper .swiper-button-prev::after,
-.featured-products-swiper .swiper-button-next::after {
-  font-size: 18px;
-  font-weight: 700;
+.melocoton-hero .swiper-pagination { bottom: 25px !important; }
+.melocoton-hero .swiper-pagination-bullet {
+  width: 22px; height: 3px; border-radius: 4px;
+  opacity: .5; background: #fff;
+  transition: width .3s ease, opacity .3s ease;
+}
+.melocoton-hero .swiper-pagination-bullet-active {
+  width: 42px; opacity: 1; background: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

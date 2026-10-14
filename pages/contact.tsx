@@ -48,8 +48,8 @@ export default function ContactPage() {
         <meta name="description" content="Contacta al equipo de Melocotón Move para resolver tus dudas sobre productos, pedidos y colaboraciones." />
         <link rel="canonical" href="https://www.melocotonmove.com/contact" />
       </Head>
-      <main className="flex flex-col items-center px-6 py-16 bg-gray-50 min-h-screen">
-      <h1 className="text-4xl font-extrabold text-brand-blue mb-8">
+      <main className="flex min-h-screen flex-col items-center bg-brand-cream px-4 py-14 sm:px-6 sm:py-20">
+      <h1 className="mm-heading mb-6 text-4xl sm:text-5xl">
         Contáctanos
       </h1>
       <p className="text-gray-600 max-w-xl text-center mb-12">
@@ -59,7 +59,7 @@ export default function ContactPage() {
 
       <form
         onSubmit={onSubmit}
-        className="bg-white shadow-md rounded-xl p-8 w-full max-w-lg space-y-6"
+        className="mm-card w-full max-w-lg space-y-6 p-6 sm:p-8"
       >
         <div>
           <label className="block text-gray-700 font-semibold mb-2">
@@ -67,7 +67,7 @@ export default function ContactPage() {
           </label>
           <input
             type="text"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none"
+            className="mm-field w-full"
             placeholder="Tu nombre"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -81,7 +81,7 @@ export default function ContactPage() {
           </label>
           <input
             type="email"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none"
+            className="mm-field w-full"
             placeholder="correo@ejemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -95,7 +95,7 @@ export default function ContactPage() {
           </label>
           <textarea
             rows={5}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none"
+            className="mm-field w-full"
             placeholder="Escribe tu mensaje aquí..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -106,7 +106,7 @@ export default function ContactPage() {
         <button
           type="submit"
           disabled={sending}
-          className="w-full bg-brand-blue text-white py-3 rounded-xl font-semibold hover:bg-brand-beige hover:text-brand-blue transition-colors disabled:opacity-50"
+          className="mm-button w-full disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending ? "Enviando..." : "Enviar mensaje"}
         </button>

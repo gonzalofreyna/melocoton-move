@@ -149,7 +149,7 @@ export default function PromoModal() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.96, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden"
+            className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-brand-line bg-brand-cream shadow-editorial-lg"
           >
             {/* Cerrar */}
             <button
@@ -191,7 +191,7 @@ export default function PromoModal() {
 
             {/* Contenido */}
             <div className="p-6 md:p-7 text-center">
-              <h2 className="text-2xl md:text-3xl font-extrabold text-brand-blue">
+              <h2 className="mm-heading text-3xl md:text-4xl">
                 {title}
               </h2>
               {text && (
@@ -248,7 +248,7 @@ export default function PromoModal() {
               <div className="mt-6 flex items-center justify-center gap-3">
                 <a
                   href={buttonLink}
-                  className="inline-flex items-center justify-center rounded-xl bg-brand-blue px-5 py-3 font-semibold text-white hover:bg-brand-beige hover:text-brand-blue transition"
+                  className="mm-button"
                 >
                   {buttonText}
                 </a>
