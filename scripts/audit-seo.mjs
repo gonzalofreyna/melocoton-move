@@ -144,6 +144,10 @@ try {
         if (product.offers?.priceCurrency !== "MXN") errors.push(path + ": moneda JSON-LD incorrecta");
         if (!almostEqual(product.offers?.price, price)) errors.push(path + ": precio JSON-LD diferente del producto inicial");
         if (!visibleText(html).includes(price.toFixed(2) + " MXN")) errors.push(path + ": precio no visible en el HTML inicial");
+        if (initialProduct.category === "mat" && /^Mat Profesional\b/i.test(initialProduct.name)) {
+          const seoTitle = text(html, "title");
+          if (!seoTitle.includes("Tapete Yoga y Pilates")) errors.push(path + ": título de mat sin intención de búsqueda Yoga y Pilates");
+        }
         const h1 = text(html, "h1");
         if (!h1 || h1 !== product.name) errors.push(path + ": H1 y nombre JSON-LD diferentes");
         if (breadcrumb?.itemListElement?.[2]?.name !== product.name) errors.push(path + ": breadcrumb sin nombre de variante correcto");
