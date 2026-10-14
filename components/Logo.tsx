@@ -10,7 +10,7 @@ export default function Logo({ className = "", tone = "dark" }: { className?: st
     >
       {/* 🎨 Fondo animado pastel dentro del logo */}
       <div
-        className="w-full h-full max-w-[320px] aspect-[260/90] animate-logo-gradient"
+        className="w-full aspect-[260/90] animate-logo-gradient"
         style={{
           WebkitMaskImage: "url('/images/logonice.svg')",
           WebkitMaskRepeat: "no-repeat",
