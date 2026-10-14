@@ -19,6 +19,7 @@ const read = async (path) => {
   return response.text();
 };
 for (const { path, required, schema } of checks) {
+  const errorsBefore = errors.length;
   try {
     const html = await read(path);
     // Evita falsos positivos de contenido que existe solo en scripts o datos de hidratación.
@@ -130,8 +131,11 @@ for (const { path, required, schema } of checks) {
       }).find((item) => item["@type"] === "BreadcrumbList");
       if (!breadcrumbs || breadcrumbs.itemListElement?.length !== 3) errors.push(path + ": falta BreadcrumbList completo");
     }
-    console.log("OK", path);
-  } catch (error) { errors.push(path + ": " + error.message); }
+    console.log(errors.length === errorsBefore ? "OK" : "ERROR", path);
+  } catch (error) {
+    errors.push(path + ": " + error.message);
+    console.log("ERROR", path);
+  }
 }
 try {
   const robots = await read("/robots.txt");
