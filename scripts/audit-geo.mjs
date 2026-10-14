@@ -5,7 +5,7 @@ const base = process.env.GEO_AUDIT_URL || "http://localhost:3000";
 const checks = [
   { path: "/", required: ["Descubre Melocotón Move: yoga", "Ver tapetes de yoga y Pilates", "Ver calcetas antideslizantes", "Personalizar mi mat", "/melocoton-en-movimiento", "Descubre nuestras historias"], schema: "Organization" },
   { path: "/aboutus", required: ["¿Qué es Melocotón Move?", "tapetes de yoga y Pilates", "calcetas antideslizantes"] },
-  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates", "/crea-tu-mat", "Diseñar mi mat personalizado", "/melocoton-en-movimiento"] },
+  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates", "/crea-tu-mat", "Diseñar mi mat personalizado", "/melocoton-en-movimiento", "Tapetes en forma de bala, cápsula o clásica", "¿Qué es un tapete de yoga o Pilates en forma de bala?"] },
   { path: "/calcetines-antideslizantes-pilates", required: ["Preguntas frecuentes", "¿Se pueden usar para Pilates reformer y barre?", "¿Dónde comprar calcetas antideslizantes para Pilates en México?", "modelos Basic y Curly", "/guia-calcetas-antideslizantes-pilates"] },
   { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates", "Diseñar mi tapete personalizado", "/crea-tu-mat"] },
   { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
@@ -67,6 +67,14 @@ for (const { path, required, schema } of checks) {
           errors.push("/melocoton-en-movimiento: VideoObject sin metadatos verificables o video válido");
         }
       }
+    }
+    if (path === "/calcetines-antideslizantes-pilates" &&
+        !html.includes("<title>Calcetas Antideslizantes para Pilates | Melocotón Move</title>")) {
+      errors.push("/calcetines-antideslizantes-pilates: title comercial no coincide con el plan");
+    }
+    if (path === "/crea-tu-mat" &&
+        !html.includes("<title>Tapetes Personalizados con Logo | Melocotón Move</title>")) {
+      errors.push("/crea-tu-mat: title comercial no coincide con el plan");
     }
     if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
       errors.push("/crea-tu-mat: falta H1 visible en el HTML inicial");
