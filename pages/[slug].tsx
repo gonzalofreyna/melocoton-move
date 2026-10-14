@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 import type React from "react";
 import type { GetStaticPaths, GetStaticProps } from "next";
 
-type ProductPageProps = { initialProduct: Product };
+type ProductPageProps = { initialProduct: Product; initialVariants: Product[] };
 
 // Generación bajo demanda de slugs nuevos, con revalidación cada 30 minutos.
 export const getStaticPaths: GetStaticPaths = async () => ({
@@ -30,10 +30,21 @@ export const getStaticProps: GetStaticProps<ProductPageProps> = async ({ params 
   const initialProduct = products.find((item) => item.slug.toLowerCase() === slug);
 
   if (!initialProduct) return { notFound: true, revalidate: 60 };
-  return { props: { initialProduct: JSON.parse(JSON.stringify(initialProduct)) as Product }, revalidate: 1800 };
+  // Entregar enlaces a colores en el HTML inicial sin esperar el fetch del navegador.
+  const productKey = initialProduct.name.trim().toLowerCase().replace(/\s+/g, " ");
+  const initialVariants = products.filter((item) =>
+    item.name.trim().toLowerCase().replace(/\s+/g, " ") === productKey,
+  );
+  return {
+    props: {
+      initialProduct: JSON.parse(JSON.stringify(initialProduct)) as Product,
+      initialVariants: JSON.parse(JSON.stringify(initialVariants)) as Product[],
+    },
+    revalidate: 1800,
+  };
 };
 
-export default function ProductDetail({ initialProduct }: ProductPageProps) {
+export default function ProductDetail({ initialProduct, initialVariants }: ProductPageProps) {
   const router = useRouter();
   const { slug } = router.query;
   const { addToCart } = useCart();
@@ -64,7 +75,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
 
   const variants = useMemo(() => {
     if (!product) return [];
-    if (!products.length) return [product];
+    if (!products.length) return initialVariants.length ? initialVariants : [product];
 
     const productKey = product.name.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -73,7 +84,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
 
       return key === productKey;
     });
-  }, [product, products]);
+  }, [product, products, initialVariants]);
 
   useEffect(() => {
     if (product?.image) setMainUrl(resolveImage(product.image));
@@ -464,12 +475,11 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
                     if (!color) return null;
 
                     return (
-                      <button
+                      <Link
                         key={variant.slug}
-                        type="button"
-                        onClick={() => router.push(`/${variant.slug}`)}
-                        aria-label={`Seleccionar ${variant.name}`}
-                        aria-pressed={isSelected}
+                        href={`/${variant.slug}`}
+                        aria-label={`Ver ${variant.name} en color ${color}`}
+                        aria-current={isSelected ? "page" : undefined}
                         className={`w-7 h-7 rounded-full border transition-all ${
                           isSelected
                             ? "ring-2 ring-brand-blue ring-offset-2 border-white"
