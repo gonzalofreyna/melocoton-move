@@ -10,7 +10,7 @@ const checks = [
   { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates", "Diseñar mi tapete personalizado", "/crea-tu-mat"] },
   { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
   { path: "/crea-tu-mat", required: ["Desde una sola pieza", "Personalización láser", "Tapetes de yoga y Pilates personalizados con tu logo en México", "/tapetes-yoga-pilates"] },
-  { path: "/melocoton-en-movimiento", required: ["Melocotón en movimiento", "Más momentos de Melocotón", "/tapetes-yoga-pilates", "4125f23c3a9141589692e1587489afbe.mp4"] },
+  { path: "/melocoton-en-movimiento", required: ["Melocotón en movimiento", "Historias que nos inspiran", "/tapetes-yoga-pilates", "4125f23c3a9141589692e1587489afbe.mp4"] },
 ];
 const errors = [];
 const read = async (path) => {
@@ -92,6 +92,23 @@ try {
   }
   const sitemap = await read("/sitemap.xml");
   if (!sitemap.includes("https://www.melocotonmove.com/melocoton-en-movimiento</loc>")) errors.push("sitemap: falta /melocoton-en-movimiento");
+  // El sitemap de video debe exponer los nueve MP4 y sus portadas, sin datos inventados.
+  if (!sitemap.includes('xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')) {
+    errors.push("sitemap: falta namespace video");
+  }
+  const videoEntries = [...sitemap.matchAll(/<video:video>([\s\S]*?)<\/video:video>/g)].map((m) => m[1]);
+  if (videoEntries.length !== 9) errors.push("sitemap: deben existir nueve video:video");
+  const videoSources = videoEntries.map((item) => item.match(/<video:content_loc>([^<]+)<\/video:content_loc>/)?.[1]);
+  const videoPosters = videoEntries.map((item) => item.match(/<video:thumbnail_loc>([^<]+)<\/video:thumbnail_loc>/)?.[1]);
+  if (new Set(videoSources).size !== 9 || videoSources.some((item) => !item?.endsWith(".mp4"))) {
+    errors.push("sitemap: video:content_loc duplicados o inválidos");
+  }
+  if (new Set(videoPosters).size !== 9 || videoPosters.some((item) => !item?.endsWith("-poster.webp"))) {
+    errors.push("sitemap: miniaturas WebP duplicadas o inválidas");
+  }
+  if (videoEntries.some((item) => !item.includes("<video:title>") || !item.includes("<video:description>"))) {
+    errors.push("sitemap: título o descripción de video ausentes");
+  }
   for (const slug of ["/guia-elegir-tapete-yoga-pilates", "/guia-calcetas-antideslizantes-pilates"]) {
     if (!sitemap.includes("https://www.melocotonmove.com" + slug + "</loc>")) errors.push("sitemap: falta " + slug);
   }
