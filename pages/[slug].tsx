@@ -199,7 +199,11 @@ export default function ProductDetail({ initialProduct, initialVariants }: Produ
   const seoProductName = variantColor
     ? `${product.name} ${variantColor}`
     : product.name;
-  const title = `${seoProductName} | Melocotón Move`;
+  // El título de mats comunica la intención de búsqueda sin modificar el nombre comercial visible.
+  const seoTitleName = product.category === "mat" && /^Mat Profesional\b/i.test(seoProductName)
+    ? seoProductName.replace(/^Mat Profesional\b/i, "Tapete Yoga y Pilates")
+    : seoProductName;
+  const title = `${seoTitleName} | Melocotón Move`;
   const categoryKeyword =
     product.category === "mat"
       ? "tapete de yoga y Pilates"
