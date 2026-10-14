@@ -6,7 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { resolveImage } from "../lib/resolveImage";
 import { useAppConfig } from "../context/ConfigContext";
 import Link from "next/link";
@@ -30,6 +30,7 @@ export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const heroRef = useRef<HTMLElement | null>(null);
 
   // 🔍 Detecta dispositivo una sola vez + listener de resize
   useEffect(() => {
@@ -57,6 +58,22 @@ export default function HeroSection() {
   const mainTitleIndex = slides.findIndex((slide) => !!slide.title?.trim());
   const heroEnabled = !loading && !!config?.featureFlags?.showHero && slides.length > 0;
 
+  // Solo reproduce el video del slide activo. Al cambiar de slide, pausa
+  // los otros videos y respeta la preferencia del sistema por menos movimiento.
+  useEffect(() => {
+    if (!heroEnabled) return;
+    const videos = heroRef.current?.querySelectorAll<HTMLVideoElement>("video");
+    videos?.forEach((video) => {
+      const slideActive = video.closest(".swiper-slide")?.classList.contains("swiper-slide-active");
+      if (slideActive && !reduceMotion) {
+        video.muted = true;
+        void video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    });
+  }, [activeIndex, heroEnabled, reduceMotion]);
+
   // El config se carga en el navegador. El H1 debe existir también en el HTML
   // inicial (SSR/SSG) DENTRO del Hero, no en otra sección del Home.
   // No mostrar un placeholder visual que modifique la experiencia del carrusel.
@@ -69,7 +86,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section aria-label="Hero de Melocotón Move" className="melocoton-hero relative isolate w-full h-[76svh] min-h-[500px] max-h-[840px] overflow-hidden bg-brand-ink sm:h-[80vh] sm:min-h-[600px]">
+    <section ref={heroRef} aria-label="Hero de Melocotón Move" className="melocoton-hero relative isolate w-full h-[76svh] min-h-[500px] max-h-[840px] overflow-hidden bg-brand-ink sm:h-[80vh] sm:min-h-[600px]">
       {mainTitleIndex === -1 && (
         <h1 className="sr-only">Melocotón Move: tapetes de yoga y Pilates en México</h1>
       )}
@@ -105,6 +122,7 @@ export default function HeroSection() {
                 {isVideo ? (
                   isMobile && slide.mobileVideo ? (
                     <video
+                      data-slide-index={idx}
                       className="absolute inset-0 w-full h-full object-cover"
                       src={slide.mobileVideo}
                       autoPlay={idx === activeIndex && !reduceMotion}
@@ -115,6 +133,7 @@ export default function HeroSection() {
                     />
                   ) : slide.desktopVideo ? (
                     <video
+                      data-slide-index={idx}
                       className="absolute inset-0 w-full h-full object-cover"
                       src={slide.desktopVideo}
                       autoPlay={idx === activeIndex && !reduceMotion}
@@ -125,6 +144,7 @@ export default function HeroSection() {
                     />
                   ) : slide.videoUrl ? (
                     <video
+                      data-slide-index={idx}
                       className="absolute inset-0 w-full h-full object-cover"
                       src={slide.videoUrl}
                       autoPlay={idx === activeIndex && !reduceMotion}
