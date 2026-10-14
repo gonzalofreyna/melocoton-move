@@ -20,6 +20,20 @@ const videoIds = [
   "df5886d824ca4205bd90273183390973",
 ] as const;
 
+// Frases editoriales: no son citas ni reseñas atribuidas a clientes.
+// Se reemplazarán por descripciones verificadas cuando revisemos cada video.
+const videoCaptions = [
+  "Lo que nos mueve",
+  "El movimiento se comparte",
+  "Haz espacio para ti",
+  "A tu propio ritmo",
+  "Una práctica, mil maneras",
+  "Momentos que inspiran",
+  "Tu espacio, tu práctica",
+  "El gusto de moverte",
+  "La práctica continúa",
+] as const;
+
 type VideoCardProps = {
   id: (typeof videoIds)[number];
   index: number;
@@ -29,6 +43,7 @@ type VideoCardProps = {
 function VideoCard({ id, index, featured = false }: VideoCardProps) {
   const src = `${MEDIA_BASE}${id}.mp4`;
   const poster = `${MEDIA_BASE}portada/${id}-poster.webp`;
+  const caption = videoCaptions[index];
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -59,7 +74,7 @@ function VideoCard({ id, index, featured = false }: VideoCardProps) {
           playsInline
           preload={featured ? "auto" : "none"}
           poster={poster}
-          aria-label={featured ? "Video destacado de Melocotón Move" : `Video ${index + 1} de Melocotón Move`}
+          aria-label={`${caption} — video de Melocotón Move`}
           className="h-full w-full object-contain"
         >
           <source src={src} type="video/mp4" />
@@ -67,8 +82,8 @@ function VideoCard({ id, index, featured = false }: VideoCardProps) {
           <a href={src} target="_blank" rel="noopener noreferrer">Abrir archivo MP4</a>.
         </video>
       </div>
-      <figcaption className="mt-2 text-center text-sm leading-6 text-gray-600">
-        {featured ? "Video destacado de Melocotón Move" : `Video ${index + 1} de la colección`}
+      <figcaption className="mt-3 text-center text-sm font-medium leading-6 text-brand-blue">
+        {caption}
       </figcaption>
     </figure>
   );
@@ -102,14 +117,14 @@ export default function MelocotonEnMovimientoPage() {
             <div className="mx-auto flex max-w-lg flex-col gap-5 lg:max-w-none lg:flex-row lg:items-center lg:justify-between lg:gap-14">
               <header className="text-center lg:max-w-xl lg:text-left">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.19em] text-[#81645f] sm:text-xs">
-                  Historias en video
+                  Una comunidad en movimiento
                 </p>
                 <h1 className="mt-2 text-[clamp(1.7rem,7vw,2.25rem)] font-semibold leading-tight tracking-tight text-brand-blue sm:text-5xl">
                   Melocotón en movimiento
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-600 sm:mt-5 sm:text-base sm:leading-8 lg:mx-0">
-                  Descubre nuestra comunidad y los productos de Melocotón Move
-                  a través de una selección de videos.
+                  Cada práctica tiene su historia. Conoce los momentos
+                  que dan vida a Melocotón Move.
                 </p>
                 <div className="mt-7 hidden flex-wrap gap-5 text-sm font-semibold text-brand-blue lg:flex">
                   <Link className="underline underline-offset-4" href="/tapetes-yoga-pilates">Explorar tapetes</Link>
@@ -117,7 +132,7 @@ export default function MelocotonEnMovimientoPage() {
                 </div>
               </header>
               <div className="w-full shrink-0 lg:w-auto">
-                <h2 id="video-destacado" className="sr-only">Video destacado</h2>
+                <h2 id="video-destacado" className="sr-only">Lo que nos mueve</h2>
                 <VideoCard id={featuredId} index={0} featured />
               </div>
             </div>
@@ -126,11 +141,11 @@ export default function MelocotonEnMovimientoPage() {
           <section aria-labelledby="mas-videos" className="mt-12 sm:mt-20">
             <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
               <h2 id="mas-videos" className="text-2xl font-semibold text-brand-blue sm:text-3xl">
-                Más momentos de Melocotón
+                Historias que nos inspiran
               </h2>
               <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
-                Explora los demás videos de nuestra colección. Desliza para verlos en
-                tu celular y toca reproducir el que quieras.
+                Un vistazo a nuestra comunidad, a su propio ritmo. Desliza
+                para descubrir más.
               </p>
             </div>
 
