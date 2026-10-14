@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 import type React from "react";
 import type { GetStaticPaths, GetStaticProps } from "next";
 
-type ProductPageProps = { initialProduct: Product };
+type ProductPageProps = { initialProduct: Product; initialVariants: Product[] };
 
 // Generación bajo demanda de slugs nuevos, con revalidación cada 30 minutos.
 export const getStaticPaths: GetStaticPaths = async () => ({
@@ -30,10 +30,21 @@ export const getStaticProps: GetStaticProps<ProductPageProps> = async ({ params 
   const initialProduct = products.find((item) => item.slug.toLowerCase() === slug);
 
   if (!initialProduct) return { notFound: true, revalidate: 60 };
-  return { props: { initialProduct: JSON.parse(JSON.stringify(initialProduct)) as Product }, revalidate: 1800 };
+  // Entregar enlaces a colores en el HTML inicial sin esperar el fetch del navegador.
+  const productKey = initialProduct.name.trim().toLowerCase().replace(/\s+/g, " ");
+  const initialVariants = products.filter((item) =>
+    item.name.trim().toLowerCase().replace(/\s+/g, " ") === productKey,
+  );
+  return {
+    props: {
+      initialProduct: JSON.parse(JSON.stringify(initialProduct)) as Product,
+      initialVariants: JSON.parse(JSON.stringify(initialVariants)) as Product[],
+    },
+    revalidate: 1800,
+  };
 };
 
-export default function ProductDetail({ initialProduct }: ProductPageProps) {
+export default function ProductDetail({ initialProduct, initialVariants }: ProductPageProps) {
   const router = useRouter();
   const { slug } = router.query;
   const { addToCart } = useCart();
@@ -64,7 +75,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
 
   const variants = useMemo(() => {
     if (!product) return [];
-    if (!products.length) return [product];
+    if (!products.length) return initialVariants.length ? initialVariants : [product];
 
     const productKey = product.name.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -73,7 +84,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
 
       return key === productKey;
     });
-  }, [product, products]);
+  }, [product, products, initialVariants]);
 
   useEffect(() => {
     if (product?.image) setMainUrl(resolveImage(product.image));
@@ -214,12 +225,20 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
     "@id": `${canonical}#product`,
     name: seoProductName,
     image: ldImages,
-    description: product.description,
-    sku: product.sku,
+    description: product.description.trim() || description,
+    ...(product.sku ? { sku: product.sku } : {}),
     brand: { "@type": "Brand", name: product.brand || "Melocotón Move" },
+    // Sólo publicar atributos que existen en los datos reales del catálogo.
+    ...(product.colors?.length ? { color: product.colors.join(", ") } : {}),
+    ...(product.materials?.length ? { material: product.materials.join(", ") } : {}),
+    ...(typeof product.weightGrams === "number" && product.weightGrams > 0
+      ? { weight: { "@type": "QuantitativeValue", value: product.weightGrams, unitCode: "GRM" } }
+      : {}),
     ...(product.category === "calcetas"
       ? { category: "Calcetas antideslizantes para Pilates", size: "Unitalla" }
-      : {}),
+      : product.category === "mat"
+        ? { category: "Tapetes de yoga y Pilates" }
+        : {}),
     offers: {
       "@type": "Offer",
       priceCurrency: "MXN",
@@ -337,6 +356,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
         <meta property="og:description" content={description} />
         <meta property="og:image" content={effectiveMainUrl} />
         <meta property="og:url" content={canonical} />
+        <meta property="og:locale" content="es_MX" />
         <meta name="twitter:card" content="summary_large_image" />
         <script
           type="application/ld+json"
@@ -455,13 +475,13 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
                     if (!color) return null;
 
                     return (
-                      <button
+                      <Link
                         key={variant.slug}
-                        type="button"
-                        onClick={() => router.push(`/${variant.slug}`)}
-                        aria-label={`Seleccionar ${variant.name}`}
-                        aria-pressed={isSelected}
-                        className={`w-7 h-7 rounded-full border transition-all ${
+                        href={`/${variant.slug}`}
+                        aria-label={`Ver ${variant.name} en color ${color}`}
+                        aria-current={isSelected ? "page" : undefined}
+                        title={variant.name}
+                        className={`inline-block h-7 w-7 shrink-0 rounded-full border transition-all ${
                           isSelected
                             ? "ring-2 ring-brand-blue ring-offset-2 border-white"
                             : "border-gray-300 hover:scale-110"
@@ -525,6 +545,20 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
               <p className="text-gray-600 whitespace-pre-line text-sm sm:text-base">
                 {product.description}
               </p>
+            )}
+
+            {product.category === "mat" && (
+              <nav
+                aria-label="Información para elegir y personalizar tu mat"
+                className="flex flex-wrap gap-x-6 gap-y-2 text-xs sm:text-sm"
+              >
+                <Link className="mm-text-link" href="/guia-elegir-tapete-yoga-pilates">
+                  Cómo elegir tu tapete
+                </Link>
+                <Link className="mm-text-link" href="/crea-tu-mat">
+                  Personaliza un mat con tu logo
+                </Link>
+              </nav>
             )}
 
             {product.category === "calcetas" && (

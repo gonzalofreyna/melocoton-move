@@ -39,12 +39,50 @@ export default function SeoCategoryPage({
     const key = product.name.trim().toLowerCase();
     groups.set(key, [...(groups.get(key) ?? []), product]);
   }
+  // JSON-LD de categoría construido con los mismos grupos que se muestran
+  // visualmente. No se generan URL ni productos ficticios.
+  const siteUrl = "https://www.melocotonmove.com";
+  const grouped = [...groups.values()];
+  const listingLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${siteUrl}${canonicalPath}#collection`,
+    url: `${siteUrl}${canonicalPath}`,
+    name: heading,
+    description,
+    inLanguage: "es-MX",
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: grouped.map((variants, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: variants[0].name,
+        url: `${siteUrl}/${variants[0].slug}`,
+      })),
+    },
+  };
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: `${siteUrl}/` },
+      { "@type": "ListItem", position: 2, name: heading, item: `${siteUrl}${canonicalPath}` },
+    ],
+  };
+
   return (
     <>
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={`https://www.melocotonmove.com${canonicalPath}`} />
+        <link rel="canonical" href={`${siteUrl}${canonicalPath}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={`${siteUrl}${canonicalPath}`} />
+        <meta property="og:locale" content="es_MX" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(listingLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       </Head>
       <main className="min-h-screen bg-brand-cream px-4 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-7xl">
@@ -64,7 +102,7 @@ export default function SeoCategoryPage({
             <p className="mt-12 text-center text-gray-600">No hay productos disponibles en esta categoría por el momento.</p>
           ) : (
             <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-12 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
-              {[...groups.values()].map((variants) => {
+              {grouped.map((variants) => {
                 const product = variants[0];
                 return (
                   <ProductCard

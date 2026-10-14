@@ -50,17 +50,8 @@ export default function Document() {
           content="width=device-width, initial-scale=1.0, viewport-fit=cover"
         />
 
-        {/* Perf de fuentes */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap"
-          rel="stylesheet"
-        />
+        {/* Tipografías nativas del sistema definidas por Tailwind.
+            Sin peticiones externas a Google Fonts para cargar fuentes no utilizadas. */}
 
         {/* JSON-LD global */}
         <script

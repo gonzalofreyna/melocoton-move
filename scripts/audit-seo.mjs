@@ -78,6 +78,37 @@ try {
     if (!description) errors.push(`${path}: falta meta description`);
     if (url !== site + (path === "/" ? "/" : path)) errors.push(`${path}: canonical incorrecta: ${url}`);
     const isProduct = !["/", "/products", "/aboutus", "/contact", "/arma-tu-studio", "/crea-tu-mat", "/melocoton-en-movimiento", "/tapetes-yoga-pilates", "/calcetines-antideslizantes-pilates", "/guia-elegir-tapete-yoga-pilates", "/guia-calcetas-antideslizantes-pilates"].includes(path);
+    // Las categorías exponen los mismos productos del catálogo prerenderizado.
+    if (path === "/tapetes-yoga-pilates" || path === "/calcetines-antideslizantes-pilates") {
+      const jsonLd = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+        .flatMap((match) => { try { return [JSON.parse(match[1])]; } catch { return []; } });
+      const collection = jsonLd.find((value) => value["@type"] === "CollectionPage");
+      const crumbs = jsonLd.find((value) => value["@type"] === "BreadcrumbList");
+      if (!collection || collection.mainEntity?.["@type"] !== "ItemList") {
+        errors.push(path + ": falta CollectionPage e ItemList");
+      } else {
+        const entries = collection.mainEntity.itemListElement || [];
+        if (!entries.length) errors.push(path + ": ItemList sin productos");
+        const urls = new Set();
+        for (const [index, entry] of entries.entries()) {
+          if (entry["@type"] !== "ListItem" || entry.position !== index + 1 ||
+              !entry.name?.trim() || !entry.url?.startsWith(site + "/") || urls.has(entry.url)) {
+            errors.push(path + ": item de colección inválido o duplicado");
+            break;
+          }
+          urls.add(entry.url);
+        }
+      }
+      if (!crumbs || crumbs.itemListElement?.length !== 2 ||
+          crumbs.itemListElement[1]?.item !== site + path) {
+        errors.push(path + ": BreadcrumbList de categoría incorrecto");
+      }
+    }
+    if (path === "/products") {
+      for (const url of ["/tapetes-yoga-pilates", "/calcetines-antideslizantes-pilates", "/crea-tu-mat"]) {
+        if (!html.includes(`href="${url}"`)) errors.push(path + ": falta enlace SSR a " + url);
+      }
+    }
     if (isProduct) {
       products++;
       const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
@@ -117,6 +148,29 @@ try {
         if (!h1 || h1 !== product.name) errors.push(path + ": H1 y nombre JSON-LD diferentes");
         if (breadcrumb?.itemListElement?.[2]?.name !== product.name) errors.push(path + ": breadcrumb sin nombre de variante correcto");
         if (!product.brand?.name?.trim()) errors.push(path + ": marca sin nombre");
+        const expectedColor = initialProduct.colors?.length ? initialProduct.colors.join(", ") : undefined;
+        const expectedMaterial = initialProduct.materials?.length ? initialProduct.materials.join(", ") : undefined;
+        const expectedWeight = typeof initialProduct.weightGrams === "number" && initialProduct.weightGrams > 0
+          ? initialProduct.weightGrams : undefined;
+        if (product.color !== expectedColor) errors.push(path + ": color JSON-LD distinto del catálogo");
+        if (product.material !== expectedMaterial) errors.push(path + ": materiales JSON-LD distintos del catálogo");
+        if (product.weight?.value !== expectedWeight ||
+            (expectedWeight != null && product.weight?.unitCode !== "GRM")) {
+          errors.push(path + ": peso JSON-LD distinto del catálogo");
+        }
+        const initialVariants = (() => {
+          try { return JSON.parse(hydration[1])?.props?.pageProps?.initialVariants; }
+          catch { return null; }
+        })();
+        if (!Array.isArray(initialVariants) || !initialVariants.some((v) => v.slug === initialProduct.slug)) {
+          errors.push(path + ": faltan variantes iniciales rastreables");
+        } else {
+          for (const variant of initialVariants.filter((v) => v.colors?.[0])) {
+            if (initialVariants.length > 1 && !html.includes(`href="/${variant.slug}"`)) {
+              errors.push(path + ": falta enlace HTML a variante " + variant.slug);
+            }
+          }
+        }
         if (!Array.isArray(product.image) || !product.image.length ||
             product.image.some((src) => !/^https:\/\//i.test(src))) {
           errors.push(path + ": imagen JSON-LD no es una URL HTTPS absoluta");
