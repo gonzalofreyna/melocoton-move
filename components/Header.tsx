@@ -178,7 +178,7 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
                 className="flex items-center justify-center"
                 aria-label="Inicio"
               >
-                <Logo tone={overlayHeader ? "light" : "dark"} className="h-auto w-[150px] transition-opacity hover:opacity-80 sm:w-[190px] lg:w-[210px]" />
+                <Logo tone={overlayHeader ? "light" : "dark"} className="h-auto w-[165px] transition-opacity hover:opacity-80 sm:w-[209px] lg:w-[231px]" />
               </Link>
             </div>
 
