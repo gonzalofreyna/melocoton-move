@@ -18,7 +18,7 @@ import DesktopNav from "./DesktopNav";
 import Logo from "../components/Logo";
 import SearchModal from "./SearchModal"; // 👈 importa el nuevo modal
 
-export default function Header() {
+export default function Header({ onHeightChange }: { onHeightChange?: (offset: number) => void }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -31,6 +31,31 @@ export default function Header() {
   const router = useRouter();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+
+  // Un header fixed queda fuera del flujo. Medimos su extremo inferior real
+  // para que el contenido empiece justo debajo, sin huecos ni solapamientos.
+  // offsetTop/offsetHeight ignoran el transform temporal de Framer Motion.
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    const updateOffset = () => {
+      onHeightChange?.(Math.ceil(header.offsetTop + header.offsetHeight));
+    };
+
+    updateOffset();
+    const observer = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(updateOffset)
+      : null;
+    observer?.observe(header);
+    window.addEventListener("resize", updateOffset);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateOffset);
+    };
+  }, [visible, onHeightChange]);
 
   // 🔄 Cargar productos para sugerencias (desktop)
   useEffect(() => {
@@ -106,6 +131,7 @@ export default function Header() {
       <AnimatePresence>
         {visible && (
           <motion.header
+            ref={headerRef}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
