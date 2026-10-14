@@ -52,6 +52,27 @@ las clases visuales no cambian el comportamiento financiero.
 - Overlay editorial y CTA blanco, indicadores discretos, mobile-first.
 - Videos inactivos pausados; autoplay reducido si el usuario solicita menos movimiento.
 
+## Product cards (catálogo, destacados y categorías)
+
+- Estética tipo editorial: **sólo la fotografía tiene esquinas redondeadas**; nombre,
+  precio y swatches van fuera de la foto, sin recuadro alrededor de toda la card.
+- El fondo interior de imagen es siempre **blanco puro** para integrarse con las
+  fotografías reales ya editadas para marketplace. No modificar sus archivos.
+- La **imagen** y el **nombre** abren la ficha de la variante seleccionada.
+- Escritorio con mouse: CTA negro **«Comprar ahora»** dentro de la imagen, visible
+  en hover o enfoque; **añade la variante al carrito y abre el minicart existente**,
+  no omite el proceso de compra.
+- Móvil y pantallas táctiles: botón circular **+** en la parte inferior de la foto
+  que añade al carrito y abre el minicart.
+- Corazón de favorito funcional mediante `localStorage` de este navegador;
+  no se crea una lista pública, cuenta ni sincronización con servidor.
+- Swatches de variantes debajo del precio con selección visible; cambian fotografía,
+  precio, ficha, disponibilidad y producto agregado al carrito. Si hay más de cinco
+  tonos, el botón `+N` permite desplegar los restantes.
+- Los badges de ofertas existentes se conservan; el corazón/CTA se reubica para
+  evitar que los controles coincidan con las esquinas configuradas.
+- Sin cambio a agrupación de productos, APIs, cálculo de descuentos, shipping o stock.
+
 ## Revisión antes de merge
 
 ```bash
