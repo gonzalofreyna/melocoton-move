@@ -21,9 +21,17 @@ export default function Footer() {
   return (
     <footer className="bg-brand-blue text-white mt-auto">
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-center md:text-left">
-        {/* Columna izquierda - Links legales */}
+        {/* Columna izquierda - Explora y enlaces legales */}
         <div>
           <ul className="space-y-2 text-sm">
+            <li>
+              <Link
+                href="/melocoton-en-movimiento"
+                className="hover:text-brand-beige transition-colors"
+              >
+                Melocotón en movimiento
+              </Link>
+            </li>
             {config?.featureFlags.showPrivacyPolicy && (
               <li>
                 <Link

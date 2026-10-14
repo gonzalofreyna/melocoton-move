@@ -3,13 +3,14 @@
 // node scripts/audit-geo.mjs
 const base = process.env.GEO_AUDIT_URL || "http://localhost:3000";
 const checks = [
-  { path: "/", required: ["Descubre Melocotón Move: yoga", "Ver tapetes de yoga y Pilates", "Ver calcetas antideslizantes", "Personalizar mi mat"], schema: "Organization" },
+  { path: "/", required: ["Descubre Melocotón Move: yoga", "Ver tapetes de yoga y Pilates", "Ver calcetas antideslizantes", "Personalizar mi mat", "/melocoton-en-movimiento", "Descubre nuestras historias"], schema: "Organization" },
   { path: "/aboutus", required: ["¿Qué es Melocotón Move?", "tapetes de yoga y Pilates", "calcetas antideslizantes"] },
-  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates", "/crea-tu-mat", "Diseñar mi mat personalizado"] },
+  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates", "/crea-tu-mat", "Diseñar mi mat personalizado", "/melocoton-en-movimiento"] },
   { path: "/calcetines-antideslizantes-pilates", required: ["Preguntas frecuentes", "¿Se pueden usar para Pilates reformer y barre?", "¿Dónde comprar calcetas antideslizantes para Pilates en México?", "modelos Basic y Curly", "/guia-calcetas-antideslizantes-pilates"] },
   { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates", "Diseñar mi tapete personalizado", "/crea-tu-mat"] },
   { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
   { path: "/crea-tu-mat", required: ["Desde una sola pieza", "Personalización láser", "Tapetes de yoga y Pilates personalizados con tu logo en México", "/tapetes-yoga-pilates"] },
+  { path: "/melocoton-en-movimiento", required: ["Melocotón en movimiento", "Más momentos de Melocotón", "/tapetes-yoga-pilates", "4125f23c3a9141589692e1587489afbe.mp4"] },
 ];
 const errors = [];
 const read = async (path) => {
@@ -24,6 +25,28 @@ for (const { path, required, schema } of checks) {
     const visibleHtml = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
     for (const value of required) {
       if (!visibleHtml.includes(value)) errors.push(path + ": falta contenido HTML visible " + value);
+    }
+    if (path === "/melocoton-en-movimiento") {
+      const videos = [...visibleHtml.matchAll(/<source\b[^>]*\bsrc="(https:\/\/melocoton-move-assets\.s3\.us-east-1\.amazonaws\.com\/videos\/customers\/[^"]+\.mp4)"/gi)]
+        .map((m) => m[1]);
+      if (videos.length !== 9 || new Set(videos).size !== 9) {
+        errors.push("/melocoton-en-movimiento: deben aparecer 9 videos S3 únicos en el HTML inicial");
+      }
+      const playerTags = [...visibleHtml.matchAll(/<video\b[^>]*>/gi)].map((m) => m[0]);
+      const heroPlayer = playerTags[0] ?? "";
+      const hasVideoFlag = (tag, flag) => new RegExp("(?:\\s)" + flag + "(?=\\s|=|>)", "i").test(tag);
+      if (playerTags.length !== 9 || !["autoplay", "muted", "playsinline", "loop"].every((flag) => hasVideoFlag(heroPlayer, flag))) {
+        errors.push("/melocoton-en-movimiento: el video principal debe tener autoplay, muted, playsInline y loop");
+      }
+      if (playerTags.slice(1).some((tag) => hasVideoFlag(tag, "autoplay") || !/preload=["']none["']/i.test(tag))) {
+        errors.push("/melocoton-en-movimiento: los ocho videos secundarios no deben usar autoplay y deben usar preload=none");
+      }
+      const posters = [...visibleHtml.matchAll(/\bposter="(https:\/\/melocoton-move-assets\.s3\.us-east-1\.amazonaws\.com\/videos\/customers\/portada\/[^"]+-poster\.webp)"/gi)]
+        .map((m) => m[1]);
+      const expectedPosters = videos.map((video) => video.replace("/videos/customers/", "/videos/customers/portada/").replace(/\.mp4$/i, "-poster.webp"));
+      if (posters.length !== 9 || new Set(posters).size !== 9 || expectedPosters.some((poster) => !posters.includes(poster))) {
+        errors.push("/melocoton-en-movimiento: faltan portadas WebP en /videos/customers/portada/ o no corresponden a los MP4");
+      }
     }
     if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
       errors.push("/crea-tu-mat: falta H1 visible en el HTML inicial");
@@ -68,6 +91,7 @@ try {
     if (robots.includes("Disallow: " + item.path + "\n")) errors.push("robots.txt: bloqueada " + item.path);
   }
   const sitemap = await read("/sitemap.xml");
+  if (!sitemap.includes("https://www.melocotonmove.com/melocoton-en-movimiento</loc>")) errors.push("sitemap: falta /melocoton-en-movimiento");
   for (const slug of ["/guia-elegir-tapete-yoga-pilates", "/guia-calcetas-antideslizantes-pilates"]) {
     if (!sitemap.includes("https://www.melocotonmove.com" + slug + "</loc>")) errors.push("sitemap: falta " + slug);
   }

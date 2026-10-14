@@ -50,6 +50,16 @@ export default function SeoCategoryPage({
         <div className="mx-auto max-w-7xl">
           <h1 className="text-2xl leading-tight sm:text-4xl font-bold text-brand-blue text-center">{heading}</h1>
           <p className="mx-auto mt-4 max-w-3xl text-center text-sm leading-6 text-gray-600 sm:mt-5 sm:text-base">{intro}</p>
+          {productCategory === "mat" && (
+            <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-[#e8ddd5] bg-white px-4 py-4 text-center sm:mt-8 sm:px-6">
+              <p className="text-sm leading-6 text-gray-700">
+                ¿Quieres ver más de Melocotón Move en movimiento?
+              </p>
+              <Link href="/melocoton-en-movimiento" className="mt-2 inline-flex min-h-11 items-center justify-center text-sm font-semibold text-brand-blue underline underline-offset-4">
+                Descubre nuestras historias en video →
+              </Link>
+            </div>
+          )}
           {groups.size === 0 ? (
             <p className="mt-12 text-center text-gray-600">No hay productos disponibles en esta categoría por el momento.</p>
           ) : (

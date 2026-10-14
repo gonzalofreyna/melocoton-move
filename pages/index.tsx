@@ -49,6 +49,37 @@ export default function Home() {
         <CategoriasSection title="Categorías" categories={config.categories} />
       )}
 
+      {/* Enlace editorial visible: imagen ligera, sin cargar ni reproducir video en la home. */}
+      <section aria-labelledby="home-melocoton-movimiento" className="w-full bg-[#fbf8f5] px-4 py-9 sm:px-6 sm:py-14">
+        <div className="mx-auto max-w-5xl">
+          <Link href="/melocoton-en-movimiento" className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-[#e8ddd5] bg-white p-3 text-left shadow-sm transition hover:shadow-md sm:gap-8 sm:p-5">
+            <img
+              src="https://melocoton-move-assets.s3.us-east-1.amazonaws.com/videos/customers/portada/4125f23c3a9141589692e1587489afbe-poster.webp"
+              alt="Portada de los videos de Melocotón Move"
+              width={270}
+              height={480}
+              loading="lazy"
+              decoding="async"
+              className="h-36 w-[94px] shrink-0 rounded-xl object-cover sm:h-52 sm:w-[146px]"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[#81645f] sm:text-xs">
+                Nuestra comunidad
+              </p>
+              <h2 id="home-melocoton-movimiento" className="mt-2 text-lg font-semibold leading-snug text-brand-blue sm:text-3xl">
+                Melocotón en movimiento
+              </h2>
+              <p className="mt-2 text-xs leading-5 text-gray-600 sm:text-base sm:leading-7">
+                Cada práctica tiene su historia. Descubre nuestros videos y los momentos que nos inspiran.
+              </p>
+              <span className="mt-3 inline-flex min-h-8 items-center gap-2 text-xs font-semibold text-brand-blue underline underline-offset-4 sm:text-sm">
+                Descubre nuestras historias <span aria-hidden="true">→</span>
+              </span>
+            </div>
+          </Link>
+        </div>
+      </section>
+
       {/* About us */}
       <AboutUsHero />
 
@@ -98,6 +129,7 @@ export default function Home() {
             <Link className="underline underline-offset-4" href="/tapetes-yoga-pilates">Ver tapetes de yoga y Pilates</Link>
             <Link className="underline underline-offset-4" href="/calcetines-antideslizantes-pilates">Ver calcetas antideslizantes</Link>
             <Link className="underline underline-offset-4" href="/crea-tu-mat">Personalizar mi mat</Link>
+            <Link className="underline underline-offset-4" href="/melocoton-en-movimiento">Ver Melocotón en movimiento</Link>
           </nav>
         </div>
       </section>
