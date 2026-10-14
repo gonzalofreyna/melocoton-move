@@ -144,7 +144,7 @@ export default function MelocotonEnMovimientoPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.19em] text-[#81645f] sm:text-xs">
                   Una comunidad en movimiento
                 </p>
-                <h1 className="mt-2 text-[clamp(1.7rem,7vw,2.25rem)] font-semibold leading-tight tracking-tight text-brand-blue sm:text-5xl">
+                <h1 className="mt-2 mm-heading text-4xl sm:text-6xl">
                   Melocotón en movimiento
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-600 sm:mt-5 sm:text-base sm:leading-8 lg:mx-0">
