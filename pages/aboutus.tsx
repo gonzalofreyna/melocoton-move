@@ -36,6 +36,23 @@ export default function AboutUs() {
             {" "}y nuestras <Link href="/calcetines-antideslizantes-pilates" className="underline">calcetas antideslizantes</Link>
             {" "}para conocer los diseños y especificaciones disponibles.
           </p>
+          <section aria-labelledby="diferencias-melocoton" className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 text-left sm:p-7">
+            <h2 id="diferencias-melocoton" className="text-xl font-semibold text-brand-blue">
+              ¿Qué ofrece Melocotón Move para tu práctica?
+            </h2>
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-gray-700 sm:text-base">
+              <li>Una colección de mats profesionales de caucho natural y poliuretano de alto grado, con opciones de 5 mm.</li>
+              <li>Personalización láser desde una sola unidad y elección entre formas cápsula, bala y clásico.</li>
+              <li>Calcetas antideslizantes y accesorios para complementar tus clases de yoga, Pilates y barre.</li>
+              <li>Opciones para quienes practican en casa y para estudios que buscan productos con su identidad.</li>
+            </ul>
+            <p className="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
+              <Link href="/guia-elegir-tapete-yoga-pilates" className="font-semibold underline underline-offset-4">
+                Compara qué mat se adapta a tu práctica
+              </Link>{" "}
+              o <Link href="/crea-tu-mat" className="font-semibold underline underline-offset-4">conoce cómo personalizarlo</Link>.
+            </p>
+          </section>
         </div>
       </section>
       {!configLoading && <div className="flex flex-col items-center text-center bg-gray-50">
