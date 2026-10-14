@@ -234,9 +234,9 @@ export default function ProductCard({
                   key={variant.slug}
                   type="button"
                   onClick={() => setSelectedSlug(variant.slug)}
-                  aria-label={`Seleccionar color de ${variant.name}`}
+                  aria-label={`Seleccionar ${variant.name}, color ${color}`}
                   aria-pressed={isSelected}
-                  title={variant.name}
+                  title={`${variant.name} · ${color}`}
                   className={`h-[18px] w-[18px] shrink-0 rounded-full border border-black/10 transition-transform hover:scale-110 focus-visible:outline-offset-4 sm:h-5 sm:w-5 ${
                     isSelected
                       ? "ring-[1.5px] ring-brand-ink ring-offset-[3px] ring-offset-white"
