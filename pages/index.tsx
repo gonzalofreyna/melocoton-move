@@ -37,14 +37,17 @@ export default function Home() {
       </Head>
       <main className="flex flex-col items-center text-center bg-gray-50">
       {!configLoading && (
-      <>
-      {/* Popup de promociones SOLO en Home */}
-      <PromoModal />
+        <>
+          {/* Popup de promociones SOLO en Home */}
+          <PromoModal />
 
-      {/* HERO DINÁMICO */}
-      {showHero && <HeroSection />}
+          {/* HERO DINÁMICO */}
+          {showHero && <HeroSection />}
+        </>
+      )}
 
-      {/* Enlace editorial visible: imagen ligera, sin cargar ni reproducir video en la home. */}
+      {/* Enlace editorial en el HTML inicial, aunque la configuración aún no haya cargado. */}
+      {/* Siempre queda visualmente inmediatamente después del Hero cuando éste está activo. */}
       <section aria-labelledby="home-melocoton-movimiento" className="w-full bg-gray-50 px-4 py-9 sm:px-6 sm:py-14">
         <div className="mx-auto max-w-5xl">
           <Link href="/melocoton-en-movimiento" className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-[#e8ddd5] bg-white p-3 text-left shadow-sm transition hover:shadow-md sm:gap-8 sm:p-5">
@@ -76,6 +79,8 @@ export default function Home() {
       </section>
 
 
+      {!configLoading && (
+      <>
       {/* Categorías */}
       {config?.categories && (
         <CategoriasSection title="Categorías" categories={config.categories} />
