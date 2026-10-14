@@ -3,6 +3,21 @@
 const base = process.env.SEO_AUDIT_URL || "http://localhost:3000";
 const site = "https://www.melocotonmove.com";
 const decode = (s = "") => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+
+// Extrae texto visible del HTML prerenderizado. React intercala comentarios
+// <!-- --> al renderizar un valor dinámico junto a texto (ej. 1399.00<!-- --> MXN).
+// Buscar en HTML crudo provoca un falso positivo por cada producto.
+const visibleText = (html) => decode(
+  html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;|&#xA0;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim(),
+);
+
 const text = (html, tag) => decode(html.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"))?.[1]?.trim() || "");
 const meta = (html, key) => decode(html.match(new RegExp(`<meta\\s+[^>]*name=["']${key}["'][^>]*>`, "i"))?.[0]?.match(/content=["']([^"']*)["']/i)?.[1] || "");
 const canonical = (html) => decode(html.match(/<link\s+[^>]*rel=["']canonical["'][^>]*>/i)?.[0]?.match(/href=["']([^"']*)["']/i)?.[1] || "");
@@ -97,7 +112,7 @@ try {
         if (!Number.isFinite(price) || price <= 0) warnings.push(path + ": revisar precio base (no positivo)");
         if (product.offers?.priceCurrency !== "MXN") errors.push(path + ": moneda JSON-LD incorrecta");
         if (!almostEqual(product.offers?.price, price)) errors.push(path + ": precio JSON-LD diferente del producto inicial");
-        if (!html.includes(price.toFixed(2) + " MXN")) errors.push(path + ": precio no visible en el HTML inicial");
+        if (!visibleText(html).includes(price.toFixed(2) + " MXN")) errors.push(path + ": precio no visible en el HTML inicial");
         const h1 = text(html, "h1");
         if (!h1 || h1 !== product.name) errors.push(path + ": H1 y nombre JSON-LD diferentes");
         if (breadcrumb?.itemListElement?.[2]?.name !== product.name) errors.push(path + ": breadcrumb sin nombre de variante correcto");
