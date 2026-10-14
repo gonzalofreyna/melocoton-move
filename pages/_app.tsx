@@ -3,6 +3,7 @@ import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import { useState } from "react";
+import { useRouter } from "next/router";
 
 // 🧩 Componentes globales
 import Header from "../components/Header";
@@ -20,6 +21,7 @@ import { ProductsProvider } from "../context/ProductsContext";
 /** ===== AppShell: UI principal ===== */
 function AppShell({ Component, pageProps }: AppProps) {
   const { config } = useAppConfig();
+  const isHome = useRouter().pathname === "/";
   const [headerOffset, setHeaderOffset] = useState<number | null>(null);
   const ig = config?.instagramStrip;
 
@@ -43,8 +45,8 @@ function AppShell({ Component, pageProps }: AppProps) {
         {/* Reserva la altura real del header fijo. Los valores responsive
             son fallback SSR antes de medirlo con ResizeObserver. */}
         <main
-          className="flex-1 pt-[119px] sm:pt-[144px] lg:pt-[157px]"
-          style={headerOffset === null ? undefined : { paddingTop: headerOffset }}
+          className={isHome ? "flex-1 pt-0" : "flex-1 pt-[119px] sm:pt-[144px] lg:pt-[157px]"}
+          style={isHome || headerOffset === null ? undefined : { paddingTop: headerOffset }}
         >
           <Component {...pageProps} />
         </main>
