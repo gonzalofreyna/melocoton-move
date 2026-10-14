@@ -438,13 +438,13 @@ export default function MatCustomizer() {
   };
 
   return (
-    <section className="min-h-screen bg-[#fbf7f2] px-3 pb-10 pt-6 sm:px-4 sm:py-10">
+    <section className="min-h-screen bg-brand-cream px-3 pb-12 pt-8 sm:px-4 sm:py-12">
       <div className="mx-auto max-w-7xl">
         <div className="mb-4 text-center sm:mb-8">
-          <p className="text-xs uppercase tracking-[0.22em] text-gray-500 sm:text-sm sm:tracking-[0.35em]">
+          <p className="mm-eyebrow">
             Personaliza tu práctica
           </p>
-          <h2 className="mt-2 text-xl font-bold text-gray-900 sm:mt-3 sm:text-4xl md:text-5xl">
+          <h2 className="mm-heading mt-3 text-3xl sm:mt-4 sm:text-5xl">
             Crea tu propio mat
           </h2>
           <p className="mx-auto mt-1 max-w-2xl text-xs leading-5 text-gray-600 sm:mt-4 sm:text-base">
@@ -453,8 +453,8 @@ export default function MatCustomizer() {
         </div>
 
         <div className="grid gap-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
-          <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:bg-white lg:p-8 lg:shadow-sm">
-            <div className="order-2 rounded-2xl bg-white p-4 shadow-sm sm:rounded-[2rem] sm:p-5 md:p-8 lg:p-0 lg:shadow-none">
+          <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
+            <div className="order-2 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none">
               <div className="mb-6 sm:mb-8">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                   1. Elige la forma
@@ -500,7 +500,7 @@ export default function MatCustomizer() {
                   aria-expanded={finishPickerOpen}
                   aria-controls="mat-finish-options"
                   onClick={() => setFinishPickerOpen((open) => !open)}
-                  className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-gray-300 bg-[#fbf7f2] px-3 py-2 text-left"
+                  className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-brand-line bg-brand-sand px-3 py-2 text-left"
                 >
                   {finish.type === "solid" ? (
                     <span className="h-8 w-8 shrink-0 rounded-lg border border-gray-300" style={{ backgroundColor: finish.value }} />
@@ -607,7 +607,7 @@ export default function MatCustomizer() {
 
               </div>
             </div>
-            <div className="order-3 mb-4 rounded-2xl border border-gray-200 bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
+            <div className="order-3 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
               <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                 4. Cantidad y cotización
               </h2>
@@ -651,12 +651,12 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-4 rounded-xl border border-gray-200 bg-[#fbf7f2] px-4 py-3 sm:mb-5">
+              <div className="mb-4 rounded-xl border border-gray-200 bg-brand-sand px-4 py-3 sm:mb-5">
                 <p className="text-sm font-bold text-gray-900">Promoción 5x4</p>
                 <p className="mt-1 text-xs leading-5 text-gray-600">Por cada 5 mats, pagas solo 4. Se aplica automáticamente al elegir 5 o más.</p>
               </div>
 
-              <div className="rounded-xl bg-[#fbf7f2] p-3 sm:rounded-2xl sm:p-4">
+              <div className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Cantidad</span>
                   <span>{safeQuantity}</span>
@@ -695,7 +695,7 @@ export default function MatCustomizer() {
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
-                className="mt-3 min-h-12 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-gray-700 sm:mt-4 sm:rounded-full sm:px-5"
+                className="mm-button mt-3 w-full sm:mt-4"
               >
                 Solicitar y comprar
               </button>
@@ -709,7 +709,7 @@ export default function MatCustomizer() {
           </div>
 
           <div className="order-1 w-full min-w-0 lg:order-2 lg:sticky lg:top-28 lg:self-start">
-            <div className="w-full rounded-2xl bg-white p-3 shadow-sm sm:rounded-[2rem] sm:p-4">
+            <div className="w-full rounded-2xl border border-brand-line bg-white p-3 shadow-editorial sm:rounded-[2rem] sm:p-4">
               <div className="mb-2 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-gray-900 sm:text-lg">
@@ -727,7 +727,7 @@ export default function MatCustomizer() {
 
               <div
                 ref={previewWrapRef}
-                className="flex w-full justify-center overflow-hidden rounded-xl bg-[#f6f1ea] sm:rounded-[1.5rem]"
+                className="flex w-full justify-center overflow-hidden rounded-xl bg-brand-sand sm:rounded-[1.5rem]"
               >
                 <div
                   style={{
@@ -791,7 +791,7 @@ export default function MatCustomizer() {
               </div>
 
               {selectedLogo && (
-                <div ref={logoControlsRef} className="mt-3 rounded-xl border border-gray-200 bg-[#fbf7f2] p-3 sm:mt-4 sm:p-4">
+                <div ref={logoControlsRef} className="mt-3 rounded-xl border border-gray-200 bg-brand-sand p-3 sm:mt-4 sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900">Ajusta tu logo</h3>
@@ -809,7 +809,7 @@ export default function MatCustomizer() {
                       <input type="range" min="5" max="100" value={selectedLogo.widthPercent}
                         aria-label="Tamaño del logo"
                         onChange={(e) => updateLogo({ ...selectedLogo, widthPercent: Number(e.target.value) })}
-                        className="h-8 w-full accent-gray-900" />
+                        className="h-8 w-full accent-brand-wine" />
                     </label>
                     <label className="block">
                       <span className="mb-1 flex justify-between gap-2 text-xs font-medium text-gray-700">
@@ -818,7 +818,7 @@ export default function MatCustomizer() {
                       <input type="range" min="-180" max="180" value={selectedLogo.rotation}
                         aria-label="Rotación del logo"
                         onChange={(e) => updateLogo({ ...selectedLogo, rotation: Number(e.target.value) })}
-                        className="h-8 w-full accent-gray-900" />
+                        className="h-8 w-full accent-brand-wine" />
                     </label>
                   </div>
                   <p className="mt-1 text-xs leading-5 text-gray-500">
