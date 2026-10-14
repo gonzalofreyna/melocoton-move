@@ -211,7 +211,8 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
   const productLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.name,
+    "@id": `${canonical}#product`,
+    name: seoProductName,
     image: ldImages,
     description: product.description,
     sku: product.sku,
@@ -223,10 +224,12 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
       "@type": "Offer",
       priceCurrency: "MXN",
       price: finalPrice,
-      availability:
-        stock != null && stock <= 0
-          ? "https://schema.org/OutOfStock"
-          : "https://schema.org/InStock",
+      // Sin dato de inventario, no afirmamos disponibilidad en buscadores.
+      ...(stock != null
+        ? { availability: stock <= 0
+            ? "https://schema.org/OutOfStock"
+            : "https://schema.org/InStock" }
+        : {}),
       url: canonical,
     },
   };
@@ -248,7 +251,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
         name: categoryName,
         item: `${SITE_URL}${categoryHref(product.category)}`,
       },
-      { "@type": "ListItem", position: 3, name: product.name, item: canonical },
+      { "@type": "ListItem", position: 3, name: seoProductName, item: canonical },
     ],
   };
 
@@ -353,7 +356,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
             {categoryName}
           </Link>
           <span aria-hidden="true" className="mx-2">/</span>
-          <span aria-current="page" className="text-gray-800">{product.name}</span>
+          <span aria-current="page" className="text-gray-800">{seoProductName}</span>
         </nav>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           {/* ===== Galería ===== */}
@@ -367,7 +370,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
                 src={effectiveMainUrl}
-                alt={`${product.name} - imagen principal`}
+                alt={`${seoProductName} - imagen principal`}
                 className="w-full max-h-[320px] sm:max-h-[420px] object-contain"
                 loading="eager"
                 decoding="async"
@@ -514,7 +517,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
           <div className="flex flex-col space-y-5 self-start">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-bold text-brand-blue">
-                {product.name}
+                {seoProductName}
               </h1>
             </div>
 
