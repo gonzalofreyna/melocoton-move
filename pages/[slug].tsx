@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 import type React from "react";
 import type { GetStaticPaths, GetStaticProps } from "next";
 
-type ProductPageProps = { initialProduct: Product; initialVariants: Product[] };
+type ProductPageProps = { initialProduct: Product; initialVariants: Product[]; initialRelated: Product[] };
 
 // Generación bajo demanda de slugs nuevos, con revalidación cada 30 minutos.
 export const getStaticPaths: GetStaticPaths = async () => ({
@@ -35,16 +35,19 @@ export const getStaticProps: GetStaticProps<ProductPageProps> = async ({ params 
   const initialVariants = products.filter((item) =>
     item.name.trim().toLowerCase().replace(/\s+/g, " ") === productKey,
   );
+  const relatedSlugs = new Set(initialProduct.related ?? []);
+  const initialRelated = products.filter((item) => relatedSlugs.has(item.slug) && item.slug !== initialProduct.slug);
   return {
     props: {
       initialProduct: JSON.parse(JSON.stringify(initialProduct)) as Product,
       initialVariants: JSON.parse(JSON.stringify(initialVariants)) as Product[],
+      initialRelated: JSON.parse(JSON.stringify(initialRelated)) as Product[],
     },
     revalidate: 1800,
   };
 };
 
-export default function ProductDetail({ initialProduct, initialVariants }: ProductPageProps) {
+export default function ProductDetail({ initialProduct, initialVariants, initialRelated }: ProductPageProps) {
   const router = useRouter();
   const { slug } = router.query;
   const { addToCart } = useCart();
@@ -345,8 +348,10 @@ export default function ProductDetail({ initialProduct, initialVariants }: Produ
   ) : null;
 
   const relatedSlugs = product.related ?? [];
+  // Conservar los enlaces a productos relacionados en el HTML inicial.
+  const relatedCatalog = products.length ? products : [initialProduct, ...initialRelated];
   const related = relatedSlugs
-    .map((s) => products.find((p) => p.slug === s))
+    .map((s) => relatedCatalog.find((p) => p.slug === s))
     .filter(Boolean) as Product[];
 
   return (
