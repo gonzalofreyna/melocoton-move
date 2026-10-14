@@ -30,7 +30,7 @@ export default function TopBanner() {
       transition={{ duration: 0.4 }}
       className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-brand-wine text-white"
     >
-      <div className="flex justify-center items-center h-[36px] text-[13px] sm:text-sm font-medium overflow-hidden relative">
+      <div className="relative flex h-[36px] items-center justify-center overflow-hidden px-3 text-center text-[11px] font-medium tracking-[0.045em] sm:text-xs">
         <AnimatePresence mode="wait">
           <motion.span
             key={index}
