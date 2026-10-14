@@ -7,10 +7,39 @@ const text = (html, tag) => decode(html.match(new RegExp(`<${tag}\\b[^>]*>([\\s\
 const meta = (html, key) => decode(html.match(new RegExp(`<meta\\s+[^>]*name=["']${key}["'][^>]*>`, "i"))?.[0]?.match(/content=["']([^"']*)["']/i)?.[1] || "");
 const canonical = (html) => decode(html.match(/<link\s+[^>]*rel=["']canonical["'][^>]*>/i)?.[0]?.match(/href=["']([^"']*)["']/i)?.[1] || "");
 const errors = [];
+const warnings = [];
+let liveBySlug = null;
+const validPrice = (full, discount) => {
+  const regular = Number(full);
+  const sale = discount == null ? NaN : Number(discount);
+  return Number.isFinite(sale) && sale > 0 && Number(sale.toFixed(2)) < Number(regular.toFixed(2))
+    ? sale : regular;
+};
+const almostEqual = (a, b) => Number.isFinite(Number(a)) && Number.isFinite(Number(b))
+  && Math.abs(Number(a) - Number(b)) < 0.011;
 const titles = new Map();
 let total = 0;
 let products = 0;
 try {
+  // Comparación opcional con catálogo vivo. Diferencias: alerta, no error,
+  // porque el HTML puede estar dentro de la ventana ISR de 30 minutos.
+  const apiUrl = process.env.NEXT_PUBLIC_API_PRODUCTS_URL;
+  if (apiUrl) {
+    try {
+      const url = new URL(apiUrl);
+      url.searchParams.set("v", String(Date.now()));
+      const liveResponse = await fetch(url, { cache: "no-store" });
+      if (!liveResponse.ok) throw new Error("HTTP " + liveResponse.status);
+      const items = await liveResponse.json();
+      if (!Array.isArray(items)) throw new Error("La API no devolvió una lista");
+      liveBySlug = new Map(items.filter((p) => typeof p.slug === "string")
+        .map((p) => [p.slug.toLowerCase(), p]));
+    } catch (error) {
+      warnings.push("API actual: no fue posible comparar el catálogo (" + error.message + ")");
+    }
+  } else {
+    console.log("Comparación API omitida: ejecuta node --env-file=.env.local scripts/audit-seo.mjs");
+  }
   const response = await fetch(base + "/sitemap.xml");
   if (!response.ok) throw new Error("sitemap.xml HTTP " + response.status);
   const xml = await response.text();
@@ -54,9 +83,53 @@ try {
         }
       }
       if (!breadcrumb) errors.push(`${path}: falta JSON-LD BreadcrumbList`);
+      const hydration = html.match(/<script\b[^>]*\bid=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+      let initialProduct;
+      try {
+        initialProduct = hydration && JSON.parse(hydration[1])?.props?.pageProps?.initialProduct;
+      } catch {
+        errors.push(path + ": datos de hidratación inválidos");
+      }
+      if (!initialProduct) {
+        errors.push(path + ": ficha de catálogo ausente del HTML inicial");
+      } else if (product) {
+        const price = validPrice(initialProduct.fullPrice, initialProduct.discountPrice);
+        if (!Number.isFinite(price) || price <= 0) warnings.push(path + ": revisar precio base (no positivo)");
+        if (product.offers?.priceCurrency !== "MXN") errors.push(path + ": moneda JSON-LD incorrecta");
+        if (!almostEqual(product.offers?.price, price)) errors.push(path + ": precio JSON-LD diferente del producto inicial");
+        if (!html.includes(price.toFixed(2) + " MXN")) errors.push(path + ": precio no visible en el HTML inicial");
+        const h1 = text(html, "h1");
+        if (!h1 || h1 !== product.name) errors.push(path + ": H1 y nombre JSON-LD diferentes");
+        if (breadcrumb?.itemListElement?.[2]?.name !== product.name) errors.push(path + ": breadcrumb sin nombre de variante correcto");
+        if (!product.brand?.name?.trim()) errors.push(path + ": marca sin nombre");
+        if (!Array.isArray(product.image) || !product.image.length ||
+            product.image.some((src) => !/^https:\/\//i.test(src))) {
+          errors.push(path + ": imagen JSON-LD no es una URL HTTPS absoluta");
+        }
+        const stock = initialProduct.stock;
+        const expectedAvailability = stock == null ? undefined
+          : Number(stock) <= 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock";
+        if (product.offers?.availability !== expectedAvailability) {
+          errors.push(path + ": disponibilidad no coincide con stock o inventada");
+        }
+        if (!initialProduct.description?.trim()) warnings.push(path + ": descripción vacía");
+        const live = liveBySlug?.get(String(initialProduct.slug).toLowerCase());
+        if (live) {
+          const priceChanged = !almostEqual(validPrice(live.fullPrice, live.discountPrice), price);
+          const stockChanged = live.stock != null && stock != null && Number(live.stock) !== Number(stock);
+          if (priceChanged || stockChanged) warnings.push(path + ": API y HTML difieren (" +
+            [priceChanged ? "precio" : null, stockChanged ? "stock" : null].filter(Boolean).join(", ") +
+            "); revisar ventana ISR");
+        }
+      }
     }
   }
   console.log(`Auditadas ${total} URLs (${products} fichas detectadas).`);
+  if (warnings.length) {
+    console.warn("Observaciones GEO (" + warnings.length + ") — primeras 20:");
+    warnings.slice(0, 20).forEach((item) => console.warn("- " + item));
+    if (warnings.length > 20) console.warn("- … y " + (warnings.length - 20) + " más");
+  }
   if (errors.length) {
     console.error(`Se encontraron ${errors.length} incidencias:\n- ${errors.join("\n- ")}`);
     process.exitCode = 1;
