@@ -86,7 +86,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section ref={heroRef} aria-label="Hero de Melocotón Move" className="melocoton-hero relative isolate w-full h-[76svh] min-h-[500px] max-h-[840px] overflow-hidden bg-brand-ink sm:h-[80vh] sm:min-h-[600px]">
+    <section ref={heroRef} aria-label="Hero de Melocotón Move" className="melocoton-hero relative isolate w-full h-[100svh] min-h-[580px] overflow-hidden bg-brand-ink sm:h-[100vh] sm:min-h-[650px]">
       {mainTitleIndex === -1 && (
         <h1 className="sr-only">Melocotón Move: tapetes de yoga y Pilates en México</h1>
       )}
@@ -115,7 +115,7 @@ export default function HeroSection() {
 
           return (
             <SwiperSlide key={idx}>
-              <div className="relative flex h-full w-full items-end justify-center text-center sm:items-center sm:justify-start sm:text-left">
+              <div className="relative flex h-full w-full items-center justify-center text-center">
                 {/* 🎥 Fondo dinámico */}
 
                 {/* 🎥 Fondo dinámico con soporte para mobileVideo */}
@@ -175,7 +175,7 @@ export default function HeroSection() {
                 )}
 
                 {/* Overlay editorial adaptado al móvil y escritorio; no altera la foto original. */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#21191C]/75 via-[#21191C]/15 to-[#21191C]/10 sm:bg-gradient-to-r sm:from-[#21191C]/65 sm:via-[#21191C]/20 sm:to-transparent" />
+                <div className="pointer-events-none absolute inset-0 bg-black/25" />
 
                 {/* 🌫 Overlay */}
                 {overlayEnabled && (
@@ -191,28 +191,28 @@ export default function HeroSection() {
                     initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: reduceMotion ? 0 : 0.75 }}
-                    className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-24 text-white sm:mx-0 sm:px-12 sm:pb-8 lg:px-20"
+                    className="relative z-10 mx-auto w-full max-w-4xl px-6 pt-16 pb-12 text-center text-white sm:px-12"
                   >
-                    <div className="max-w-[610px]">
-                    <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/85 sm:text-xs">MELOCOTÓN MOVE · EN MOVIMIENTO</p>
+                    <div className="mx-auto max-w-[780px]">
+                    <p className="mb-6 text-[10px] font-normal uppercase tracking-[0.28em] text-white/90 sm:text-xs">MELOCOTÓN MOVE · EN MOVIMIENTO</p>
                     {slide.title && (idx === mainTitleIndex ? (
-                      <h1 className="font-display text-[clamp(2.8rem,10vw,4.6rem)] leading-[0.98] font-normal tracking-[-0.035em] drop-shadow-sm sm:text-[clamp(4rem,5.8vw,6.5rem)] mb-5">
+                      <h1 className="font-display text-[clamp(3rem,10vw,5.2rem)] leading-[1.02] font-normal tracking-[-0.025em] drop-shadow-sm sm:text-[clamp(4.6rem,6.5vw,7.2rem)] mb-5">
                         {slide.title}
                       </h1>
                     ) : (
-                      <h2 className="font-display text-[clamp(2.8rem,10vw,4.6rem)] leading-[0.98] font-normal tracking-[-0.035em] drop-shadow-sm sm:text-[clamp(4rem,5.8vw,6.5rem)] mb-5">
+                      <h2 className="font-display text-[clamp(3rem,10vw,5.2rem)] leading-[1.02] font-normal tracking-[-0.025em] drop-shadow-sm sm:text-[clamp(4.6rem,6.5vw,7.2rem)] mb-5">
                         {slide.title}
                       </h2>
                     ))}
                     {slide.paragraph && (
-                      <p className="mx-auto mb-8 max-w-lg text-sm leading-7 text-white/90 sm:mx-0 sm:text-lg sm:leading-8">
+                      <p className="mx-auto mb-8 max-w-lg text-sm leading-7 text-white/90 sm:text-base sm:leading-8">
                         {slide.paragraph}
                       </p>
                     )}
                     {slide.cta?.enabled && slide.cta?.text && (
                       <Link
                         href={slide.cta.href || "/products"}
-                        className="inline-flex min-h-12 items-center justify-center rounded-full border border-white bg-white px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.11em] text-brand-ink transition-colors hover:border-brand-blush hover:bg-brand-blush sm:text-sm"
+                        className="inline-flex min-h-11 items-center justify-center border-b border-white pb-1 text-xs font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-70 sm:text-sm"
                       >
                         {slide.cta.text}
                       </Link>
