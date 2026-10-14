@@ -214,12 +214,20 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
     "@id": `${canonical}#product`,
     name: seoProductName,
     image: ldImages,
-    description: product.description,
-    sku: product.sku,
+    description: product.description.trim() || description,
+    ...(product.sku ? { sku: product.sku } : {}),
     brand: { "@type": "Brand", name: product.brand || "Melocotón Move" },
+    // Sólo publicar atributos que existen en los datos reales del catálogo.
+    ...(product.colors?.length ? { color: product.colors.join(", ") } : {}),
+    ...(product.materials?.length ? { material: product.materials.join(", ") } : {}),
+    ...(typeof product.weightGrams === "number" && product.weightGrams > 0
+      ? { weight: { "@type": "QuantitativeValue", value: product.weightGrams, unitCode: "GRM" } }
+      : {}),
     ...(product.category === "calcetas"
       ? { category: "Calcetas antideslizantes para Pilates", size: "Unitalla" }
-      : {}),
+      : product.category === "mat"
+        ? { category: "Tapetes de yoga y Pilates" }
+        : {}),
     offers: {
       "@type": "Offer",
       priceCurrency: "MXN",
@@ -337,6 +345,7 @@ export default function ProductDetail({ initialProduct }: ProductPageProps) {
         <meta property="og:description" content={description} />
         <meta property="og:image" content={effectiveMainUrl} />
         <meta property="og:url" content={canonical} />
+        <meta property="og:locale" content="es_MX" />
         <meta name="twitter:card" content="summary_large_image" />
         <script
           type="application/ld+json"
