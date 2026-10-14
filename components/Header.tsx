@@ -175,10 +175,10 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
             <div className="flex justify-center items-center col-span-1 relative">
               <Link
                 href="/"
-                className="flex items-center justify-center"
+                className="flex shrink-0 items-center justify-center"
                 aria-label="Inicio"
               >
-                <Logo tone={overlayHeader ? "light" : "dark"} className="h-auto w-[209px] transition-opacity hover:opacity-80 sm:w-[265px] lg:w-[292px]" />
+                <Logo tone={overlayHeader ? "light" : "dark"} className="h-auto w-[251px] shrink-0 transition-opacity hover:opacity-80 sm:w-[318px] lg:w-[350px]" />
               </Link>
             </div>
 
