@@ -22,7 +22,7 @@ Fuente única: `tailwind.config.js`, `styles/globals.css`.
 | `brand-line` | `#E5DBD3` | Bordes y separadores |
 | `brand-muted` | `#736764` | Texto secundario |
 
-**Excepción deliberada:** enlace editorial Home mantiene `bg-gray-50`, por petición de la marca.
+**Home editorial:** la invitación «Melocotón en movimiento» usa fondo blanco puro, fotografía vertical, tipografía editorial y enlace discreto; sin tarjeta, borde exterior ni sombra. El bloque conserva su contenido en el HTML inicial justo después del Hero.
 
 ### Tipografías
 
