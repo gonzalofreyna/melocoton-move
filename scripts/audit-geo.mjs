@@ -32,6 +32,15 @@ for (const { path, required, schema } of checks) {
       if (videos.length !== 9 || new Set(videos).size !== 9) {
         errors.push("/melocoton-en-movimiento: deben aparecer 9 videos S3 únicos en el HTML inicial");
       }
+      const playerTags = [...visibleHtml.matchAll(/<video\b[^>]*>/gi)].map((m) => m[0]);
+      const heroPlayer = playerTags[0] ?? "";
+      const hasVideoFlag = (tag, flag) => new RegExp("(?:\\s)" + flag + "(?=\\s|=|>)", "i").test(tag);
+      if (playerTags.length !== 9 || !["autoplay", "muted", "playsinline", "loop"].every((flag) => hasVideoFlag(heroPlayer, flag))) {
+        errors.push("/melocoton-en-movimiento: el video principal debe tener autoplay, muted, playsInline y loop");
+      }
+      if (playerTags.slice(1).some((tag) => hasVideoFlag(tag, "autoplay") || !/preload=["']none["']/i.test(tag))) {
+        errors.push("/melocoton-en-movimiento: los ocho videos secundarios no deben usar autoplay y deben usar preload=none");
+      }
       const posters = [...visibleHtml.matchAll(/\bposter="(https:\/\/melocoton-move-assets\.s3\.us-east-1\.amazonaws\.com\/videos\/customers\/portada\/[^"]+-poster\.webp)"/gi)]
         .map((m) => m[1]);
       const expectedPosters = videos.map((video) => video.replace("/videos/customers/", "/videos/customers/portada/").replace(/\.mp4$/i, "-poster.webp"));
