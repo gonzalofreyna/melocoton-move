@@ -8,7 +8,7 @@ export default function CalcetinesPilates({ products }: SeoCategoryProps) {
   return <SeoCategoryPage
     products={products}
     productCategory="calcetas"
-    title="Calcetas Antideslizantes para Pilates | Melocotón Move México"
+    title="Calcetas Antideslizantes para Pilates | Melocotón Move"
     description="Compra en México calcetas antideslizantes Melocotón Move para Pilates reformer, piso y barre. Modelos Basic y Curly, ajuste unitalla y distintos colores."
     heading="Calcetas antideslizantes para Pilates, reformer y barre"
     intro="Compra en línea calcetas antideslizantes Melocotón Move para Pilates de piso, reformer y barre en México. Nuestras calcetas son unitalla y cuentan con agarre en la planta. Compara los modelos Basic y Curly y elige tu color."
