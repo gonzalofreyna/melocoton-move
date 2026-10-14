@@ -68,13 +68,21 @@ for (const { path, required, schema } of checks) {
         }
       }
     }
-    if (path === "/calcetines-antideslizantes-pilates" &&
-        !html.includes("<title>Calcetas Antideslizantes para Pilates | Melocotón Move</title>")) {
-      errors.push("/calcetines-antideslizantes-pilates: title comercial no coincide con el plan");
-    }
-    if (path === "/crea-tu-mat" &&
-        !html.includes("<title>Tapetes Personalizados con Logo | Melocotón Move</title>")) {
-      errors.push("/crea-tu-mat: title comercial no coincide con el plan");
+    // Next.js puede añadir atributos al <title> (p. ej. data-next-head).
+    // Verificar el contenido real del <head>, no una etiqueta HTML literal.
+    const expectedCommercialTitles = {
+      "/calcetines-antideslizantes-pilates": "Calcetas Antideslizantes para Pilates | Melocotón Move",
+      "/crea-tu-mat": "Tapetes Personalizados con Logo | Melocotón Move",
+    };
+    if (Object.prototype.hasOwnProperty.call(expectedCommercialTitles, path)) {
+      const headHtml = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? html;
+      const parsedTitles = [...headHtml.matchAll(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/gi)]
+        .map((match) => match[1].replace(/<!--[\s\S]*?-->/g, "").replace(/\s+/g, " ").trim());
+      const actualTitle = parsedTitles[parsedTitles.length - 1] ?? "(sin title)";
+      if (actualTitle !== expectedCommercialTitles[path]) {
+        errors.push(path + ": title SEO incorrecto; esperado " +
+          JSON.stringify(expectedCommercialTitles[path]) + "; encontrado " + JSON.stringify(actualTitle));
+      }
     }
     if (path === "/crea-tu-mat" && !/<h1\b[^>]*>\s*Tapetes de yoga y Pilates personalizados con tu logo en México\s*<\/h1>/i.test(visibleHtml)) {
       errors.push("/crea-tu-mat: falta H1 visible en el HTML inicial");
