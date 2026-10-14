@@ -19,8 +19,8 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="bg-brand-blue text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-center md:text-left">
+    <footer className="mt-auto bg-brand-ink text-white">
+      <div className="mm-container grid grid-cols-1 items-center gap-12 py-16 text-center md:grid-cols-3 md:text-left">
         {/* Columna izquierda - Explora y enlaces legales */}
         <div>
           <ul className="space-y-2 text-sm">
@@ -70,7 +70,7 @@ export default function Footer() {
           <img
             src="/images/logomelocoton.svg"
             alt="Melocotón Move"
-            className="h-16 mb-4"
+            className="mb-5 h-14"
           />
           <p className="text-sm text-gray-200 max-w-xs text-center">
             Mt 13:31-32
@@ -114,7 +114,7 @@ export default function Footer() {
       </div>
 
       {/* Derechos de autor */}
-      <div className="bg-brand-blue/90 py-4 text-center text-sm text-gray-200 border-t border-white/10">
+      <div className="border-t border-white/10 bg-brand-ink px-4 py-5 text-center text-xs tracking-[0.04em] text-white/60">
         © {new Date().getFullYear()} Melocotón — Todos los derechos reservados
       </div>
     </footer>
