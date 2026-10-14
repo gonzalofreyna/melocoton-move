@@ -34,6 +34,34 @@ export default function GuiaTapetes() {
             <p>Melocotón Move permite personalizar un mat profesional desde una sola pieza con grabado láser. Puedes elegir la forma, el color o textura y colocar tu logo en una vista previa antes de enviar la solicitud de compra.</p>
             <Link href="/crea-tu-mat" className="inline-flex min-h-11 items-center font-semibold text-brand-blue underline underline-offset-4">Diseñar mi tapete personalizado</Link>
           </section>
+          <section aria-labelledby="mat-segun-necesidad" className="mt-4 space-y-4 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
+            <h2 id="mat-segun-necesidad" className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">5. ¿Qué tapete de yoga o Pilates te conviene según tu práctica?</h2>
+            <p>No existe un único mat ideal para todas las personas. Antes de elegir, identifica qué necesitas:</p>
+            <dl className="space-y-3">
+              <div>
+                <dt className="font-semibold text-brand-blue">Para practicar yoga o Pilates de piso en casa o estudio</dt>
+                <dd>Compara superficie, material, grosor y espacio de apoyo. Los mats profesionales de Melocotón Move combinan poliuretano de alto grado y caucho natural; revisa los datos del modelo concreto.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-brand-blue">Para un estudio o un regalo personalizado</dt>
+                <dd>Si necesitas agregar un nombre, logo o identidad visual, considera la personalización láser. En Melocotón Move puedes diseñar desde una sola pieza.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-brand-blue">Para llevar tu mat todos los días</dt>
+                <dd>Confirma el peso y el espacio que ocupa enrollado antes de comprar. Si tu prioridad es transportar el tapete, el peso puede importar tanto como el material.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-brand-blue">Si priorizas la sensación de agarre</dt>
+                <dd>Revisa el tipo de superficie y su cuidado, y busca experiencias de uso verificables. No todos los acabados ni todas las prácticas se sienten igual.</dd>
+              </div>
+            </dl>
+          </section>
+          <section aria-labelledby="formas-personalizadas" className="mt-4 space-y-3 rounded-2xl bg-white p-5 shadow-sm sm:mt-6 sm:p-7">
+            <h2 id="formas-personalizadas" className="text-lg font-semibold leading-snug text-brand-blue sm:text-2xl">6. ¿Qué diferencia a un mat personalizado de Melocotón Move?</h2>
+            <p>Puedes elegir entre tres formas: <strong>cápsula</strong> (extremos redondeados), <strong>bala</strong> (un extremo redondeado y otro más recto) o <strong>clásico</strong> (contorno rectangular con esquinas suavizadas). También puedes escoger color o textura y colocar tu logo en una vista previa.</p>
+            <p>La personalización se solicita desde una unidad. Confirma medidas, disponibilidad y especificaciones del mat elegido antes de realizar tu pedido.</p>
+            <Link href="/crea-tu-mat" className="inline-flex min-h-11 items-center font-semibold text-brand-blue underline underline-offset-4">Ver formas y personalizar mi mat</Link>
+          </section>
           <section className="mt-10 rounded-2xl bg-white p-5 shadow-sm sm:p-7">
             <h2 className="text-lg font-semibold leading-snug text-brand-blue sm:text-xl">Explora los tapetes disponibles</h2>
             <p className="mt-2">Compara colores, formas y especificaciones directamente en nuestro catálogo.</p>
