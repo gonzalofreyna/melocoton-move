@@ -44,10 +44,10 @@ export default function MobileNavbar() {
         className="
   w-full max-w-[430px]
   rounded-full
-  bg-[#FFD6CC]/55
+  bg-brand-cream/95
   backdrop-blur-lg
   border border-brand-line
-  shadow-[0_10px_30px_rgba(91,58,50,0.14)]
+  shadow-editorial-lg
   flex justify-around items-center
   px-3 py-3
 "
@@ -58,8 +58,8 @@ export default function MobileNavbar() {
           onClick={() => router.push("/")}
           className={`flex flex-col items-center justify-center text-[11px] font-medium transition-all duration-200 ${
             isActive("/")
-              ? "text-[#5B3A32] scale-105 bg-white/35 rounded-full px-4 py-2 shadow-sm"
-              : "text-[#8B6A62]/80 hover:text-[#5B3A32]"
+              ? "text-brand-ink scale-105 bg-white/35 rounded-full px-4 py-2 shadow-sm"
+              : "text-[#8B6A62]/80 hover:text-brand-ink"
           }`}
         >
           <HomeIcon className="h-6 w-6 mb-1" />
@@ -72,8 +72,8 @@ export default function MobileNavbar() {
           onClick={() => router.push("/products")}
           className={`flex flex-col items-center justify-center text-[11px] font-medium transition-all duration-200 ${
             isActive("/products")
-              ? "text-[#5B3A32] scale-105 bg-white/35 rounded-full px-4 py-2 shadow-sm"
-              : "text-[#8B6A62]/80 hover:text-[#5B3A32]"
+              ? "text-brand-ink scale-105 bg-white/35 rounded-full px-4 py-2 shadow-sm"
+              : "text-[#8B6A62]/80 hover:text-brand-ink"
           }`}
         >
           <ShoppingBagIcon className="h-6 w-6 mb-1" />
@@ -89,7 +89,7 @@ export default function MobileNavbar() {
           className="
             flex flex-col items-center justify-center
             text-[11px] font-medium
-            text-[#8B6A62]/80 hover:text-[#5B3A32]
+            text-[#8B6A62]/80 hover:text-brand-ink
             transition-all duration-200
           "
         >
@@ -103,8 +103,8 @@ export default function MobileNavbar() {
           onClick={toggleCart}
           className={`relative flex flex-col items-center justify-center text-[11px] font-medium transition-all duration-200 ${
             isActive("/cart")
-              ? "text-[#5B3A32] scale-105 bg-white/35 rounded-full px-4 py-2 shadow-sm"
-              : "text-[#8B6A62]/80 hover:text-[#5B3A32]"
+              ? "text-brand-ink scale-105 bg-white/35 rounded-full px-4 py-2 shadow-sm"
+              : "text-[#8B6A62]/80 hover:text-brand-ink"
           }`}
         >
           <ShoppingCartIcon className="h-6 w-6 mb-1" />
@@ -116,9 +116,9 @@ export default function MobileNavbar() {
                 translate-x-1/2 -translate-y-1/2
                 min-w-[1.15rem] px-1.5 py-0.5
                 rounded-full
-                bg-[#FF6F61] text-white
+                bg-brand-wine text-white
                 text-[10px] font-bold text-center
-                ring-2 ring-[#FFD6CC]
+                ring-2 ring-brand-cream
               "
             >
               {cartCount > 99 ? "99+" : cartCount}
