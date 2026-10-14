@@ -26,6 +26,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
     "/contact",
     "/arma-tu-studio",
     "/crea-tu-mat",
+    "/melocoton-en-movimiento",
     "/guia-elegir-tapete-yoga-pilates",
     "/guia-calcetas-antideslizantes-pilates",
   ]);
