@@ -70,7 +70,7 @@ export default function Footer() {
           <img
             src="/images/logomelocoton.svg"
             alt="Melocotón Move"
-            className="mb-5 h-14"
+            className="mb-5 h-14 brightness-0 invert opacity-90"
           />
           <p className="text-sm text-gray-200 max-w-xs text-center">
             Mt 13:31-32
