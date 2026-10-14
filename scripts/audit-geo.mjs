@@ -10,6 +10,7 @@ const checks = [
   { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates", "Diseñar mi tapete personalizado", "/crea-tu-mat"] },
   { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
   { path: "/crea-tu-mat", required: ["Desde una sola pieza", "Personalización láser", "Tapetes de yoga y Pilates personalizados con tu logo en México", "/tapetes-yoga-pilates"] },
+  { path: "/melocoton-en-movimiento", required: ["Melocotón en movimiento", "Más momentos de Melocotón", "/tapetes-yoga-pilates", "4125f23c3a9141589692e1587489afbe.mp4"] },
 ];
 const errors = [];
 const read = async (path) => {
