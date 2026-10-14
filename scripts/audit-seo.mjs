@@ -160,6 +160,13 @@ try {
         if (initialProduct.category === "calcetas" && /^Calceta(?:s)? Antiderrapante(?:s)?\b/i.test(initialProduct.name)) {
           if (!text(html, "title").includes("Calcetas Antideslizantes")) errors.push(path + ": título de calcetas sin término antideslizantes");
         }
+        if (initialProduct.slug.startsWith("mini-ball-pilates-")) {
+          const color = initialProduct.slug.slice("mini-ball-pilates-".length);
+          const title = text(html, "title").toLowerCase();
+          if (!title.startsWith("mini ball pilates 20 cm ") || !title.includes(color)) {
+            errors.push(path + ": título Mini Ball sin Pilates, medida o color");
+          }
+        }
         const h1 = text(html, "h1");
         if (!h1 || h1 !== product.name) errors.push(path + ": H1 y nombre JSON-LD diferentes");
         if (breadcrumb?.itemListElement?.[2]?.name !== product.name) errors.push(path + ": breadcrumb sin nombre de variante correcto");
