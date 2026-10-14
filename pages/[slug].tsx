@@ -209,7 +209,11 @@ export default function ProductDetail({ initialProduct, initialVariants, initial
   const commercialTitleName = product.category === "calcetas"
     ? seoTitleName.replace(/^Calceta(?:s)? Antiderrapante(?:s)?\b/i, "Calcetas Antideslizantes")
     : seoTitleName;
-  const title = `${commercialTitleName} | Melocotón Move`;
+  // Títulos concisos de Mini Ball: intención Pilates, medida y color reales.
+  const searchTitleName = product.slug.toLowerCase().startsWith("mini-ball-pilates-") && variantColor
+    ? `Mini Ball Pilates 20 cm ${variantColor}`
+    : commercialTitleName;
+  const title = `${searchTitleName} | Melocotón Move`;
   const categoryKeyword =
     product.category === "mat"
       ? "tapete de yoga y Pilates"
