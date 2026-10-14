@@ -19,11 +19,6 @@ export default function Home() {
   const { products, loading: productsLoading, error } = useProducts();
 
 
-  const showHero =
-    !!config?.featureFlags?.showHero &&
-    Array.isArray(config?.heroSlides) &&
-    config.heroSlides.length > 0;
-
   return (
     <>
       <Head>
@@ -36,15 +31,11 @@ export default function Home() {
 
       </Head>
       <main className="flex flex-col items-center text-center bg-gray-50">
-      {!configLoading && (
-        <>
-          {/* Popup de promociones SOLO en Home */}
-          <PromoModal />
+      {/* Popup de promociones SOLO en Home */}
+      {!configLoading && <PromoModal />}
 
-          {/* HERO DINÁMICO */}
-          {showHero && <HeroSection />}
-        </>
-      )}
+      {/* HERO DINÁMICO: su H1 se prerenderiza dentro del Hero antes de cargar config. */}
+      <HeroSection />
 
       {/* Enlace editorial en el HTML inicial, aunque la configuración aún no haya cargado. */}
       {/* Siempre queda visualmente inmediatamente después del Hero cuando éste está activo. */}
