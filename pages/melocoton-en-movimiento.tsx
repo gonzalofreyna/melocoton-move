@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 // Los nueve videos provienen de los enlaces S3 entregados por Melocotón Move.
 // Los MP4 están en /videos/customers/ y las portadas WebP en /videos/customers/portada/.
-// Confirmar acceso HTTP público a ambos tipos de recurso antes del merge.
+// El acceso HTTPS a los MP4 y las portadas ya debe verificarse en cada despliegue.
 const MEDIA_BASE =
   "https://melocoton-move-assets.s3.us-east-1.amazonaws.com/videos/customers/";
 
@@ -38,8 +38,8 @@ const videoCaptions = [
 // y confirmar su fecha de publicación. Nunca inferir esos datos de los hashes
 // ni usar la fecha del despliegue como si fuera la fecha de publicación.
 // Ejemplo al contar con la información verificada:
-// "id-del-video": { description: "Descripción factual del video", uploadDate: "2026-10-10" }
-type VerifiedVideoSeo = { description: string; uploadDate: string };
+// "id-del-video": { title: "Título real", description: "Qué ocurre en el video", uploadDate: "AAAA-MM-DD" }
+type VerifiedVideoSeo = { title: string; description: string; uploadDate: string };
 const verifiedVideoSeo: Partial<Record<(typeof videoIds)[number], VerifiedVideoSeo>> = {};
 
 const PAGE_URL = "https://www.melocotonmove.com/melocoton-en-movimiento";
@@ -56,12 +56,13 @@ const breadcrumbSchema = {
 
 const videoSchemas = videoIds.flatMap((id, index) => {
   const seo = verifiedVideoSeo[id];
-  if (!seo || !seo.description.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(seo.uploadDate) ||
-      !Number.isFinite(Date.parse(seo.uploadDate + "T00:00:00Z"))) return [];
+  if (!seo || !seo.title.trim() || !seo.description.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(seo.uploadDate) ||
+      !Number.isFinite(Date.parse(seo.uploadDate + "T00:00:00Z")) ||
+      new Date(seo.uploadDate + "T00:00:00Z").toISOString().slice(0, 10) !== seo.uploadDate) return [];
   return [{
     "@context": "https://schema.org",
     "@type": "VideoObject",
-    name: videoCaptions[index],
+    name: seo.title,
     description: seo.description,
     thumbnailUrl: `${MEDIA_BASE}portada/${id}-poster.webp`,
     contentUrl: `${MEDIA_BASE}${id}.mp4`,
