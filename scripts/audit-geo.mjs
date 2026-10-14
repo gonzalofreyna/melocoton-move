@@ -3,9 +3,9 @@
 // node scripts/audit-geo.mjs
 const base = process.env.GEO_AUDIT_URL || "http://localhost:3000";
 const checks = [
-  { path: "/", required: ["Descubre Melocotón Move: yoga", "Ver tapetes de yoga y Pilates", "Ver calcetas antideslizantes", "Personalizar mi mat"], schema: "Organization" },
+  { path: "/", required: ["Descubre Melocotón Move: yoga", "Ver tapetes de yoga y Pilates", "Ver calcetas antideslizantes", "Personalizar mi mat", "/melocoton-en-movimiento", "Descubre nuestras historias"], schema: "Organization" },
   { path: "/aboutus", required: ["¿Qué es Melocotón Move?", "tapetes de yoga y Pilates", "calcetas antideslizantes"] },
-  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates", "/crea-tu-mat", "Diseñar mi mat personalizado"] },
+  { path: "/tapetes-yoga-pilates", required: ["Preguntas frecuentes", "¿Qué grosor tienen los tapetes?", "/guia-elegir-tapete-yoga-pilates", "/crea-tu-mat", "Diseñar mi mat personalizado", "/melocoton-en-movimiento"] },
   { path: "/calcetines-antideslizantes-pilates", required: ["Preguntas frecuentes", "¿Se pueden usar para Pilates reformer y barre?", "¿Dónde comprar calcetas antideslizantes para Pilates en México?", "modelos Basic y Curly", "/guia-calcetas-antideslizantes-pilates"] },
   { path: "/guia-elegir-tapete-yoga-pilates", required: ["Cómo elegir un tapete de yoga y Pilates", "Revisa los materiales", "/tapetes-yoga-pilates", "Diseñar mi tapete personalizado", "/crea-tu-mat"] },
   { path: "/guia-calcetas-antideslizantes-pilates", required: ["Cómo elegir calcetas antideslizantes para Pilates", "Comprueba el agarre", "Dónde comprar calcetas para Pilates en México", "/calcetines-antideslizantes-pilates"] },
@@ -91,6 +91,7 @@ try {
     if (robots.includes("Disallow: " + item.path + "\n")) errors.push("robots.txt: bloqueada " + item.path);
   }
   const sitemap = await read("/sitemap.xml");
+  if (!sitemap.includes("https://www.melocotonmove.com/melocoton-en-movimiento</loc>")) errors.push("sitemap: falta /melocoton-en-movimiento");
   for (const slug of ["/guia-elegir-tapete-yoga-pilates", "/guia-calcetas-antideslizantes-pilates"]) {
     if (!sitemap.includes("https://www.melocotonmove.com" + slug + "</loc>")) errors.push("sitemap: falta " + slug);
   }
