@@ -57,7 +57,7 @@ export default function ProductCard({
   };
 
   return (
-    <div className="relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-transform transform hover:scale-[1.02] h-full">
+    <div className="mm-card group relative flex h-full flex-col">
       {shouldShowBadge && <OfferBadge cfg={offerBadge} />}
 
       {/* Imagen */}
@@ -66,11 +66,11 @@ export default function ProductCard({
           href={`/${selectedProduct.slug}`}
           aria-label={`Ir a ${selectedProduct.name}`}
         >
-          <div className="w-full aspect-square flex items-center justify-center bg-white cursor-pointer">
+          <div className="aspect-square flex w-full cursor-pointer items-center justify-center bg-brand-cream p-3 sm:p-5">
             <img
               src={img}
               alt={selectedProduct.name}
-              className={`max-h-full max-w-full object-contain ${
+              className={`max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-[1.025] ${
                 isOut ? "opacity-80" : ""
               }`}
             />
@@ -80,7 +80,7 @@ export default function ProductCard({
         {/* Overlay agotado */}
         {isOut && (
           <div className="absolute inset-0 bg-white/55 backdrop-blur-[1.5px] flex items-center justify-center">
-            <span className="px-4 py-2 rounded-full bg-white/95 border border-gray-200 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-gray-700 shadow-sm">
+            <span className="rounded-full border border-brand-line bg-white/95 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-ink sm:text-xs">
               Agotado
             </span>
           </div>
@@ -88,11 +88,11 @@ export default function ProductCard({
       </div>
 
       {/* Info del producto */}
-      <div className="p-4 text-center flex flex-col">
+      <div className="flex flex-1 flex-col px-3 pb-4 pt-5 text-center sm:px-5 sm:pb-5">
         {/* Nombre y stock */}
         <div className="mb-2 min-h-[3.25rem] sm:min-h-[3.75rem] flex flex-col justify-start">
           {/* Nombre del producto */}
-          <h3 className="text-[8px] sm:text-sm lg:text-base font-semibold text-brand-blue leading-snug mb-1 line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] lg:min-h-[2.75rem]">
+          <h3 className="text-xs sm:text-sm lg:text-base font-medium text-brand-ink leading-snug mb-1 line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] lg:min-h-[2.75rem]">
             {selectedProduct.name}
           </h3>
         </div>
@@ -133,7 +133,7 @@ export default function ProductCard({
         <div className="mt-2">
           {typeof selectedProduct.discountPrice === "number" ? (
             <>
-              <p className="text-brand-beige font-bold text-sm sm:text-base lg:text-lg">
+              <p className="text-brand-wine font-semibold text-sm sm:text-base lg:text-lg">
                 ${selectedProduct.discountPrice.toFixed(2)} MXN
               </p>
               <p className="text-gray-400 line-through text-[11px] sm:text-xs lg:text-sm">
@@ -141,7 +141,7 @@ export default function ProductCard({
               </p>
             </>
           ) : (
-            <p className="text-brand-beige font-bold text-sm sm:text-base lg:text-lg">
+            <p className="text-brand-wine font-semibold text-sm sm:text-base lg:text-lg">
               ${selectedProduct.fullPrice.toFixed(2)} MXN
             </p>
           )}
@@ -152,7 +152,7 @@ export default function ProductCard({
           <button
             onClick={handleAddToCart}
             disabled={isOut}
-            className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center bg-brand-blue text-white rounded-xl hover:bg-brand-beige hover:text-brand-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-blue text-white transition-colors hover:bg-brand-wine disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-11"
             title={isOut ? "Producto agotado" : "Añadir al carrito"}
             aria-disabled={isOut}
           >
@@ -161,7 +161,7 @@ export default function ProductCard({
 
           <Link
             href={`/${selectedProduct.slug}`}
-            className="flex-1 text-center text-[11px] sm:text-xs lg:text-sm text-brand-blue border border-brand-blue py-2 rounded-xl hover:bg-brand-blue hover:text-white transition-colors"
+            className="flex min-h-10 flex-1 items-center justify-center rounded-full border border-brand-line text-center text-xs font-semibold text-brand-blue transition-colors hover:border-brand-blue hover:bg-brand-blue hover:text-white sm:min-h-11 sm:text-sm"
           >
             Detalles
           </Link>
