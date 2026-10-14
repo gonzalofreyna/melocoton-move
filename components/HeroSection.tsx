@@ -37,18 +37,33 @@ export default function HeroSection() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // 🕒 No renderizar mientras carga config
-  if (loading) return null;
-
+  // Mantener las mismas llamadas de hooks en todos los renders.
   const slides: HeroSlide[] = useMemo(
     () => (Array.isArray(config?.heroSlides) ? config.heroSlides : []),
     [config?.heroSlides]
   );
 
-  if (slides.length === 0) return null;
+  // En la configuración del carrusel sólo uno de sus títulos será el H1.
+  // Los demás mantienen exactamente las mismas clases visuales como H2.
+  const mainTitleIndex = slides.findIndex((slide) => !!slide.title?.trim());
+  const heroEnabled = !loading && !!config?.featureFlags?.showHero && slides.length > 0;
+
+  // El config se carga en el navegador. El H1 debe existir también en el HTML
+  // inicial (SSR/SSG) DENTRO del Hero, no en otra sección del Home.
+  // No mostrar un placeholder visual que modifique la experiencia del carrusel.
+  if (!heroEnabled) {
+    return (
+      <section aria-label="Hero de Melocotón Move" className="sr-only">
+        <h1>Melocotón Move: tapetes de yoga y Pilates en México</h1>
+      </section>
+    );
+  }
 
   return (
-    <section className="relative w-full h-screen overflow-hidden">
+    <section aria-label="Hero de Melocotón Move" className="relative w-full h-screen overflow-hidden">
+      {mainTitleIndex === -1 && (
+        <h1 className="sr-only">Melocotón Move: tapetes de yoga y Pilates en México</h1>
+      )}
       <Swiper
         modules={[Autoplay, Pagination]}
         autoplay={{ delay: 12000, disableOnInteraction: false }}
@@ -140,11 +155,15 @@ export default function HeroSection() {
                     transition={{ duration: 0.9 }}
                     className="relative z-10 text-white max-w-2xl px-6"
                   >
-                    {slide.title && (
+                    {slide.title && (idx === mainTitleIndex ? (
                       <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
                         {slide.title}
                       </h1>
-                    )}
+                    ) : (
+                      <h2 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+                        {slide.title}
+                      </h2>
+                    ))}
                     {slide.paragraph && (
                       <p className="text-base md:text-lg mb-8 leading-relaxed">
                         {slide.paragraph}
