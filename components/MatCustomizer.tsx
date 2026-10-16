@@ -251,6 +251,7 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
+  const [checkoutNotice, setCheckoutNotice] = useState(false);
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -438,7 +439,7 @@ export default function MatCustomizer() {
   };
 
   return (
-    <section className="min-h-screen bg-brand-cream px-3 pb-12 pt-8 sm:px-4 sm:py-12">
+    <section className="min-h-screen bg-white px-3 pb-16 pt-10 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-7xl">
         <div className="mb-4 text-center sm:mb-8">
           <p className="mm-eyebrow">
@@ -452,7 +453,7 @@ export default function MatCustomizer() {
           </p>
         </div>
 
-        <div className="grid gap-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
+        <div className="grid gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
             <div className="order-2 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none">
               <div className="mb-6 sm:mb-8">
@@ -653,7 +654,7 @@ export default function MatCustomizer() {
 
               <div className="mb-4 rounded-xl border border-gray-200 bg-brand-sand px-4 py-3 sm:mb-5">
                 <p className="text-sm font-bold text-gray-900">Promoción 5x4</p>
-                <p className="mt-1 text-xs leading-5 text-gray-600">Por cada 5 mats, pagas solo 4. Se aplica automáticamente al elegir 5 o más.</p>
+                <p className="mt-1 text-xs leading-5 text-gray-600">Por cada 5 mats, pagas solo 4. Promoción exclusiva de Crea tu Mat; no acumulable con otras promociones ni meses sin intereses.</p>
               </div>
 
               <div className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
@@ -697,11 +698,25 @@ export default function MatCustomizer() {
                 onClick={handleWhatsAppOrder}
                 className="mm-button mt-3 w-full sm:mt-4"
               >
-                Solicitar y comprar
+                Consultar por WhatsApp
               </button>
+              <button
+                type="button"
+                onClick={() => setCheckoutNotice((open) => !open)}
+                aria-expanded={checkoutNotice}
+                aria-controls="personalized-mat-checkout-notice"
+                className="mm-button-outline mt-3 w-full"
+              >
+                Comprar ahora
+              </button>
+              {checkoutNotice && (
+                <div id="personalized-mat-checkout-notice" role="status" className="mt-3 rounded-xl border border-brand-line bg-brand-sand p-4 text-left text-sm leading-6 text-brand-ink">
+                  Estamos preparando un pago exclusivo para mats personalizados, sin meses sin intereses ni promociones combinables. Por seguridad, la compra directa se habilitará cuando el servidor valide el 5×4 y guarde tu diseño con el pedido. Mientras tanto puedes solicitarlo por WhatsApp.
+                </div>
+              )}
 
               <p className="mt-2 text-center text-[11px] leading-5 text-gray-500 sm:mt-3 sm:text-xs">
-                Al continuar, se descargará la imagen de tu diseño y se abrirá
+                Al consultar, se descargará la imagen de tu diseño y se abrirá
                 WhatsApp con tu cotización. Adjunta la imagen descargada en el
                 chat.
               </p>
