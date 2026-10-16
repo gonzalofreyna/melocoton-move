@@ -6,7 +6,6 @@
     "test": "node --test src/*.test.mjs"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.900.0",
     "stripe": "^23.0.0"
   }
 }
