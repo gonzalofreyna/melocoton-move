@@ -30,19 +30,33 @@ export function buildCheckoutParameters(body, origin) {
     mode: "payment",
     // Stripe selects eligible payment methods from Dashboard settings.
     ...(quote.installmentsAllowed ? { payment_method_options: { card: { installments: { enabled: true } } } } : {}),
-    line_items: [{
-      price_data: {
-        currency: "mxn",
-        unit_amount: unitAmount,
-        product_data: {
-          name: "Mat profesional personalizado — Melocotón Move",
-          description: quote.promotion === "fiveFour"
-            ? "Promoción 5×4. Diseño a definir después de la compra. Envío por cotizar."
-            : "5% de descuento. Diseño a definir después de la compra. Envío por cotizar.",
+    line_items: [
+      {
+        price_data: {
+          currency: "mxn",
+          unit_amount: unitAmount,
+          product_data: {
+            name: "Mat profesional personalizado — Melocotón Move",
+            description: quote.promotion === "fiveFour"
+              ? "Promoción 5×4. Diseño a confirmar después de la compra. Envío por cotizar."
+              : "5% de descuento. Diseño a confirmar después de la compra. Envío por cotizar.",
+          },
         },
+        quantity: itemQuantity,
       },
-      quantity: itemQuantity,
-    }],
+      // Show the actual mats delivered in Stripe: paid units plus free units.
+      ...(quote.freeUnits > 0 ? [{
+        price_data: {
+          currency: "mxn",
+          unit_amount: 0,
+          product_data: {
+            name: "Mat profesional personalizado — cortesía 5×4",
+            description: "Unidades sin costo incluidas en tu promoción.",
+          },
+        },
+        quantity: quote.freeUnits,
+      }] : []),
+    ],
     customer_creation: "always",
     billing_address_collection: "required",
     phone_number_collection: { enabled: true },
