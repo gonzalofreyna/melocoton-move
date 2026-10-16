@@ -282,6 +282,7 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
+  const [finishCategory, setFinishCategory] = useState<"solid" | "texture">("solid");
   const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design">("shape");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -536,7 +537,7 @@ export default function MatCustomizer() {
             ] as const).map(([step, label]) => (
               <button key={step} type="button"
                 aria-current={mobileStep === step ? "step" : undefined}
-                onClick={() => { setMobileStep(step); if (step === "color") setFinishPickerOpen(true); }}
+                onClick={() => { setMobileStep(step); if (step === "color") { setFinishPickerOpen(true); setFinishCategory(finish.type); } }}
                 className={`min-h-11 rounded-xl px-1 py-2 text-xs font-semibold transition ${mobileStep === step ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>
                 {label}
               </button>
@@ -589,30 +590,35 @@ export default function MatCustomizer() {
                   aria-expanded={finishPickerOpen}
                   aria-controls="mat-finish-options"
                   onClick={() => setFinishPickerOpen((open) => !open)}
-                  className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-brand-line bg-brand-sand px-3 py-2 text-left"
+                  className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-brand-line bg-brand-sand px-3 py-2 text-left"
                 >
                   {finish.type === "solid" ? (
-                    <span className="h-8 w-8 shrink-0 rounded-lg border border-gray-300" style={{ backgroundColor: finish.value }} />
+                    <span className="h-7 w-7 shrink-0 rounded-full border border-gray-300" style={{ backgroundColor: finish.value }} />
                   ) : (
-                    <img src={finish.value} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
+                    <img src={finish.value} alt="" className="h-7 w-7 shrink-0 rounded-lg object-cover" />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs text-gray-500">Acabado seleccionado</span>
+                    <span className="block text-[11px] text-gray-500">Acabado seleccionado</span>
                     <span className="block truncate text-sm font-semibold text-gray-900">{finish.label}</span>
                   </span>
                   <span aria-hidden="true" className="text-sm font-semibold text-gray-700">{finishPickerOpen ? "Cerrar −" : "Cambiar +"}</span>
                 </button>
                 {finishPickerOpen && (
-                  <div id="mat-finish-options" className="mt-3 rounded-xl border border-gray-200 p-3">
-                    <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">Colores sólidos</h3>
-                    <div className="grid grid-cols-6 gap-2 sm:grid-cols-10 sm:gap-3">
+                  <div id="mat-finish-options" className="mt-2 rounded-xl border border-gray-200 p-2.5 sm:p-3">
+                    <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-brand-sand p-1 lg:hidden" role="group" aria-label="Tipo de acabado">
+                      <button type="button" aria-pressed={finishCategory === "solid"} onClick={() => setFinishCategory("solid")} className={`min-h-10 rounded-lg px-2 text-xs font-semibold transition ${finishCategory === "solid" ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>Colores sólidos</button>
+                      <button type="button" aria-pressed={finishCategory === "texture"} onClick={() => setFinishCategory("texture")} className={`min-h-10 rounded-lg px-2 text-xs font-semibold transition ${finishCategory === "texture" ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>Texturas premium</button>
+                    </div>
+                    <div className={finishCategory === "solid" ? "" : "hidden lg:block"}>
+                    <h3 className="mb-2 hidden text-xs font-bold uppercase tracking-wide text-gray-500 lg:block">Colores sólidos</h3>
+                    <div className="grid grid-cols-8 gap-1 sm:grid-cols-10 sm:gap-2">
                       {solidColors.map((item) => (
                         <button
                           key={item}
                           onClick={() => {
                             setFinish({ type: "solid", value: item, label: solidColorNames[item] ?? item });
                           }}
-                          className={`h-11 rounded-xl border transition ${
+                          className={`mx-auto h-8 w-8 rounded-full border transition sm:h-10 sm:w-10 ${
                             finish.type === "solid" && finish.value === item
                               ? "border-gray-900 ring-2 ring-gray-900"
                               : "border-gray-200"
@@ -624,15 +630,17 @@ export default function MatCustomizer() {
                         />
                       ))}
                     </div>
-                    <h3 className="mb-3 mt-5 text-xs font-bold uppercase tracking-wide text-gray-500">Texturas premium</h3>
-                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
+                    </div>
+                    <div className={finishCategory === "texture" ? "" : "hidden lg:block"}>
+                    <h3 className="mb-2 mt-2 hidden text-xs font-bold uppercase tracking-wide text-gray-500 lg:block lg:mt-5">Texturas premium</h3>
+                    <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-8 sm:gap-2">
                       {textureFinishes.map((item) => (
                         <button
                           key={item.value}
                           onClick={() => {
                             setFinish(item);
                           }}
-                          className={`h-14 overflow-hidden rounded-xl border transition ${
+                          className={`h-11 overflow-hidden rounded-lg border transition sm:h-14 sm:rounded-xl ${
                             finish.type === "texture" && finish.value === item.value
                               ? "border-gray-900 ring-2 ring-gray-900"
                               : "border-gray-200"
@@ -644,6 +652,7 @@ export default function MatCustomizer() {
                           <img src={item.value} alt={item.label} className="h-full w-full object-cover" />
                         </button>
                       ))}
+                    </div>
                     </div>
                   </div>
                 )}
