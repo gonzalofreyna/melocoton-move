@@ -10,11 +10,15 @@ const MatCustomizer = dynamic(() => import("../components/MatCustomizer"), {
 const faqs = [
   {
     question: "¿Puedo personalizar un solo tapete?",
-    answer: "Sí. Personalizamos desde una sola pieza, tanto para tu práctica como para tu estudio de Pilates o yoga.",
+    answer: "Sí. Personalizamos desde una sola pieza, tanto para tu práctica como para tu estudio de pilates o yoga.",
   },
   {
     question: "¿De qué materiales son los mats profesionales?",
-    answer: "Nuestros mats profesionales tienen base de caucho natural y superficie de poliuretano de alto grado.",
+    answer: "Todos los mats tienen una base de caucho natural, una superficie de poliuretano de alto grado y 5 mm de espesor.",
+  },
+  {
+    question: "¿Cuáles son las medidas de cada forma?",
+    answer: "Clásico: 182 × 69 cm. Bala: 182 × 69 cm. Cápsula: 181 × 68 cm. Todos tienen 5 mm de espesor.",
   },
   {
     question: "¿Necesito tener mi logo o diseño listo antes de comprar?",
@@ -25,7 +29,7 @@ const faqs = [
     answer: "Puedes elegir cápsula (extremos redondeados), bala (un extremo redondeado y otro más recto) o clásico (rectangular con esquinas suavizadas).",
   },
   {
-    question: "¿Puedo comprar mats para un estudio de Pilates?",
+    question: "¿Puedo comprar mats para un estudio de pilates?",
     answer: "Sí. Elige la cantidad de mats y la promoción disponible en el configurador. La personalización mediante grabado láser está disponible desde una pieza.",
   },
   {
@@ -40,7 +44,7 @@ export default function CreaTuMatPage() {
         <title>Tapetes Personalizados con Logo | Melocotón Move</title>
         <meta
           name="description"
-          content="Personaliza un tapete profesional de yoga y Pilates con tu logo desde una pieza en México. Caucho natural y poliuretano, grabado láser y diseño a tu gusto."
+          content="Personaliza un tapete profesional de yoga y pilates con tu logo desde una pieza en México. Caucho natural y poliuretano, grabado láser y diseño a tu gusto."
         />
         <link rel="canonical" href="https://www.melocotonmove.com/crea-tu-mat" />
         <script
@@ -51,7 +55,7 @@ export default function CreaTuMatPage() {
               "@type": "BreadcrumbList",
               itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.melocotonmove.com/" },
-                { "@type": "ListItem", position: 2, name: "Tapetes de yoga y Pilates", item: "https://www.melocotonmove.com/tapetes-yoga-pilates" },
+                { "@type": "ListItem", position: 2, name: "Tapetes de yoga y pilates", item: "https://www.melocotonmove.com/tapetes-yoga-pilates" },
                 { "@type": "ListItem", position: 3, name: "Personaliza tu mat", item: "https://www.melocotonmove.com/crea-tu-mat" },
               ],
             }),
