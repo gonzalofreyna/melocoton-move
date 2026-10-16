@@ -210,12 +210,23 @@ export default function HeroSection() {
                       </p>
                     )}
                     {slide.cta?.enabled && slide.cta?.text && (
-                      <Link
-                        href={slide.cta.href || "/products"}
-                        className="inline-flex min-h-11 items-center justify-center border-b border-white pb-1 text-xs font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-70 sm:text-sm"
-                      >
-                        {slide.cta.text}
-                      </Link>
+                                            (slide.cta.href?.split("?")[0].replace(/\/$/, "") === "/crea-tu-mat" ? (
+                        // The canvas-based customizer needs a fresh document load.
+                        // Avoid a broken dev-time webpack chunk transition from the hero.
+                        <a
+                          href={slide.cta.href}
+                          className="inline-flex min-h-11 items-center justify-center border-b border-white pb-1 text-xs font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-70 sm:text-sm"
+                        >
+                          {slide.cta.text}
+                        </a>
+                      ) : (
+                        <Link
+                          href={slide.cta.href || "/products"}
+                          className="inline-flex min-h-11 items-center justify-center border-b border-white pb-1 text-xs font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-70 sm:text-sm"
+                        >
+                          {slide.cta.text}
+                        </Link>
+                      ))
                     )}
                     </div>
                   </motion.div>
