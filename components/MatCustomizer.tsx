@@ -421,6 +421,9 @@ export default function MatCustomizer() {
         `Ahorro estimado: ${formatMoney(savings)}`,
         `Total estimado: ${formatMoney(estimatedTotal)}`,
         "",
+        "Entrega estimada: 45 días hábiles.",
+        "Envío: se cotiza y cobra por separado; no está incluido en el total estimado.",
+        "",
         "Ya descargué la imagen de mi diseño y la adjunto aquí.",
       ].join("\n");
 
@@ -688,9 +691,15 @@ export default function MatCustomizer() {
                 )}
 
                 <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-200 pt-3 text-base font-bold text-gray-900 sm:text-lg">
-                  <span>Total estimado</span>
+                  <span>Total estimado de mats (sin envío)</span>
                   <span>{formatMoney(estimatedTotal)}</span>
                 </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-brand-line bg-white px-4 py-3 text-left text-sm leading-6 text-brand-ink" aria-label="Condiciones de entrega y envío">
+                <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
+                <p><strong>Envío:</strong> se cotiza y cobra por separado; no está incluido en el total de los mats.</p>
+                <p className="mt-1 text-xs text-brand-muted">Estas condiciones se indicarán también en la cotización y en el comprobante del pedido personalizado.</p>
               </div>
 
               <button
