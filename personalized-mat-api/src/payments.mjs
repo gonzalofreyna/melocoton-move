@@ -14,6 +14,8 @@ export function checkoutConfiguration(env = process.env) {
   try { origin = new URL(env.PERSONALIZED_MAT_SITE_ORIGIN); } catch { return null; }
   if (origin.protocol !== "https:" && !(origin.protocol === "http:" && origin.hostname === "localhost")) return null;
   if (origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) return null;
+  // Production checkout must return only to the official storefront.
+  if (origin.origin !== "https://www.melocotonmove.com") return null;
   return { origin: origin.origin };
 }
 
@@ -93,7 +95,9 @@ export async function createCheckout(event, env = process.env) {
   }
   try {
     const { default: Stripe } = await import("stripe");
-    const stripe = new Stripe(await getStripeSecret(env));
+    const secret = await getStripeSecret(env);
+    if (!secret.startsWith("sk_live_")) return json(503, { ok: false, code: "LIVE_MODE_REQUIRED", message: "Checkout de producción no configurado." });
+    const stripe = new Stripe(secret);
     const session = await stripe.checkout.sessions.create(params);
     if (!session.url) throw new Error("Stripe no devolvió URL.");
     return json(200, { ok: true, url: session.url });
