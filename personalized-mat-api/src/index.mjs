@@ -1,5 +1,6 @@
 import { handleStripeWebhook } from "./webhook.mjs";
 import { createCheckout } from "./payments.mjs";
+import { getCheckoutSession } from "./session.mjs";
 import { quotePersonalizedMats, PERSONALIZED_MAT_UNIT_PRICE_MXN } from "./personalized-mat-pricing.mjs";
 
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
@@ -9,7 +10,7 @@ const corsHeaders = (event) => {
   if (!origin || !allowed || origin !== allowed.replace(/\/$/, "")) return {};
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "content-type",
     Vary: "Origin",
   };
@@ -28,6 +29,9 @@ export async function handler(event) {
   const path = event?.rawPath || event?.path || "";
   const method = event?.requestContext?.http?.method || event?.httpMethod || "";
   if (method === "OPTIONS") return { statusCode: 204, headers: { ...headers, ...corsHeaders(event) }, body: "" };
+  if (method === "GET" && path.endsWith("/session")) {
+    return getCheckoutSession(event);
+  }
   if (method !== "POST") return { ...respond(405, { ok: false, message: "Metodo no permitido" }), headers: { ...headers, ...corsHeaders(event) } };
   if (!["/quote", "/checkout", "/webhook"].some((route) => path.endsWith(route))) {
     return respond(404, { ok: false, message: "Ruta no encontrada" });
