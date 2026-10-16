@@ -794,14 +794,14 @@ export default function MatCustomizer() {
                 onClick={handleBuyNow}
                 disabled={checkoutLoading}
                 aria-busy={checkoutLoading}
-                className="mt-3 w-full rounded-xl bg-gray-900 px-5 py-4 text-base font-bold text-white shadow-md transition hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60"
+                className="mm-button mt-3 w-full py-4 text-base font-bold disabled:cursor-wait disabled:opacity-60"
               >
                 {checkoutLoading ? "Conectando con Stripe…" : "Comprar ahora"}
               </button>
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
-                className="mt-2 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="mm-button-outline mt-2 w-full text-sm font-medium"
               >
                 Consultar por WhatsApp
               </button>
