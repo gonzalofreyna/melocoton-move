@@ -32,7 +32,7 @@ export function buildCheckoutParameters(body, origin) {
   return {
     mode: "payment",
     // Stripe selects eligible payment methods from Dashboard settings.
-    ...(quote.installmentsAllowed ? { payment_method_options: { card: { installments: { enabled: true } } } } : {}),
+    payment_method_options: { card: { installments: { enabled: quote.installmentsAllowed } } },
     line_items: [
       {
         price_data: {
