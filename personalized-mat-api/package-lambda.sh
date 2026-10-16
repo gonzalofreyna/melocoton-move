@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Empaqueta SOLO la API independiente. No crea ni modifica Lambdas.
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 if ! command -v zip >/dev/null || ! command -v npm >/dev/null; then
