@@ -763,19 +763,19 @@ export default function MatCustomizer() {
 
               <button
                 type="button"
-                onClick={handleWhatsAppOrder}
-                className="mm-button-outline mt-3 w-full sm:mt-4"
-              >
-                Consultar por WhatsApp
-              </button>
-              <button
-                type="button"
                 onClick={handleBuyNow}
                 disabled={checkoutLoading}
                 aria-busy={checkoutLoading}
-                className="mm-button mt-3 w-full"
+                className="mt-3 w-full rounded-xl bg-gray-900 px-5 py-4 text-base font-bold text-white shadow-md transition hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60"
               >
                 {checkoutLoading ? "Conectando con Stripe…" : "Comprar ahora"}
+              </button>
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                className="mt-2 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Consultar por WhatsApp
               </button>
               {checkoutError && (
                 <div role="alert" className="mt-3 rounded-xl border border-brand-line bg-brand-sand p-4 text-left text-sm leading-6 text-brand-ink">
@@ -783,11 +783,6 @@ export default function MatCustomizer() {
                 </div>
               )}
 
-              <p className="mt-2 text-center text-[11px] leading-5 text-gray-500 sm:mt-3 sm:text-xs">
-                Al consultar, se descargará la imagen de tu diseño y se abrirá
-                WhatsApp con tu cotización. Adjunta la imagen descargada en el
-                chat.
-              </p>
             </div>
           </div>
 
