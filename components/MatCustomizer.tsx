@@ -717,55 +717,43 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-4 rounded-xl border border-gray-200 bg-brand-sand px-4 py-3 sm:mb-5">
-                <p className="text-sm font-bold text-gray-900">Elige tu promoción exclusiva</p>
-                <p className="mt-1 text-xs leading-5 text-gray-600">Selecciona solo una modalidad. Los importes mostrados son estimaciones; la API calculará el total definitivo.</p>
-                <div role="radiogroup" aria-label="Modalidad de promoción" className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <button type="button" role="radio" aria-checked={promotionMode === "msi5"} onClick={() => setPromotionMode("msi5")} className={`rounded-xl border px-3 py-3 text-left text-sm ${promotionMode === "msi5" ? "border-brand-wine bg-white font-semibold" : "border-brand-line bg-white/70"}`}>
-                    5% de descuento + MSI
-                    <span className="mt-1 block text-xs font-normal text-brand-muted">Sobre el precio original. Meses sujetos a disponibilidad.</span>
+              <div className="mb-3">
+                <p className="mb-2 text-sm font-semibold text-gray-900">Elige tu promoción</p>
+                <div role="radiogroup" aria-label="Modalidad de promoción" className="grid grid-cols-2 gap-2">
+                  <button type="button" role="radio" aria-checked={promotionMode === "msi5"} onClick={() => setPromotionMode("msi5")}
+                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "msi5" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                    <span className="block font-semibold">5% + MSI</span>
+                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Meses según tarjeta</span>
                   </button>
-                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} onClick={() => setPromotionMode("fiveFour")} className={`rounded-xl border px-3 py-3 text-left text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-white font-semibold" : "border-brand-line bg-white/70"}`}>
-                    Promoción 5×4 · sin MSI
-                    <span className="mt-1 block text-xs font-normal text-brand-muted">Por cada cinco mats, pagas cuatro.</span>
+                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} onClick={() => setPromotionMode("fiveFour")}
+                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                    <span className="block font-semibold">5×4 · Sin MSI</span>
+                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Lleva 5, paga 4</span>
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Cantidad</span>
-                  <span>{safeQuantity}</span>
-                </div>
-
-                <div className="mt-2 flex justify-between text-sm text-gray-600">
-                  <span>Promoción</span>
-                  <span>{promoLabel}</span>
-                </div>
-
-                {promotionMode === "fiveFour" && safeQuantity >= 5 && (
-                  <div className="mt-2 flex justify-between text-sm text-gray-600">
-                    <span>Mats a pagar</span>
-                    <span>{paidQuantity}</span>
+              <div aria-live="polite" className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-gray-600">Total de mats · sin envío</p>
+                    <p className="text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   </div>
-                )}
-
-                <div className="mt-2 flex justify-between text-sm text-gray-600">
-                  <span>Subtotal sin promoción</span>
-                  <span>{formatMoney(subtotalBeforePromo)}</span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-brand-ink">
+                    {promotionMode === "msi5" ? "5% + MSI" : "5×4"}
+                  </span>
                 </div>
-
-                {savings > 0 && (
-                  <div className="mt-2 flex justify-between text-sm font-medium text-green-700">
-                    <span>Ahorro estimado</span>
-                    <span>-{formatMoney(savings)}</span>
-                  </div>
-                )}
-
-                <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-200 pt-3 text-base font-bold text-gray-900 sm:text-lg">
-                  <span>Total estimado de mats (sin envío)</span>
-                  <span>{formatMoney(estimatedTotal)}</span>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                  <span>{safeQuantity} {safeQuantity === 1 ? "mat" : "mats"}</span>
+                  {promotionMode === "fiveFour" && safeQuantity >= 5 && <span>Pagas {paidQuantity}</span>}
+                  {savings > 0 && <span className="font-semibold text-green-700">Ahorras {formatMoney(savings)}</span>}
                 </div>
+                <details className="mt-2 border-t border-brand-line pt-2 text-xs text-gray-600">
+                  <summary className="cursor-pointer font-medium">Ver desglose del precio</summary>
+                  <div className="mt-2 flex justify-between"><span>Subtotal sin descuento</span><span>{formatMoney(subtotalBeforePromo)}</span></div>
+                  <div className="mt-1 flex justify-between"><span>Descuento</span><span>-{formatMoney(savings)}</span></div>
+                  <p className="mt-2">El importe definitivo se confirma al pagar.</p>
+                </details>
               </div>
 
               <div className="mt-4 rounded-xl border border-brand-line bg-white px-4 py-3 text-left text-sm leading-6 text-brand-ink" aria-label="Condiciones de entrega y envío">
@@ -776,7 +764,7 @@ export default function MatCustomizer() {
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
-                className="mm-button mt-3 w-full sm:mt-4"
+                className="mm-button-outline mt-3 w-full sm:mt-4"
               >
                 Consultar por WhatsApp
               </button>
@@ -785,7 +773,7 @@ export default function MatCustomizer() {
                 onClick={handleBuyNow}
                 disabled={checkoutLoading}
                 aria-busy={checkoutLoading}
-                className="mm-button-outline mt-3 w-full"
+                className="mm-button mt-3 w-full"
               >
                 {checkoutLoading ? "Conectando con Stripe…" : "Comprar ahora"}
               </button>
