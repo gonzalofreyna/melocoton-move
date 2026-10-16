@@ -24,6 +24,9 @@ type SuccessProps = {
   shippingProvider?: string | null;
   shippingService?: string | null;
   orderId?: string | null;
+  personalized?: boolean;
+  promotion?: string | null;
+  stripeReceiptUrl?: string | null;
   errorMessage?: string;
 };
 
@@ -40,6 +43,9 @@ export default function SuccessPage({
   shippingName,
   shippingAddress,
   orderId,
+  personalized,
+  promotion,
+  stripeReceiptUrl,
   errorMessage,
 }: SuccessProps) {
   const { clearCart, closeCart } = useCart();
@@ -47,7 +53,7 @@ export default function SuccessPage({
   const router = useRouter();
 
   useEffect(() => {
-    if (!ok) return;
+    if (!ok || personalized) return;
 
     clearCart();
 
@@ -56,7 +62,7 @@ export default function SuccessPage({
     } catch {}
 
     closeCart();
-  }, [ok, clearCart, closeCart]);
+  }, [ok, personalized, clearCart, closeCart]);
 
   const fmt = (value?: number, curr?: string) => {
     if (value == null || !curr) return "-";
@@ -95,7 +101,7 @@ export default function SuccessPage({
       // 💻 En escritorio: forzar descarga
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Factura-MelocotonMove-${orderId || "pedido"}.pdf`;
+      a.download = `Comprobante-MelocotonMove-${orderId || "pedido"}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -140,7 +146,7 @@ export default function SuccessPage({
           ¡Pago exitoso!
         </h1>
         <p className="text-sm text-brand-blue/70 mt-1">
-          Recibo oficial de compra ✨
+          {personalized ? "Confirmación de tu compra ✨" : "Recibo de compra ✨"}
         </p>
         <div className="absolute -bottom-3 left-0 right-0 flex justify-between px-3">
           <div className="w-6 h-6 bg-gray-50 rounded-full shadow-inner"></div>
@@ -223,6 +229,15 @@ export default function SuccessPage({
           </p>
         </div>
 
+        {personalized && (
+          <div className="mt-5 rounded-xl border border-brand-line bg-brand-sand p-4 text-sm leading-6 text-brand-ink">
+            <p><strong>Promoción:</strong> {promotion === "msi5" ? "5% de descuento con opción de MSI" : "5×4 sin MSI"}</p>
+            <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
+            <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el total pagado.</p>
+            <p>Nos pondremos en contacto contigo para confirmar los detalles de tu diseño.</p>
+          </div>
+        )}
+
         {/* Dirección */}
         {(shippingName || shippingAddress) && (
           <div className="mt-5 border-t pt-4 text-gray-700 text-sm leading-relaxed">
@@ -243,11 +258,14 @@ export default function SuccessPage({
 
       {/* Botones */}
       <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8 sm:justify-end max-w-md w-full">
+        {personalized && stripeReceiptUrl && (
+          <a href={stripeReceiptUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl text-center text-sm font-medium">Ver comprobante de pago</a>
+        )}
         <button
           onClick={handleDownloadPDF}
           className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl hover:bg-brand-blue hover:text-white transition text-sm font-medium"
         >
-          Descargar recibo (PDF)
+          Descargar comprobante (PDF)
         </button>
         <button
           onClick={() => router.push("/")}
@@ -271,11 +289,70 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       };
 
     const Stripe = (await import("stripe")).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+    // Independent personalized credentials use the SAME variable in test and
+    // live. Deployment environments supply sk_test_ or sk_live_ accordingly.
+    // Preserve the existing ecommerce key and flow unchanged.
+    const isTestSession = sessionId.startsWith("cs_test_");
+    const isLiveSession = sessionId.startsWith("cs_live_");
+    if (!isTestSession && !isLiveSession) {
+      return { props: { ok: false, errorMessage: "Identificador de pago inválido." } };
+    }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items", "payment_intent"],
-    });
+    // The personalized API owns the Stripe credential; Amplify does not need it.
+    // A 404 can mean a regular ecommerce session, which retains its original flow.
+    const apiUrl = process.env.NEXT_PUBLIC_PERSONALIZED_MAT_API_URL;
+    if (apiUrl) {
+      try {
+        const result = await fetch(
+          apiUrl.replace(/\/$/, "") + "/session?session_id=" + encodeURIComponent(sessionId),
+          { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(10000) }
+        );
+        if (result.ok) {
+          const data = await result.json();
+          if (data.ok && data.sessionId === sessionId) {
+            return { props: {
+              ok: true,
+              personalized: true,
+              promotion: data.promotion,
+              stripeReceiptUrl: data.stripeReceiptUrl,
+              amountTotal: data.amountTotal,
+              currency: data.currency,
+              customerEmail: data.customerEmail,
+              items: [{
+                description: "Mat profesional personalizado" + (data.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
+                quantity: data.quantity,
+                amountSubtotal: data.amountTotal,
+              }],
+              shippingLabel: "Se cotiza por separado",
+              orderId: sessionId,
+            } };
+          }
+        } else if (result.status !== 404) {
+          return { props: { ok: false, errorMessage: "No fue posible verificar el pago personalizado." } };
+        }
+      } catch {
+        return { props: { ok: false, errorMessage: "No fue posible conectar con la confirmación de pago." } };
+      }
+    }
+
+    // Original ecommerce checkout remains untouched.
+    const normalKey = process.env.STRIPE_SECRET_KEY;
+    let session: import("stripe").Stripe.Checkout.Session | null = null;
+    let stripe: InstanceType<typeof Stripe> | null = null;
+    if (normalKey) {
+      const normalStripe = new Stripe(normalKey);
+      const candidate = await normalStripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["line_items", "payment_intent"],
+      });
+      if (candidate.metadata?.source !== "melocoton_ecommerce") {
+        return { props: { ok: false, errorMessage: "Esta sesión no pertenece al checkout normal." } };
+      }
+      session = candidate;
+      stripe = normalStripe;
+    }
+    if (!session || !stripe || session.livemode !== isLiveSession) {
+      return { props: { ok: false, errorMessage: "No fue posible verificar el pago en su entorno." } };
+    }
 
     if (session.payment_status !== "paid") {
       return {
@@ -286,7 +363,8 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       };
     }
 
-    if (session.metadata?.source !== "melocoton_ecommerce") {
+    const personalized = session.metadata?.source === "melocoton_personalized_mat";
+    if (session.metadata?.source !== "melocoton_ecommerce" && !personalized) {
       return {
         props: {
           ok: false,
@@ -295,13 +373,19 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       };
     }
 
-    const lineItems = (session.line_items?.data || [])
-      .filter((li) => li.description !== "Costo de envío")
-      .map((li) => ({
-        description: li.description || "Artículo",
-        quantity: li.quantity || 0,
-        amountSubtotal: li.amount_subtotal ?? li.amount_total ?? 0,
-      }));
+    const lineItems = personalized
+      ? [{
+          description: "Mat profesional personalizado" + (session.metadata?.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
+          quantity: Number(session.metadata?.quantity) || 0,
+          amountSubtotal: session.amount_total ?? 0,
+        }]
+      : (session.line_items?.data || [])
+          .filter((li) => li.description !== "Costo de envío")
+          .map((li) => ({
+            description: li.description || "Artículo",
+            quantity: li.quantity || 0,
+            amountSubtotal: li.amount_subtotal ?? li.amount_total ?? 0,
+          }));
 
     const sd = session.collected_information?.shipping_details ?? null;
 
@@ -337,6 +421,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
     let shippingLabel: string | null =
       session.metadata?.shippingLabel?.trim() || null;
 
+    if (personalized) shippingLabel = "Se cotiza por separado";
     if (!shippingLabel) {
       if (session.metadata?.hasCustomShipping === "true") {
         shippingLabel = "Incluye artículos con envío a cotizar";
@@ -354,9 +439,21 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       }
     }
 
+    let stripeReceiptUrl: string | null = null;
+    if (personalized && session.payment_intent && typeof session.payment_intent !== "string") {
+      const chargeId = session.payment_intent.latest_charge;
+      if (typeof chargeId === "string") {
+        const charge = await stripe.charges.retrieve(chargeId);
+        stripeReceiptUrl = charge.receipt_url || null;
+      }
+    }
+
     return {
       props: {
         ok: true,
+        personalized,
+        promotion: personalized ? session.metadata?.promotion || null : null,
+        stripeReceiptUrl,
         amountTotal: session.amount_total ?? null,
         currency: session.currency ?? "mxn",
         customerEmail: session.customer_details?.email ?? null,

@@ -26,8 +26,12 @@ type LogoItem = {
   rotation: number;
 };
 
-const MAT_REAL_WIDTH_CM = 70;
-const MAT_REAL_HEIGHT_CM = 183;
+const MAT_DIMENSIONS: Record<MatShape, { height: number; width: number }> = {
+  clasico: { height: 182, width: 69 },
+  bala: { height: 182, width: 69 },
+  capsula: { height: 181, width: 68 },
+};
+const MAT_THICKNESS_MM = 5;
 const MAT_PRICE = 1499;
 const WHATSAPP_PHONE = "523310125501";
 
@@ -69,7 +73,35 @@ const solidColors = [
   "#F3B5BE",
 ];
 const solidColorNames: Record<string, string> = {
-  "#741D32": "Vino marrón",
+  "#3D3A3B": "Negro carbón",
+  "#7A7A78": "Gris piedra",
+  "#F7F7F7": "Blanco nieve",
+  "#FFD71E": "Amarillo sol",
+  "#F2DADD": "Rosa empolvado",
+  "#DE765F": "Terracota",
+  "#D46D78": "Rosa antiguo",
+  "#B8AAA0": "Arena cálida",
+  "#D5CEBC": "Marfil",
+  "#285D48": "Verde bosque",
+  "#24548F": "Azul profundo",
+  "#ADB58B": "Verde salvia",
+  "#9ABAB4": "Verde agua",
+  "#B08BBB": "Lavanda",
+  "#73A0BA": "Azul cielo",
+  "#4C4D53": "Grafito",
+  "#E62623": "Rojo intenso",
+  "#2F9A91": "Turquesa",
+  "#B3AFE6": "Lila pastel",
+  "#A89EAD": "Malva grisáceo",
+  "#66676D": "Gris humo",
+  "#8B604E": "Café cacao",
+  "#741D32": "Vino",
+  "#60456A": "Ciruela",
+  "#FFF0C3": "Vainilla",
+  "#AED0DB": "Azul bruma",
+  "#F6D1A5": "Durazno",
+  "#C97643": "Canela",
+  "#F3B5BE": "Rosa suave",
 };
 const textureFinishes: MatFinish[] = Array.from({ length: 15 }, (_, index) => ({
   type: "texture",
@@ -251,6 +283,10 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
+  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design" | "checkout">("shape");
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -259,7 +295,7 @@ export default function MatCustomizer() {
       if (!previewWrapRef.current) return;
 
       const availableWidth = previewWrapRef.current.clientWidth;
-      setPreviewWidth(Math.min(window.innerWidth < 640 ? 170 : 420, Math.max(160, availableWidth)));
+      setPreviewWidth(Math.min(window.innerWidth < 640 ? 130 : 420, Math.max(160, availableWidth)));
     };
 
     updatePreviewWidth();
@@ -271,12 +307,13 @@ export default function MatCustomizer() {
     };
   }, []);
 
+  const matDimensions = MAT_DIMENSIONS[shape];
   const stageWidth = previewWidth;
   const stageHeight = Math.round(stageWidth * 1.72);
 
   const matHeight = Math.round(stageHeight * 0.86);
   const matWidth = Math.round(
-    matHeight * (MAT_REAL_WIDTH_CM / MAT_REAL_HEIGHT_CM),
+    matHeight * (matDimensions.width / matDimensions.height),
   );
 
   const matX = (stageWidth - matWidth) / 2;
@@ -287,15 +324,67 @@ export default function MatCustomizer() {
 
   const paidQuantity = safeQuantity - Math.floor(safeQuantity / 5);
   const subtotalBeforePromo = MAT_PRICE * safeQuantity;
-  const estimatedTotal = MAT_PRICE * paidQuantity;
+  const estimatedTotal = promotionMode === "msi5"
+    ? Math.round(MAT_PRICE * safeQuantity * 0.95 * 100) / 100
+    : MAT_PRICE * paidQuantity;
   const savings = subtotalBeforePromo - estimatedTotal;
-  const promoLabel = `5x4: pagas ${paidQuantity} de ${safeQuantity}`;
+  const promoLabel = promotionMode === "msi5"
+    ? "5% de descuento + opción de MSI (sujeta a disponibilidad de Stripe)"
+    : `5x4: pagas ${paidQuantity} de ${safeQuantity}`;
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-MX", {
       style: "currency",
       currency: "MXN",
     }).format(value);
+
+  const handleBuyNow = async () => {
+    if (checkoutLoading) return;
+    setCheckoutError(null);
+
+    // This is the public base URL of the separately deployed API, never a secret.
+    const configuredApiUrl = process.env.NEXT_PUBLIC_PERSONALIZED_MAT_API_URL;
+    if (!configuredApiUrl) {
+      setCheckoutError("La compra directa todavía no está disponible. Puedes consultar por WhatsApp.");
+      return;
+    }
+    let checkoutEndpoint: URL;
+    try {
+      const base = new URL(configuredApiUrl);
+      if (base.search || base.hash || base.username || base.password ||
+          !(base.protocol === "https:" || (base.protocol === "http:" && base.hostname === "localhost"))) {
+        throw new Error("URL de API inválida");
+      }
+      checkoutEndpoint = new URL(base.href.replace(/\/$/, "") + "/checkout");
+    } catch {
+      setCheckoutError("La compra directa no está configurada correctamente.");
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const response = await fetch(checkoutEndpoint.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: safeQuantity, promotion: promotionMode }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.ok) {
+        throw new Error(typeof data?.message === "string" ? data.message : "No se pudo iniciar el pago.");
+      }
+      const destination = new URL(data.url);
+      if (destination.protocol !== "https:" || !(
+        destination.hostname === "checkout.stripe.com" ||
+        destination.hostname.endsWith(".checkout.stripe.com")
+      )) {
+        throw new Error("La respuesta de pago no es válida.");
+      }
+      window.location.assign(destination.toString());
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : "No se pudo conectar con el pago.");
+      setCheckoutLoading(false);
+    }
+  };
 
   const updateMatQuantity = (value: number) => {
     const cleanValue = Math.min(
@@ -382,7 +471,7 @@ export default function MatCustomizer() {
       pdf.text(`Forma: ${shape}`, 15, 26);
       pdf.text(`Acabado: ${finish.label}`, 15, 32);
       pdf.text(
-        `Medidas reales: ${MAT_REAL_HEIGHT_CM} cm x ${MAT_REAL_WIDTH_CM} cm`,
+        `Medidas: ${matDimensions.height} × ${matDimensions.width} cm · ${MAT_THICKNESS_MM} mm de espesor`,
         15,
         38,
       );
@@ -412,13 +501,17 @@ export default function MatCustomizer() {
         "",
         `Forma: ${shape}`,
         `Acabado: ${finish.label}`,
-        `Medidas: ${MAT_REAL_HEIGHT_CM} cm x ${MAT_REAL_WIDTH_CM} cm`,
+        `Medidas: ${matDimensions.height} × ${matDimensions.width} cm · ${MAT_THICKNESS_MM} mm de espesor`,
         `Cantidad: ${safeQuantity}`,
         `Precio unitario: ${formatMoney(MAT_PRICE)}`,
         `Promoción elegida: ${promoLabel}`,
+        `Modalidad de pago: ${promotionMode === "msi5" ? "MSI elegibles" : "Sin MSI"}`,
         `Subtotal sin promoción: ${formatMoney(subtotalBeforePromo)}`,
         `Ahorro estimado: ${formatMoney(savings)}`,
         `Total estimado: ${formatMoney(estimatedTotal)}`,
+        "",
+        "Entrega estimada: 45 días hábiles.",
+        "Envío: se cotiza y cobra por separado; no está incluido en el total estimado.",
         "",
         "Ya descargué la imagen de mi diseño y la adjunto aquí.",
       ].join("\n");
@@ -438,24 +531,27 @@ export default function MatCustomizer() {
   };
 
   return (
-    <section className="min-h-screen bg-brand-cream px-3 pb-12 pt-8 sm:px-4 sm:py-12">
+    <section aria-label="Personalizador de tapetes" className="bg-white px-3 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-4 text-center sm:mb-8">
-          <p className="mm-eyebrow">
-            Personaliza tu práctica
-          </p>
-          <h2 className="mm-heading mt-3 text-3xl sm:mt-4 sm:text-5xl">
-            Crea tu propio mat
-          </h2>
-          <p className="mx-auto mt-1 max-w-2xl text-xs leading-5 text-gray-600 sm:mt-4 sm:text-base">
-            Elige forma, color y coloca tu logo exactamente donde lo quieres.
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
+        <div className="grid gap-3 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
+          <nav aria-label="Pasos del personalizador" className="order-2 grid grid-cols-4 gap-1 rounded-2xl bg-brand-sand p-1.5 lg:hidden">
+            {([
+              ["shape", "Forma"],
+              ["color", "Color"],
+              ["design", "Diseño"],
+              ["checkout", "Comprar"],
+            ] as const).map(([step, label]) => (
+              <button key={step} type="button"
+                aria-current={mobileStep === step ? "step" : undefined}
+                onClick={() => { setMobileStep(step); if (step === "color") setFinishPickerOpen(true); }}
+                className={`min-h-11 rounded-xl px-1 py-2 text-xs font-semibold transition ${mobileStep === step ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>
+                {label}
+              </button>
+            ))}
+          </nav>
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
-            <div className="order-2 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none">
-              <div className="mb-6 sm:mb-8">
+            <div className="contents lg:block lg:rounded-[2rem] lg:border-0 lg:p-0 lg:shadow-none">
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-6 ${mobileStep === "shape" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                   1. Elige la forma
                 </h2>
@@ -491,7 +587,7 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-5 sm:mb-8">
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-5 ${mobileStep === "color" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   2. Elige color o textura
                 </h2>
@@ -522,7 +618,6 @@ export default function MatCustomizer() {
                           key={item}
                           onClick={() => {
                             setFinish({ type: "solid", value: item, label: solidColorNames[item] ?? item });
-                            setFinishPickerOpen(false);
                           }}
                           className={`h-11 rounded-xl border transition ${
                             finish.type === "solid" && finish.value === item
@@ -543,7 +638,6 @@ export default function MatCustomizer() {
                           key={item.value}
                           onClick={() => {
                             setFinish(item);
-                            setFinishPickerOpen(false);
                           }}
                           className={`h-14 overflow-hidden rounded-xl border transition ${
                             finish.type === "texture" && finish.value === item.value
@@ -565,7 +659,7 @@ export default function MatCustomizer() {
                 </p>
               </div>
 
-              <div className="mb-4 sm:mb-8">
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   3. Sube tu logo o diseño
                 </h2>
@@ -607,7 +701,7 @@ export default function MatCustomizer() {
 
               </div>
             </div>
-            <div className="order-3 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
+            <div className={`order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5 ${mobileStep === "checkout" ? "" : "hidden lg:block"}`}>
               <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                 4. Cantidad y cotización
               </h2>
@@ -651,72 +745,84 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-4 rounded-xl border border-gray-200 bg-brand-sand px-4 py-3 sm:mb-5">
-                <p className="text-sm font-bold text-gray-900">Promoción 5x4</p>
-                <p className="mt-1 text-xs leading-5 text-gray-600">Por cada 5 mats, pagas solo 4. Se aplica automáticamente al elegir 5 o más.</p>
+              <div className="mb-3">
+                <p className="mb-2 text-sm font-semibold text-gray-900">Elige tu promoción</p>
+                <div role="radiogroup" aria-label="Modalidad de promoción" className="grid grid-cols-2 gap-2">
+                  <button type="button" role="radio" aria-checked={promotionMode === "msi5"} onClick={() => setPromotionMode("msi5")}
+                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "msi5" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                    <span className="block font-semibold">5% + MSI</span>
+                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Meses según tarjeta</span>
+                  </button>
+                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} onClick={() => setPromotionMode("fiveFour")}
+                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                    <span className="block font-semibold">5×4 · Sin MSI</span>
+                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Lleva 5, paga 4</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Cantidad</span>
-                  <span>{safeQuantity}</span>
-                </div>
-
-                <div className="mt-2 flex justify-between text-sm text-gray-600">
-                  <span>Promoción</span>
-                  <span>{promoLabel}</span>
-                </div>
-
-                {safeQuantity >= 5 && (
-                  <div className="mt-2 flex justify-between text-sm text-gray-600">
-                    <span>Mats a pagar</span>
-                    <span>{paidQuantity}</span>
+              <div aria-live="polite" className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-gray-600">Total de mats · sin envío</p>
+                    <p className="text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   </div>
-                )}
-
-                <div className="mt-2 flex justify-between text-sm text-gray-600">
-                  <span>Subtotal sin promoción</span>
-                  <span>{formatMoney(subtotalBeforePromo)}</span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-brand-ink">
+                    {promotionMode === "msi5" ? "5% + MSI" : "5×4"}
+                  </span>
                 </div>
-
-                {savings > 0 && (
-                  <div className="mt-2 flex justify-between text-sm font-medium text-green-700">
-                    <span>Ahorro estimado</span>
-                    <span>-{formatMoney(savings)}</span>
-                  </div>
-                )}
-
-                <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-200 pt-3 text-base font-bold text-gray-900 sm:text-lg">
-                  <span>Total estimado</span>
-                  <span>{formatMoney(estimatedTotal)}</span>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                  <span>{safeQuantity} {safeQuantity === 1 ? "mat" : "mats"}</span>
+                  {promotionMode === "fiveFour" && safeQuantity >= 5 && <span>Pagas {paidQuantity}</span>}
+                  {savings > 0 && <span className="font-semibold text-green-700">Ahorras {formatMoney(savings)}</span>}
                 </div>
+                <details className="mt-2 border-t border-brand-line pt-2 text-xs text-gray-600">
+                  <summary className="cursor-pointer font-medium">Ver desglose del precio</summary>
+                  <div className="mt-2 flex justify-between"><span>Subtotal sin descuento</span><span>{formatMoney(subtotalBeforePromo)}</span></div>
+                  <div className="mt-1 flex justify-between"><span>Descuento</span><span>-{formatMoney(savings)}</span></div>
+                  <p className="mt-2">El importe definitivo se confirma al pagar.</p>
+                </details>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-brand-line bg-white px-4 py-3 text-left text-sm leading-6 text-brand-ink" aria-label="Condiciones de entrega y envío">
+                <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
+                <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el precio.</p>
               </div>
 
               <button
                 type="button"
-                onClick={handleWhatsAppOrder}
-                className="mm-button mt-3 w-full sm:mt-4"
+                onClick={handleBuyNow}
+                disabled={checkoutLoading}
+                aria-busy={checkoutLoading}
+                className="mm-button mt-3 w-full py-4 text-base font-bold disabled:cursor-wait disabled:opacity-60"
               >
-                Solicitar y comprar
+                {checkoutLoading ? "Conectando con Stripe…" : "Comprar ahora"}
               </button>
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                className="mm-button-outline mt-2 w-full text-sm font-medium"
+              >
+                Consultar por WhatsApp
+              </button>
+              {checkoutError && (
+                <div role="alert" className="mt-3 rounded-xl border border-brand-line bg-brand-sand p-4 text-left text-sm leading-6 text-brand-ink">
+                  {checkoutError}
+                </div>
+              )}
 
-              <p className="mt-2 text-center text-[11px] leading-5 text-gray-500 sm:mt-3 sm:text-xs">
-                Al continuar, se descargará la imagen de tu diseño y se abrirá
-                WhatsApp con tu cotización. Adjunta la imagen descargada en el
-                chat.
-              </p>
             </div>
           </div>
 
-          <div className="order-1 w-full min-w-0 lg:order-2 lg:sticky lg:top-28 lg:self-start">
-            <div className="w-full rounded-2xl border border-brand-line bg-white p-3 shadow-editorial sm:rounded-[2rem] sm:p-4">
+          <div className="order-1 sticky top-0 z-20 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:top-28 lg:bg-transparent lg:py-0">
+            <div className="w-full rounded-2xl border border-brand-line bg-white p-2 shadow-editorial sm:rounded-[2rem] sm:p-4">
               <div className="mb-2 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-gray-900 sm:text-lg">
                     Vista previa
                   </h2>
                   <p className="text-xs text-gray-500 sm:text-sm">
-                    Mat real: 183 cm x 70 cm
+                    {`Medidas: ${matDimensions.height} × ${matDimensions.width} cm · ${MAT_THICKNESS_MM} mm`}
                   </p>
                 </div>
 
@@ -827,7 +933,7 @@ export default function MatCustomizer() {
                 </div>
               )}
 
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
+              <div className="mt-2 hidden grid-cols-2 gap-2 sm:mt-5 sm:gap-3 lg:grid">
                 <button
                   onClick={downloadPNG}
                   className="min-h-11 rounded-xl bg-gray-900 px-3 py-3 text-xs font-bold text-white transition hover:bg-gray-700 sm:rounded-full sm:px-5 sm:text-sm"

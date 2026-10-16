@@ -1,0 +1,12 @@
+{
+  "name": "personalized-mat-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/*.test.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.800.0",
+    "stripe": "^23.0.0"
+  }
+}
