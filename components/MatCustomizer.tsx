@@ -282,6 +282,7 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
+  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design">("shape");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
@@ -527,9 +528,23 @@ export default function MatCustomizer() {
     <section aria-label="Personalizador de tapetes" className="bg-white px-3 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-3 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
+          <nav aria-label="Pasos del personalizador" className="order-2 grid grid-cols-3 gap-1 rounded-2xl bg-brand-sand p-1.5 lg:hidden">
+            {([
+              ["shape", "Forma"],
+              ["color", "Color"],
+              ["design", "Diseño"],
+            ] as const).map(([step, label]) => (
+              <button key={step} type="button"
+                aria-current={mobileStep === step ? "step" : undefined}
+                onClick={() => { setMobileStep(step); if (step === "color") setFinishPickerOpen(true); }}
+                className={`min-h-11 rounded-xl px-1 py-2 text-xs font-semibold transition ${mobileStep === step ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>
+                {label}
+              </button>
+            ))}
+          </nav>
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
             <div className="contents lg:block lg:rounded-[2rem] lg:border-0 lg:p-0 lg:shadow-none">
-              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-6 `}>
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-6 ${mobileStep === "shape" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                   1. Elige la forma
                 </h2>
@@ -565,7 +580,7 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-5 `}>
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-5 ${mobileStep === "color" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   2. Elige color o textura
                 </h2>
@@ -637,7 +652,7 @@ export default function MatCustomizer() {
                 </p>
               </div>
 
-              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 `}>
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   3. Sube tu logo o diseño
                 </h2>
