@@ -1,3 +1,4 @@
+import { handleStripeWebhook } from "./webhook.mjs";
 import { createCheckout } from "./payments.mjs";
 import { quotePersonalizedMats, PERSONALIZED_MAT_UNIT_PRICE_MXN } from "./personalized-mat-pricing.mjs";
 
@@ -28,8 +29,11 @@ export async function handler(event) {
   const method = event?.requestContext?.http?.method || event?.httpMethod || "";
   if (method === "OPTIONS") return { statusCode: 204, headers: { ...headers, ...corsHeaders(event) }, body: "" };
   if (method !== "POST") return { ...respond(405, { ok: false, message: "Metodo no permitido" }), headers: { ...headers, ...corsHeaders(event) } };
-  if (!["/quote", "/checkout"].some((route) => path.endsWith(route))) {
+  if (!["/quote", "/checkout", "/webhook"].some((route) => path.endsWith(route))) {
     return respond(404, { ok: false, message: "Ruta no encontrada" });
+  }
+  if (path.endsWith("/webhook")) {
+    return handleStripeWebhook(event);
   }
   if (path.endsWith("/checkout")) {
     const result = await createCheckout(event);
