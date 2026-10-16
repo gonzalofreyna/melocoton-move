@@ -283,7 +283,7 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
-  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design" | "checkout">("shape");
+  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design">("shape");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
@@ -534,12 +534,11 @@ export default function MatCustomizer() {
     <section aria-label="Personalizador de tapetes" className="bg-white px-3 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-3 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
-          <nav aria-label="Pasos del personalizador" className="order-2 grid grid-cols-4 gap-1 rounded-2xl bg-brand-sand p-1.5 lg:hidden">
+          <nav aria-label="Pasos del personalizador" className="order-2 grid grid-cols-3 gap-1 rounded-2xl bg-brand-sand p-1.5 lg:hidden">
             {([
               ["shape", "Forma"],
               ["color", "Color"],
               ["design", "Diseño"],
-              ["checkout", "Comprar"],
             ] as const).map(([step, label]) => (
               <button key={step} type="button"
                 aria-current={mobileStep === step ? "step" : undefined}
@@ -701,7 +700,7 @@ export default function MatCustomizer() {
 
               </div>
             </div>
-            <div className={`order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5 ${mobileStep === "checkout" ? "" : "hidden lg:block"}`}>
+            <div className="order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
               <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                 4. Cantidad y cotización
               </h2>
