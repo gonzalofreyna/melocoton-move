@@ -1,4 +1,5 @@
 import { validateQuote } from "./index.mjs";
+import { getStripeSecret } from "./stripe-secret.mjs";
 
 const json = (statusCode, data) => ({
   statusCode,
@@ -7,7 +8,7 @@ const json = (statusCode, data) => ({
 });
 
 export function checkoutConfiguration(env = process.env) {
-  const required = ["STRIPE_SECRET_KEY", "PERSONALIZED_MAT_SITE_ORIGIN"];
+  const required = ["PERSONALIZED_MAT_SITE_ORIGIN"];
   if (env.PERSONALIZED_MAT_CHECKOUT_READY !== "true" || required.some((key) => !env[key])) return null;
   let origin;
   try { origin = new URL(env.PERSONALIZED_MAT_SITE_ORIGIN); } catch { return null; }
@@ -92,7 +93,7 @@ export async function createCheckout(event, env = process.env) {
   }
   try {
     const { default: Stripe } = await import("stripe");
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(await getStripeSecret(env));
     const session = await stripe.checkout.sessions.create(params);
     if (!session.url) throw new Error("Stripe no devolvió URL.");
     return json(200, { ok: true, url: session.url });
