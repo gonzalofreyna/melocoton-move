@@ -5,7 +5,7 @@ const headers = { "Content-Type": "application/json", "Cache-Control": "no-store
 const corsHeaders = (event) => {
   const origin = event?.headers?.origin || event?.headers?.Origin;
   const allowed = process.env.PERSONALIZED_MAT_SITE_ORIGIN;
-  if (!origin || !allowed || origin !== allowed.replace(/\\/$/, "")) return {};
+  if (!origin || !allowed || origin !== allowed.replace(/\/$/, "")) return {};
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
