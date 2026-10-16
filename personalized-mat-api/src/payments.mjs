@@ -7,13 +7,13 @@ const json = (statusCode, data) => ({
 });
 
 export function checkoutConfiguration(env = process.env) {
-  const required = ["STRIPE_SECRET_KEY", "PERSONALIZED_MAT_WEBHOOK_SECRET", "PERSONALIZED_MAT_ORDERS_TABLE", "PERSONALIZED_MAT_SITE_ORIGIN"];
+  const required = ["STRIPE_SECRET_KEY", "PERSONALIZED_MAT_SITE_ORIGIN"];
   if (env.PERSONALIZED_MAT_CHECKOUT_READY !== "true" || required.some((key) => !env[key])) return null;
   let origin;
   try { origin = new URL(env.PERSONALIZED_MAT_SITE_ORIGIN); } catch { return null; }
   if (origin.protocol !== "https:" && !(origin.protocol === "http:" && origin.hostname === "localhost")) return null;
   if (origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) return null;
-  return { origin: origin.origin, table: env.PERSONALIZED_MAT_ORDERS_TABLE };
+  return { origin: origin.origin };
 }
 
 export function buildCheckoutParameters(body, origin) {
@@ -88,55 +88,3 @@ export async function createCheckout(event, env = process.env) {
   }
 }
 
-export async function processStripeWebhook(event, env = process.env) {
-  if (!checkoutConfiguration(env)) return json(503, { received: false });
-  const signature = event.headers?.["stripe-signature"] || event.headers?.["Stripe-Signature"];
-  if (!signature || typeof event.body !== "string") return json(400, { received: false });
-  try {
-    const { default: Stripe } = await import("stripe");
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-    const rawBody = event.isBase64Encoded ? Buffer.from(event.body, "base64") : event.body;
-    const stripeEvent = stripe.webhooks.constructEvent(rawBody, signature, env.PERSONALIZED_MAT_WEBHOOK_SECRET);
-    if (stripeEvent.type !== "checkout.session.completed" && stripeEvent.type !== "checkout.session.async_payment_succeeded") {
-      return json(200, { received: true });
-    }
-    const session = stripeEvent.data.object;
-    if (session.metadata?.source !== "melocoton_personalized_mat" || session.payment_status !== "paid") {
-      return json(200, { received: true });
-    }
-    const quote = validateQuote({ quantity: Number(session.metadata.quantity), promotion: session.metadata.promotion });
-    if (quote.totalCents !== session.amount_total || session.currency !== "mxn") {
-      throw new Error("El importe de Stripe no coincide con la cotización del servidor.");
-    }
-    const { DynamoDBClient, PutItemCommand } = await import("@aws-sdk/client-dynamodb");
-    const db = new DynamoDBClient({});
-    const contact = session.customer_details || {};
-    await db.send(new PutItemCommand({
-      TableName: env.PERSONALIZED_MAT_ORDERS_TABLE,
-      Item: {
-        stripeSessionId: { S: session.id },
-        paymentStatus: { S: "paid" },
-        createdAt: { S: new Date().toISOString() },
-        promotion: { S: quote.promotion },
-        quantity: { N: String(quote.quantity) },
-        freeUnits: { N: String(quote.freeUnits) },
-        amountTotalCents: { N: String(quote.totalCents) },
-        currency: { S: "mxn" },
-        email: { S: contact.email || session.customer_email || "unknown" },
-        customerName: { S: contact.name || "" },
-        customerPhone: { S: contact.phone || "" },
-        paymentIntentId: { S: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || "" },
-        designStatus: { S: "pending_contact" },
-        shippingStatus: { S: "awaiting_quote" },
-        deliveryBusinessDays: { N: "45" },
-      },
-      ConditionExpression: "attribute_not_exists(stripeSessionId)",
-    }));
-    return json(200, { received: true });
-  } catch (err) {
-    if (err?.name === "ConditionalCheckFailedException") return json(200, { received: true, alreadyProcessed: true });
-    if (err?.type === "StripeSignatureVerificationError") return json(400, { received: false });
-    console.error("Error guardando pedido de mat personalizado:", err);
-    return json(500, { received: false });
-  }
-}
