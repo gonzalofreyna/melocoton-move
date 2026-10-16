@@ -8,7 +8,7 @@ const json = (statusCode, data) => ({
 });
 
 export function checkoutConfiguration(env = process.env) {
-  const required = ["PERSONALIZED_MAT_SITE_ORIGIN", "PERSONALIZED_MAT_STRIPE_SECRET_NAME"];
+  const required = ["PERSONALIZED_MAT_SITE_ORIGIN"];
   if (env.PERSONALIZED_MAT_CHECKOUT_READY !== "true" || required.some((key) => !env[key])) return null;
   let origin;
   try { origin = new URL(env.PERSONALIZED_MAT_SITE_ORIGIN); } catch { return null; }
