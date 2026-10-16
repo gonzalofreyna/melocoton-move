@@ -133,12 +133,6 @@ export default function ProductsPage() {
         <Link className="mm-text-link" href="/calcetines-antideslizantes-pilates">Calcetas antideslizantes</Link>
         <Link className="mm-text-link" href="/crea-tu-mat">Personaliza tu mat</Link>
       </nav>
-      <p className="mb-8 max-w-3xl text-center text-sm leading-7 text-brand-muted sm:mb-10 sm:text-base">
-        Explora nuestra selección de tapetes de yoga y Pilates, calcetas antideslizantes
-        para reformer y barre y accesorios para practicar en casa o en el estudio.
-        Consulta los colores, las características y la disponibilidad de cada producto.
-      </p>
-
       {isLoading && <p className="text-gray-500">Cargando productos…</p>}
       {anyError && !isLoading && (
         <div className="text-center space-y-2">
@@ -172,6 +166,11 @@ export default function ProductsPage() {
           )}
         </>
       )}
+      <p className="mt-12 max-w-3xl text-center text-sm leading-7 text-brand-muted sm:mt-16 sm:text-base">
+        Explora nuestra selección de tapetes de yoga y Pilates, calcetas antideslizantes
+        para reformer y barre y accesorios para practicar en casa o en el estudio.
+        Consulta los colores, las características y la disponibilidad de cada producto.
+      </p>
       <section aria-labelledby="catalogo-guia-compra" className="mt-16 w-full max-w-4xl border-t border-brand-line pt-8 text-left sm:mt-20 sm:pt-10">
         <h2 id="catalogo-guia-compra" className="mm-heading text-2xl sm:text-3xl">
           Encuentra lo que necesitas para tu práctica
