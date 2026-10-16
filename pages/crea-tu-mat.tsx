@@ -73,7 +73,7 @@ export default function CreaTuMatPage() {
             Crea tu Mat
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
-            Personaliza tu tapete profesional de yoga o Pilates. Elige forma, color y diseño a tu estilo.
+            Personaliza tu tapete profesional de yoga o pilates. Elige forma, color y diseño a tu estilo.
           </p>
         </div>
       </section>
@@ -84,31 +84,17 @@ export default function CreaTuMatPage() {
         <div className="mx-auto max-w-4xl">
           <p className="mm-eyebrow">Conoce tu mat</p>
           <h2 id="detalles-mat-personalizado" className="mm-heading mt-2 text-2xl sm:text-3xl">
-            Tapetes personalizados de yoga y Pilates en México
+            Diseñado para tu movimiento
           </h2>
           <p className="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
             Crea un mat profesional Melocotón Move con base de caucho natural y superficie de
             poliuretano de alto grado. Personalízalo con tu logo mediante grabado láser,
             desde una sola pieza para ti o en varias unidades para tu estudio.
           </p>
-          <div className="mt-7 grid gap-3 sm:grid-cols-3 sm:gap-4">
-            <article className="rounded-2xl border border-brand-line bg-white p-5">
-              <h3 className="font-semibold text-brand-ink">Cápsula</h3>
-              <p className="mt-2 text-sm leading-6 text-gray-600">Extremos completamente redondeados.</p>
-            </article>
-            <article className="rounded-2xl border border-brand-line bg-white p-5">
-              <h3 className="font-semibold text-brand-ink">Bala</h3>
-              <p className="mt-2 text-sm leading-6 text-gray-600">Un extremo redondeado y el otro más recto.</p>
-            </article>
-            <article className="rounded-2xl border border-brand-line bg-white p-5">
-              <h3 className="font-semibold text-brand-ink">Clásico</h3>
-              <p className="mt-2 text-sm leading-6 text-gray-600">Forma rectangular con esquinas suavizadas.</p>
-            </article>
-          </div>
-          <p className="mt-5 text-sm leading-7 text-gray-600">
-            Puedes comprar sin subir un logo. Después de tu pago nos comunicaremos contigo para
-            confirmar los detalles del diseño. La entrega estimada es de 45 días hábiles;
-            el envío se cotiza por separado.
+          <p className="mt-4 text-sm leading-7 text-gray-600">
+            Tres formas para hacerlo tuyo: <strong>Cápsula</strong>, de extremos redondeados;
+            <strong> Bala</strong>, con un extremo recto; y <strong>Clásico</strong>,
+            de líneas rectangulares y esquinas suaves.
           </p>
         </div>
       </section>
@@ -131,7 +117,7 @@ export default function CreaTuMatPage() {
           </div>
           <p className="mt-6 text-sm leading-6 text-gray-600">
             ¿Quieres comparar diseños antes de personalizar?
-            {" "}<Link href="/tapetes-yoga-pilates" className="font-semibold underline underline-offset-2">Explora nuestros tapetes de yoga y Pilates</Link>.
+            {" "}<Link href="/tapetes-yoga-pilates" className="font-semibold underline underline-offset-2">Explora nuestros tapetes de yoga y pilates</Link>.
           </p>
         </div>
       </section>
