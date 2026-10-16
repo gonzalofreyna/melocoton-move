@@ -314,13 +314,19 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       };
     }
 
-    const lineItems = (session.line_items?.data || [])
-      .filter((li) => li.description !== "Costo de envío")
-      .map((li) => ({
-        description: li.description || "Artículo",
-        quantity: li.quantity || 0,
-        amountSubtotal: li.amount_subtotal ?? li.amount_total ?? 0,
-      }));
+    const lineItems = personalized
+      ? [{
+          description: "Mat profesional personalizado" + (session.metadata?.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
+          quantity: Number(session.metadata?.quantity) || 0,
+          amountSubtotal: session.amount_total ?? 0,
+        }]
+      : (session.line_items?.data || [])
+          .filter((li) => li.description !== "Costo de envío")
+          .map((li) => ({
+            description: li.description || "Artículo",
+            quantity: li.quantity || 0,
+            amountSubtotal: li.amount_subtotal ?? li.amount_total ?? 0,
+          }));
 
     const sd = session.collected_information?.shipping_details ?? null;
 
