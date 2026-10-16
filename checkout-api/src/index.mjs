@@ -1,4 +1,3 @@
-import { handlePersonalizedMatCheckout, handlePersonalizedMatQuote } from "./personalized-mat-handler.mjs";
 import Stripe from "stripe";
 import {
   SecretsManagerClient,
@@ -48,14 +47,6 @@ export const handler = async (event) => {
 
   const path = event.rawPath;
   const method = event.requestContext.http.method;
-
-  // Isolated personalized-mat endpoints. Normal /checkout is unchanged.
-  if (path === "/personalized-mat/quote" && method === "POST") {
-    return handlePersonalizedMatQuote(event);
-  }
-  if (path === "/personalized-mat/checkout" && method === "POST") {
-    return handlePersonalizedMatCheckout(event); // fail-closed until full lifecycle is ready
-  }
 
   // === POST /checkout ===
   if (path === "/checkout" && method === "POST") {
