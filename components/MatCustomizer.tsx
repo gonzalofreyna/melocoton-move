@@ -497,20 +497,8 @@ export default function MatCustomizer() {
   };
 
   return (
-    <section className="min-h-screen bg-white px-3 pb-16 pt-10 sm:px-6 sm:py-16">
+    <section aria-label="Personalizador de tapetes" className="bg-white px-3 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-4 text-center sm:mb-8">
-          <p className="mm-eyebrow">
-            Personaliza tu práctica
-          </p>
-          <h2 className="mm-heading mt-3 text-3xl sm:mt-4 sm:text-5xl">
-            Crea tu propio mat
-          </h2>
-          <p className="mx-auto mt-1 max-w-2xl text-xs leading-5 text-gray-600 sm:mt-4 sm:text-base">
-            Elige forma, color y coloca tu logo exactamente donde lo quieres.
-          </p>
-        </div>
-
         <div className="grid gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
             <div className="order-2 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none">
