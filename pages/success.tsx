@@ -24,6 +24,9 @@ type SuccessProps = {
   shippingProvider?: string | null;
   shippingService?: string | null;
   orderId?: string | null;
+  personalized?: boolean;
+  promotion?: string | null;
+  stripeReceiptUrl?: string | null;
   errorMessage?: string;
 };
 
@@ -40,6 +43,9 @@ export default function SuccessPage({
   shippingName,
   shippingAddress,
   orderId,
+  personalized,
+  promotion,
+  stripeReceiptUrl,
   errorMessage,
 }: SuccessProps) {
   const { clearCart, closeCart } = useCart();
@@ -47,7 +53,7 @@ export default function SuccessPage({
   const router = useRouter();
 
   useEffect(() => {
-    if (!ok) return;
+    if (!ok || personalized) return;
 
     clearCart();
 
@@ -56,7 +62,7 @@ export default function SuccessPage({
     } catch {}
 
     closeCart();
-  }, [ok, clearCart, closeCart]);
+  }, [ok, personalized, clearCart, closeCart]);
 
   const fmt = (value?: number, curr?: string) => {
     if (value == null || !curr) return "-";
@@ -223,6 +229,15 @@ export default function SuccessPage({
           </p>
         </div>
 
+        {personalized && (
+          <div className="mt-5 rounded-xl border border-brand-line bg-brand-sand p-4 text-sm leading-6 text-brand-ink">
+            <p><strong>Promoción:</strong> {promotion === "msi5" ? "5% de descuento con opción de MSI" : "5×4 sin MSI"}</p>
+            <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
+            <p><strong>Envío:</strong> se cotiza y paga por separado; no está incluido en este recibo.</p>
+            <p>Melocotón Move se comunicará contigo para acordar tu diseño. No es necesario haber subido un logo.</p>
+          </div>
+        )}
+
         {/* Dirección */}
         {(shippingName || shippingAddress) && (
           <div className="mt-5 border-t pt-4 text-gray-700 text-sm leading-relaxed">
@@ -243,6 +258,9 @@ export default function SuccessPage({
 
       {/* Botones */}
       <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8 sm:justify-end max-w-md w-full">
+        {personalized && stripeReceiptUrl && (
+          <a href={stripeReceiptUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl text-center text-sm font-medium">Ver recibo oficial de Stripe</a>
+        )}
         <button
           onClick={handleDownloadPDF}
           className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl hover:bg-brand-blue hover:text-white transition text-sm font-medium"
@@ -286,7 +304,8 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       };
     }
 
-    if (session.metadata?.source !== "melocoton_ecommerce") {
+    const personalized = session.metadata?.source === "melocoton_personalized_mat";
+    if (session.metadata?.source !== "melocoton_ecommerce" && !personalized) {
       return {
         props: {
           ok: false,
@@ -337,6 +356,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
     let shippingLabel: string | null =
       session.metadata?.shippingLabel?.trim() || null;
 
+    if (personalized) shippingLabel = "Envío por cotizar y pagar por separado";
     if (!shippingLabel) {
       if (session.metadata?.hasCustomShipping === "true") {
         shippingLabel = "Incluye artículos con envío a cotizar";
@@ -354,9 +374,21 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       }
     }
 
+    let stripeReceiptUrl: string | null = null;
+    if (personalized && session.payment_intent && typeof session.payment_intent !== "string") {
+      const chargeId = session.payment_intent.latest_charge;
+      if (typeof chargeId === "string") {
+        const charge = await stripe.charges.retrieve(chargeId);
+        stripeReceiptUrl = charge.receipt_url || null;
+      }
+    }
+
     return {
       props: {
         ok: true,
+        personalized,
+        promotion: personalized ? session.metadata?.promotion || null : null,
+        stripeReceiptUrl,
         amountTotal: session.amount_total ?? null,
         currency: session.currency ?? "mxn",
         customerEmail: session.customer_details?.email ?? null,
