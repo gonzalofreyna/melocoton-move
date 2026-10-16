@@ -16,7 +16,7 @@ En API Gateway HTTP API / Lambda Function URL se deben definir correctamente la 
 
 ## Variables de entorno de la Lambda
 
-- `PERSONALIZED_MAT_STRIPE_SECRET_NAME`: nombre o ARN del secreto dedicado en AWS Secrets Manager. El secreto contiene la clave `sk_test_...` o `sk_live_...` como texto o JSON `{"STRIPE_SECRET_KEY":"..."}`. La Lambda necesita permiso IAM `secretsmanager:GetSecretValue` **solo para este secreto**. No guardar la clave directamente en Lambda ni en Amplify.
+- `PERSONALIZED_MAT_STRIPE_SECRET_NAME` (opcional): nombre del secreto en AWS Secrets Manager. Por defecto usa **`eternancy/STRIPE_SECRET_KEY`**, el mismo secreto de producción del checkout normal. La Lambda personalizada necesita permiso IAM `secretsmanager:GetSecretValue` sobre este secreto. No cambiar su contenido ni crear otro.
 - `PERSONALIZED_MAT_SITE_ORIGIN`: origen publico exacto del sitio, por ejemplo `https://www.melocotonmove.com`, sin slash final, query ni ruta. Usado en Stripe redirects y CORS.
 - `PERSONALIZED_MAT_WEBHOOK_SECRET`: secreto `whsec_...` del destino Webhook de **esta API**, distinto al webhook de ecommerce. Necesario para verificar notificaciones; no compartir ni subir a GitHub.
 - `PERSONALIZED_MAT_CHECKOUT_READY=true`: habilita el inicio de Checkout solo despues de configurar y validar Stripe en test mode. En otro caso devuelve 503.
@@ -53,11 +53,11 @@ npm test
 
 ## Antes de desplegar la nueva versión
 
-1. Crear secreto **independiente** en Secrets Manager; no reutilizar ni modificar el secreto del checkout normal.
-2. Asignar a la función IAM únicamente `secretsmanager:GetSecretValue` sobre el ARN del nuevo secreto y configurar `PERSONALIZED_MAT_STRIPE_SECRET_NAME`.
+1. Reutilizar **`eternancy/STRIPE_SECRET_KEY`** tal como está, sin crear otro secreto ni modificar su valor. Esto significa que Crea tu Mat utilizará la misma cuenta y el mismo modo Stripe (producción) que el checkout normal.
+2. Autorizar `secretsmanager:GetSecretValue` para el rol de la Lambda personalizada sobre el ARN de `eternancy/STRIPE_SECRET_KEY`. La variable `PERSONALIZED_MAT_STRIPE_SECRET_NAME` puede omitirse.
 3. Agregar ruta **GET /session** al API Gateway de esta Lambda (además de POST /quote, /checkout y /webhook). No asignar authorizer que impida la consulta SSR de Amplify; el session_id es un token de acceso no adivinable y la respuesta lleva no-store.
 4. Publicar nuevo ZIP desde `bash personalized-mat-api/package-lambda.sh` y comprobar el flujo de prueba de nuevo antes de pasar a modo real.
 5. Mantener `NEXT_PUBLIC_PERSONALIZED_MAT_API_URL` en Amplify y `STRIPE_SECRET_KEY` existente de la tienda normal. Eliminar `PERSONALIZED_MAT_STRIPE_SECRET_KEY` en Amplify **después** de validar el nuevo comprobante.
-6. Para producción, actualizar el secreto dedicado con la clave Live y configurar el webhook Live correspondiente; ajustar `PERSONALIZED_MAT_SITE_ORIGIN=https://www.melocotonmove.com`.
+6. Para producción, **no cambiar el secreto compartido**: ya es Live si lo utiliza el checkout normal. Configurar un webhook Live independiente para Crea tu Mat con su propio `PERSONALIZED_MAT_WEBHOOK_SECRET` y ajustar `PERSONALIZED_MAT_SITE_ORIGIN=https://www.melocotonmove.com`. **No activar el nuevo flujo con el secreto Live hasta verificar el despliegue y la ruta GET /session.**
 
 El runtime de AWS Lambda Node.js incluye AWS SDK v3 utilizado para leer Secrets Manager.
