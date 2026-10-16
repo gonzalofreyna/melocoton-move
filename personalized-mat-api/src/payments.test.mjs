@@ -12,7 +12,7 @@ test("5x4: Stripe collects four units, metadata preserves five mats", () => {
   assert.equal(p.line_items.reduce((n, li) => n + li.quantity * li.price_data.unit_amount, 0), 599600);
   assert.equal(p.metadata.quantity, "5");
   assert.equal(p.metadata.promotion, "fiveFour");
-  assert.equal(p.payment_method_options, undefined);
+  assert.equal(p.payment_method_options.card.installments.enabled, false);
   assert.equal(p.payment_method_types, undefined);
   assert.equal(p.metadata.shippingPolicy, "quoted_separately");
 });
