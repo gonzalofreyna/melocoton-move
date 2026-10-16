@@ -289,33 +289,53 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       };
 
     const Stripe = (await import("stripe")).default;
-    // Stripe Checkout session IDs distinguish test from live. Never replace
-    // the normal ecommerce secret with the personalized test secret.
+    // Independent personalized credentials use the SAME variable in test and
+    // live. Deployment environments supply sk_test_ or sk_live_ accordingly.
+    // Preserve the existing ecommerce key and flow unchanged.
     const isTestSession = sessionId.startsWith("cs_test_");
     const isLiveSession = sessionId.startsWith("cs_live_");
     if (!isTestSession && !isLiveSession) {
       return { props: { ok: false, errorMessage: "Identificador de pago inválido." } };
     }
 
-    const personalizedTestSecret = process.env.PERSONALIZED_MAT_STRIPE_TEST_SECRET_KEY;
-    const usePersonalizedTestStripe = isTestSession && Boolean(personalizedTestSecret);
-    const secret = usePersonalizedTestStripe
-      ? personalizedTestSecret
-      : process.env.STRIPE_SECRET_KEY;
-    if (!secret) {
-      return { props: { ok: false, errorMessage: "Servicio de verificación de pagos no disponible." } };
+    const personalizedKey = process.env.PERSONALIZED_MAT_STRIPE_SECRET_KEY;
+    const normalKey = process.env.STRIPE_SECRET_KEY;
+    let session: Awaited<ReturnType<InstanceType<typeof Stripe>["checkout"]["sessions"]["retrieve"]>> | null = null;
+    let stripe: InstanceType<typeof Stripe> | null = null;
+
+    if (personalizedKey) {
+      // Only sessions from the configured test/live environment can be fetched.
+      const personalizedIsTest = personalizedKey.startsWith("sk_test_");
+      const personalizedIsLive = personalizedKey.startsWith("sk_live_");
+      if ((isTestSession && personalizedIsTest) || (isLiveSession && personalizedIsLive)) {
+        try {
+          const candidateStripe = new Stripe(personalizedKey);
+          const candidate = await candidateStripe.checkout.sessions.retrieve(sessionId, {
+            expand: ["line_items", "payment_intent"],
+          });
+          if (candidate.metadata?.source === "melocoton_personalized_mat") {
+            session = candidate;
+            stripe = candidateStripe;
+          }
+        } catch {
+          // Not found in personalized account/environment; try existing ecommerce.
+        }
+      }
     }
-    const stripe = new Stripe(secret);
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items", "payment_intent"],
-    });
-    // A separate test secret must never be used to authorize regular ecommerce
-    // purchases, even when the session is legitimately paid.
-    if (usePersonalizedTestStripe && session.metadata?.source !== "melocoton_personalized_mat") {
-      return { props: { ok: false, errorMessage: "Esta sesión no pertenece a Crea tu Mat." } };
+
+    if (!session && normalKey) {
+      const normalStripe = new Stripe(normalKey);
+      const candidate = await normalStripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["line_items", "payment_intent"],
+      });
+      if (candidate.metadata?.source !== "melocoton_ecommerce") {
+        return { props: { ok: false, errorMessage: "Esta sesión no pertenece al checkout normal." } };
+      }
+      session = candidate;
+      stripe = normalStripe;
     }
-    if (session.livemode !== isLiveSession) {
-      return { props: { ok: false, errorMessage: "El entorno del pago no coincide." } };
+    if (!session || !stripe || session.livemode !== isLiveSession) {
+      return { props: { ok: false, errorMessage: "No fue posible verificar el pago en su entorno." } };
     }
 
     if (session.payment_status !== "paid") {
