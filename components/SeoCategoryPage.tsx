@@ -88,17 +88,6 @@ export default function SeoCategoryPage({
       <main className="min-h-screen bg-brand-cream px-4 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-7xl">
           <h1 className="mm-heading text-center text-3xl sm:text-5xl">{heading}</h1>
-          <p className="mx-auto mt-4 max-w-3xl text-center text-sm leading-6 text-gray-600 sm:mt-5 sm:text-base">{intro}</p>
-          {productCategory === "mat" && (
-            <div className="mm-card mx-auto mt-8 max-w-3xl px-4 py-5 text-center sm:px-6">
-              <p className="text-sm leading-6 text-gray-700">
-                ¿Quieres ver más de Melocotón Move en movimiento?
-              </p>
-              <Link href="/melocoton-en-movimiento" className="mt-2 inline-flex min-h-11 items-center justify-center text-sm font-semibold text-brand-blue underline underline-offset-4">
-                Descubre nuestras historias en video →
-              </Link>
-            </div>
-          )}
           {groups.size === 0 ? (
             <p className="mt-12 text-center text-gray-600">No hay productos disponibles en esta categoría por el momento.</p>
           ) : (
@@ -115,6 +104,17 @@ export default function SeoCategoryPage({
                   />
                 );
               })}
+            </div>
+          )}
+          <p className="mx-auto mt-10 max-w-3xl text-center text-sm leading-6 text-gray-600 sm:mt-14 sm:text-base">{intro}</p>
+          {productCategory === "mat" && (
+            <div className="mm-card mx-auto mt-8 max-w-3xl px-4 py-5 text-center sm:px-6">
+              <p className="text-sm leading-6 text-gray-700">
+                ¿Quieres ver más de Melocotón Move en movimiento?
+              </p>
+              <Link href="/melocoton-en-movimiento" className="mt-2 inline-flex min-h-11 items-center justify-center text-sm font-semibold text-brand-blue underline underline-offset-4">
+                Descubre nuestras historias en video →
+              </Link>
             </div>
           )}
           {contentSections.length > 0 && (
