@@ -251,6 +251,7 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
+  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design" | "checkout">("shape");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
@@ -262,7 +263,7 @@ export default function MatCustomizer() {
       if (!previewWrapRef.current) return;
 
       const availableWidth = previewWrapRef.current.clientWidth;
-      setPreviewWidth(Math.min(window.innerWidth < 640 ? 170 : 420, Math.max(160, availableWidth)));
+      setPreviewWidth(Math.min(window.innerWidth < 640 ? 130 : 420, Math.max(160, availableWidth)));
     };
 
     updatePreviewWidth();
@@ -499,10 +500,25 @@ export default function MatCustomizer() {
   return (
     <section aria-label="Personalizador de tapetes" className="bg-white px-3 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
+        <div className="grid gap-3 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
+          <nav aria-label="Pasos del personalizador" className="order-2 grid grid-cols-4 gap-1 rounded-2xl bg-brand-sand p-1.5 lg:hidden">
+            {([
+              ["shape", "Forma"],
+              ["color", "Color"],
+              ["design", "Diseño"],
+              ["checkout", "Comprar"],
+            ] as const).map(([step, label]) => (
+              <button key={step} type="button"
+                aria-current={mobileStep === step ? "step" : undefined}
+                onClick={() => { setMobileStep(step); if (step === "color") setFinishPickerOpen(true); }}
+                className={`min-h-11 rounded-xl px-1 py-2 text-xs font-semibold transition ${mobileStep === step ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>
+                {label}
+              </button>
+            ))}
+          </nav>
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
-            <div className="order-2 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none">
-              <div className="mb-6 sm:mb-8">
+            <div className="contents lg:block lg:rounded-[2rem] lg:border-0 lg:p-0 lg:shadow-none">
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-6 ${mobileStep === "shape" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                   1. Elige la forma
                 </h2>
@@ -538,7 +554,7 @@ export default function MatCustomizer() {
                 </div>
               </div>
 
-              <div className="mb-5 sm:mb-8">
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-5 ${mobileStep === "color" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   2. Elige color o textura
                 </h2>
@@ -612,7 +628,7 @@ export default function MatCustomizer() {
                 </p>
               </div>
 
-              <div className="mb-4 sm:mb-8">
+              <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   3. Sube tu logo o diseño
                 </h2>
@@ -654,7 +670,7 @@ export default function MatCustomizer() {
 
               </div>
             </div>
-            <div className="order-3 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
+            <div className={`order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5 ${mobileStep === "checkout" ? "" : "hidden lg:block"}`}>
               <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                 4. Cantidad y cotización
               </h2>
@@ -785,8 +801,8 @@ export default function MatCustomizer() {
             </div>
           </div>
 
-          <div className="order-1 w-full min-w-0 lg:order-2 lg:sticky lg:top-28 lg:self-start">
-            <div className="w-full rounded-2xl border border-brand-line bg-white p-3 shadow-editorial sm:rounded-[2rem] sm:p-4">
+          <div className="order-1 sticky top-0 z-20 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:top-28 lg:bg-transparent lg:py-0">
+            <div className="w-full rounded-2xl border border-brand-line bg-white p-2 shadow-editorial sm:rounded-[2rem] sm:p-4">
               <div className="mb-2 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-gray-900 sm:text-lg">
@@ -904,7 +920,7 @@ export default function MatCustomizer() {
                 </div>
               )}
 
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
+              <div className="mt-2 hidden grid-cols-2 gap-2 sm:mt-5 sm:gap-3 lg:grid">
                 <button
                   onClick={downloadPNG}
                   className="min-h-11 rounded-xl bg-gray-900 px-3 py-3 text-xs font-bold text-white transition hover:bg-gray-700 sm:rounded-full sm:px-5 sm:text-sm"
