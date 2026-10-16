@@ -2,6 +2,7 @@
  * Crea tu Mat: pricing authority. Never accept price/discount/total from clients.
  * Keep separate from the standard ecommerce checkout.
  */
+export const PERSONALIZED_MAT_UNIT_PRICE_MXN = 1499;
 export const PERSONALIZED_MAT_DELIVERY_BUSINESS_DAYS = 45;
 export const PERSONALIZED_MAT_SHIPPING_POLICY = "quoted_separately";
 export const PERSONALIZED_MAT_PROMOS = Object.freeze({
