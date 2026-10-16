@@ -300,7 +300,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
 
     const personalizedKey = process.env.PERSONALIZED_MAT_STRIPE_SECRET_KEY;
     const normalKey = process.env.STRIPE_SECRET_KEY;
-    let session: Awaited<ReturnType<InstanceType<typeof Stripe>["checkout"]["sessions"]["retrieve"]>> | null = null;
+    let session: import("stripe").Stripe.Checkout.Session | null = null;
     let stripe: InstanceType<typeof Stripe> | null = null;
 
     if (personalizedKey) {
