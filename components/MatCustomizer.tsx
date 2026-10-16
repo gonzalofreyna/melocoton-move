@@ -252,6 +252,7 @@ export default function MatCustomizer() {
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
   const [checkoutNotice, setCheckoutNotice] = useState(false);
+  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -288,9 +289,13 @@ export default function MatCustomizer() {
 
   const paidQuantity = safeQuantity - Math.floor(safeQuantity / 5);
   const subtotalBeforePromo = MAT_PRICE * safeQuantity;
-  const estimatedTotal = MAT_PRICE * paidQuantity;
+  const estimatedTotal = promotionMode === "msi5"
+    ? Math.round(MAT_PRICE * safeQuantity * 0.95 * 100) / 100
+    : MAT_PRICE * paidQuantity;
   const savings = subtotalBeforePromo - estimatedTotal;
-  const promoLabel = `5x4: pagas ${paidQuantity} de ${safeQuantity}`;
+  const promoLabel = promotionMode === "msi5"
+    ? "5% de descuento + opción de MSI (sujeta a disponibilidad de Stripe)"
+    : `5x4: pagas ${paidQuantity} de ${safeQuantity}`;
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-MX", {
@@ -417,6 +422,7 @@ export default function MatCustomizer() {
         `Cantidad: ${safeQuantity}`,
         `Precio unitario: ${formatMoney(MAT_PRICE)}`,
         `Promoción elegida: ${promoLabel}`,
+        `Modalidad de pago: ${promotionMode === "msi5" ? "MSI elegibles" : "Sin MSI"}`,
         `Subtotal sin promoción: ${formatMoney(subtotalBeforePromo)}`,
         `Ahorro estimado: ${formatMoney(savings)}`,
         `Total estimado: ${formatMoney(estimatedTotal)}`,
@@ -656,8 +662,18 @@ export default function MatCustomizer() {
               </div>
 
               <div className="mb-4 rounded-xl border border-gray-200 bg-brand-sand px-4 py-3 sm:mb-5">
-                <p className="text-sm font-bold text-gray-900">Promoción 5x4</p>
-                <p className="mt-1 text-xs leading-5 text-gray-600">Por cada 5 mats, pagas solo 4. Promoción exclusiva de Crea tu Mat; no acumulable con otras promociones ni meses sin intereses.</p>
+                <p className="text-sm font-bold text-gray-900">Elige tu promoción exclusiva</p>
+                <p className="mt-1 text-xs leading-5 text-gray-600">Selecciona solo una modalidad. Los importes mostrados son estimaciones; la API calculará el total definitivo.</p>
+                <div role="radiogroup" aria-label="Modalidad de promoción" className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <button type="button" role="radio" aria-checked={promotionMode === "msi5"} onClick={() => setPromotionMode("msi5")} className={`rounded-xl border px-3 py-3 text-left text-sm ${promotionMode === "msi5" ? "border-brand-wine bg-white font-semibold" : "border-brand-line bg-white/70"}`}>
+                    5% de descuento + MSI
+                    <span className="mt-1 block text-xs font-normal text-brand-muted">Sobre el precio original. Meses sujetos a disponibilidad.</span>
+                  </button>
+                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} onClick={() => setPromotionMode("fiveFour")} className={`rounded-xl border px-3 py-3 text-left text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-white font-semibold" : "border-brand-line bg-white/70"}`}>
+                    Promoción 5×4 · sin MSI
+                    <span className="mt-1 block text-xs font-normal text-brand-muted">Por cada cinco mats, pagas cuatro.</span>
+                  </button>
+                </div>
               </div>
 
               <div className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
@@ -671,7 +687,7 @@ export default function MatCustomizer() {
                   <span>{promoLabel}</span>
                 </div>
 
-                {safeQuantity >= 5 && (
+                {promotionMode === "fiveFour" && safeQuantity >= 5 && (
                   <div className="mt-2 flex justify-between text-sm text-gray-600">
                     <span>Mats a pagar</span>
                     <span>{paidQuantity}</span>
@@ -720,7 +736,7 @@ export default function MatCustomizer() {
               </button>
               {checkoutNotice && (
                 <div id="personalized-mat-checkout-notice" role="status" className="mt-3 rounded-xl border border-brand-line bg-brand-sand p-4 text-left text-sm leading-6 text-brand-ink">
-                  Estamos preparando un pago exclusivo para mats personalizados, sin meses sin intereses ni promociones combinables. Por seguridad, la compra directa se habilitará cuando el servidor valide el 5×4 y guarde tu diseño con el pedido. Mientras tanto puedes solicitarlo por WhatsApp.
+                  Estamos preparando un pago exclusivo para mats personalizados, con la promoción seleccionada y sin promociones combinables. Por seguridad, la compra directa se habilitará cuando el servidor valide el 5×4 y guarde tu diseño con el pedido. Mientras tanto puedes solicitarlo por WhatsApp.
                 </div>
               )}
 
