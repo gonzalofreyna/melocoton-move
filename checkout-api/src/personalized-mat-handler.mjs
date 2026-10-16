@@ -45,3 +45,32 @@ export function validatePersonalizedMatQuote(body, unitPriceFromServer) {
     promotion: body.promotion,
   }, unitPriceFromServer);
 }
+
+/**
+ * Server-authoritative quote endpoint, intentionally separate from payments.
+ * Unit price must be set in checkout Lambda env by an operator, not sent by FE.
+ * Does not read or store logos; do not mistake this quote for an order.
+ */
+export async function handlePersonalizedMatQuote(event) {
+  const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+  const response = (statusCode, body) => ({ statusCode, headers, body: JSON.stringify(body) });
+  let body;
+  try {
+    if (typeof event?.body !== "string" || event.body.length > 8192) {
+      return response(400, { ok: false, message: "Solicitud inválida o demasiado grande." });
+    }
+    body = JSON.parse(event.body);
+    const allowed = new Set(["quantity", "promotion"]);
+    if (Object.keys(body).some((key) => !allowed.has(key))) {
+      return response(400, { ok: false, message: "La solicitud contiene parámetros no autorizados." });
+    }
+    const serverPrice = Number(process.env.PERSONALIZED_MAT_UNIT_PRICE_MXN);
+    const quote = validatePersonalizedMatQuote(body, serverPrice);
+    return response(200, { ok: true, quote });
+  } catch (err) {
+    if (err instanceof RangeError || err instanceof TypeError || err instanceof SyntaxError) {
+      return response(400, { ok: false, message: "Cantidad o promoción inválida." });
+    }
+    return response(503, { ok: false, message: "Cotización temporalmente no disponible." });
+  }
+}
