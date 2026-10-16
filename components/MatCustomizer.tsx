@@ -590,7 +590,6 @@ export default function MatCustomizer() {
                           key={item}
                           onClick={() => {
                             setFinish({ type: "solid", value: item, label: solidColorNames[item] ?? item });
-                            setFinishPickerOpen(false);
                           }}
                           className={`h-11 rounded-xl border transition ${
                             finish.type === "solid" && finish.value === item
@@ -611,7 +610,6 @@ export default function MatCustomizer() {
                           key={item.value}
                           onClick={() => {
                             setFinish(item);
-                            setFinishPickerOpen(false);
                           }}
                           className={`h-14 overflow-hidden rounded-xl border transition ${
                             finish.type === "texture" && finish.value === item.value
