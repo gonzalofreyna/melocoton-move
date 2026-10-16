@@ -289,11 +289,34 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       };
 
     const Stripe = (await import("stripe")).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+    // Stripe Checkout session IDs distinguish test from live. Never replace
+    // the normal ecommerce secret with the personalized test secret.
+    const isTestSession = sessionId.startsWith("cs_test_");
+    const isLiveSession = sessionId.startsWith("cs_live_");
+    if (!isTestSession && !isLiveSession) {
+      return { props: { ok: false, errorMessage: "Identificador de pago inválido." } };
+    }
 
+    const personalizedTestSecret = process.env.PERSONALIZED_MAT_STRIPE_TEST_SECRET_KEY;
+    const usePersonalizedTestStripe = isTestSession && Boolean(personalizedTestSecret);
+    const secret = usePersonalizedTestStripe
+      ? personalizedTestSecret
+      : process.env.STRIPE_SECRET_KEY;
+    if (!secret) {
+      return { props: { ok: false, errorMessage: "Servicio de verificación de pagos no disponible." } };
+    }
+    const stripe = new Stripe(secret);
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["line_items", "payment_intent"],
     });
+    // A separate test secret must never be used to authorize regular ecommerce
+    // purchases, even when the session is legitimately paid.
+    if (usePersonalizedTestStripe && session.metadata?.source !== "melocoton_personalized_mat") {
+      return { props: { ok: false, errorMessage: "Esta sesión no pertenece a Crea tu Mat." } };
+    }
+    if (session.livemode !== isLiveSession) {
+      return { props: { ok: false, errorMessage: "El entorno del pago no coincide." } };
+    }
 
     if (session.payment_status !== "paid") {
       return {
