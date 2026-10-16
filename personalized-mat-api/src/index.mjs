@@ -1,0 +1,37 @@
+import { quotePersonalizedMats, PERSONALIZED_MAT_UNIT_PRICE_MXN } from "./personalized-mat-pricing.mjs";
+
+const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+const respond = (statusCode, data) => ({ statusCode, headers, body: JSON.stringify(data) });
+
+export function validateQuote(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) throw new TypeError("Solicitud invalida");
+  if (Object.keys(body).some((key) => !["quantity", "promotion"].includes(key))) {
+    throw new TypeError("Parametros no autorizados");
+  }
+  return quotePersonalizedMats(body, PERSONALIZED_MAT_UNIT_PRICE_MXN);
+}
+
+export async function handler(event) {
+  const path = event?.rawPath || event?.path || "";
+  const method = event?.requestContext?.http?.method || event?.httpMethod || "";
+  if (method === "OPTIONS") return respond(204, {});
+  if (method !== "POST") return respond(405, { ok: false, message: "Metodo no permitido" });
+  if (!["/quote", "/checkout"].some((route) => path.endsWith(route))) {
+    return respond(404, { ok: false, message: "Ruta no encontrada" });
+  }
+  if (path.endsWith("/checkout")) {
+    return respond(503, { ok: false, code: "CHECKOUT_NOT_READY", message: "El checkout personalizado todavia no esta disponible" });
+  }
+  try {
+    if (typeof event?.body !== "string" || event.body.length > 8192 || event.isBase64Encoded) {
+      return respond(400, { ok: false, message: "Solicitud invalida" });
+    }
+    const quote = validateQuote(JSON.parse(event.body));
+    return respond(200, { ok: true, quote });
+  } catch (err) {
+    if (err instanceof RangeError || err instanceof TypeError || err instanceof SyntaxError) {
+      return respond(400, { ok: false, message: "Cantidad o promocion invalida" });
+    }
+    return respond(503, { ok: false, message: "Cotizacion no disponible" });
+  }
+}
