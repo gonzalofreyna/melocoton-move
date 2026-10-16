@@ -772,8 +772,7 @@ export default function MatCustomizer() {
 
               <div className="mt-4 rounded-xl border border-brand-line bg-white px-4 py-3 text-left text-sm leading-6 text-brand-ink" aria-label="Condiciones de entrega y envío">
                 <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
-                <p><strong>Envío:</strong> se cotiza y cobra por separado; no está incluido en el total de los mats.</p>
-                <p className="mt-1 text-xs text-brand-muted">Estas condiciones se indicarán también en la cotización y en el comprobante del pedido personalizado.</p>
+                <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el precio.</p>
               </div>
 
               <button
