@@ -6,8 +6,7 @@ const secretsClient = new SecretsManagerClient({});
 export async function getStripeSecret(env = process.env, dependencies = {}) {
   if (dependencies.secret) return dependencies.secret;
   if (cachedSecret) return cachedSecret;
-  const name = env.PERSONALIZED_MAT_STRIPE_SECRET_NAME;
-  if (!name) throw new Error("PERSONALIZED_MAT_STRIPE_SECRET_NAME no configurado");
+  const name = env.PERSONALIZED_MAT_STRIPE_SECRET_NAME || "eternancy/STRIPE_SECRET_KEY";
   const client = dependencies.client || secretsClient;
   const response = await client.send(new GetSecretValueCommand({ SecretId: name }));
   const raw = response.SecretString || (response.SecretBinary && Buffer.from(response.SecretBinary).toString("utf8"));
