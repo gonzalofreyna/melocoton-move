@@ -298,32 +298,48 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
       return { props: { ok: false, errorMessage: "Identificador de pago inválido." } };
     }
 
-    const personalizedKey = process.env.PERSONALIZED_MAT_STRIPE_SECRET_KEY;
-    const normalKey = process.env.STRIPE_SECRET_KEY;
-    let session: import("stripe").Stripe.Checkout.Session | null = null;
-    let stripe: InstanceType<typeof Stripe> | null = null;
-
-    if (personalizedKey) {
-      // Only sessions from the configured test/live environment can be fetched.
-      const personalizedIsTest = personalizedKey.startsWith("sk_test_");
-      const personalizedIsLive = personalizedKey.startsWith("sk_live_");
-      if ((isTestSession && personalizedIsTest) || (isLiveSession && personalizedIsLive)) {
-        try {
-          const candidateStripe = new Stripe(personalizedKey);
-          const candidate = await candidateStripe.checkout.sessions.retrieve(sessionId, {
-            expand: ["line_items", "payment_intent"],
-          });
-          if (candidate.metadata?.source === "melocoton_personalized_mat") {
-            session = candidate;
-            stripe = candidateStripe;
+    // The personalized API owns the Stripe credential; Amplify does not need it.
+    // A 404 can mean a regular ecommerce session, which retains its original flow.
+    const apiUrl = process.env.NEXT_PUBLIC_PERSONALIZED_MAT_API_URL;
+    if (apiUrl) {
+      try {
+        const result = await fetch(
+          apiUrl.replace(/\/$/, "") + "/session?session_id=" + encodeURIComponent(sessionId),
+          { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(10000) }
+        );
+        if (result.ok) {
+          const data = await result.json();
+          if (data.ok && data.sessionId === sessionId) {
+            return { props: {
+              ok: true,
+              personalized: true,
+              promotion: data.promotion,
+              stripeReceiptUrl: data.stripeReceiptUrl,
+              amountTotal: data.amountTotal,
+              currency: data.currency,
+              customerEmail: data.customerEmail,
+              items: [{
+                description: "Mat profesional personalizado" + (data.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
+                quantity: data.quantity,
+                amountSubtotal: data.amountTotal,
+              }],
+              shippingLabel: "Se cotiza por separado",
+              orderId: sessionId,
+            } };
           }
-        } catch {
-          // Not found in personalized account/environment; try existing ecommerce.
+        } else if (result.status !== 404) {
+          return { props: { ok: false, errorMessage: "No fue posible verificar el pago personalizado." } };
         }
+      } catch {
+        return { props: { ok: false, errorMessage: "No fue posible conectar con la confirmación de pago." } };
       }
     }
 
-    if (!session && normalKey) {
+    // Original ecommerce checkout remains untouched.
+    const normalKey = process.env.STRIPE_SECRET_KEY;
+    let session: import("stripe").Stripe.Checkout.Session | null = null;
+    let stripe: InstanceType<typeof Stripe> | null = null;
+    if (normalKey) {
       const normalStripe = new Stripe(normalKey);
       const candidate = await normalStripe.checkout.sessions.retrieve(sessionId, {
         expand: ["line_items", "payment_intent"],
