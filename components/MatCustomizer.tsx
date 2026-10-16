@@ -251,7 +251,8 @@ export default function MatCustomizer() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
-  const [checkoutNotice, setCheckoutNotice] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
 
   const [previewWidth, setPreviewWidth] = useState(420);
@@ -302,6 +303,54 @@ export default function MatCustomizer() {
       style: "currency",
       currency: "MXN",
     }).format(value);
+
+  const handleBuyNow = async () => {
+    if (checkoutLoading) return;
+    setCheckoutError(null);
+
+    // This is the public base URL of the separately deployed API, never a secret.
+    const configuredApiUrl = process.env.NEXT_PUBLIC_PERSONALIZED_MAT_API_URL;
+    if (!configuredApiUrl) {
+      setCheckoutError("La compra directa todavía no está disponible. Puedes consultar por WhatsApp.");
+      return;
+    }
+    let checkoutEndpoint: URL;
+    try {
+      const base = new URL(configuredApiUrl);
+      if (base.search || base.hash || base.username || base.password ||
+          !(base.protocol === "https:" || (base.protocol === "http:" && base.hostname === "localhost"))) {
+        throw new Error("URL de API inválida");
+      }
+      checkoutEndpoint = new URL(base.href.replace(/\\/$/, "") + "/checkout");
+    } catch {
+      setCheckoutError("La compra directa no está configurada correctamente.");
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const response = await fetch(checkoutEndpoint.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: safeQuantity, promotion: promotionMode }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.ok) {
+        throw new Error(typeof data?.message === "string" ? data.message : "No se pudo iniciar el pago.");
+      }
+      const destination = new URL(data.url);
+      if (destination.protocol !== "https:" || !(
+        destination.hostname === "checkout.stripe.com" ||
+        destination.hostname.endsWith(".checkout.stripe.com")
+      )) {
+        throw new Error("La respuesta de pago no es válida.");
+      }
+      window.location.assign(destination.toString());
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : "No se pudo conectar con el pago.");
+      setCheckoutLoading(false);
+    }
+  };
 
   const updateMatQuantity = (value: number) => {
     const cleanValue = Math.min(
@@ -727,16 +776,16 @@ export default function MatCustomizer() {
               </button>
               <button
                 type="button"
-                onClick={() => setCheckoutNotice((open) => !open)}
-                aria-expanded={checkoutNotice}
-                aria-controls="personalized-mat-checkout-notice"
+                onClick={handleBuyNow}
+                disabled={checkoutLoading}
+                aria-busy={checkoutLoading}
                 className="mm-button-outline mt-3 w-full"
               >
-                Comprar ahora
+                {checkoutLoading ? "Conectando con Stripe…" : "Comprar ahora"}
               </button>
-              {checkoutNotice && (
-                <div id="personalized-mat-checkout-notice" role="status" className="mt-3 rounded-xl border border-brand-line bg-brand-sand p-4 text-left text-sm leading-6 text-brand-ink">
-                  Estamos preparando un pago exclusivo para mats personalizados, con la promoción seleccionada y sin promociones combinables. Por seguridad, la compra directa se habilitará cuando el servidor valide el 5×4 y guarde tu diseño con el pedido. Mientras tanto puedes solicitarlo por WhatsApp.
+              {checkoutError && (
+                <div role="alert" className="mt-3 rounded-xl border border-brand-line bg-brand-sand p-4 text-left text-sm leading-6 text-brand-ink">
+                  {checkoutError}
                 </div>
               )}
 
