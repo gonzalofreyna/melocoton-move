@@ -29,8 +29,7 @@ test("checkout is fail-closed, no Stripe session", async () => {
   assert.equal(JSON.parse(result.body).ok, false);
 });
 
-test("server quote never trusts client total and requires configured price", async () => {
-  {
+test("server quote uses fixed 1499 price and rejects forged total", async () => {
     const valid = await handlePersonalizedMatQuote({
       body: JSON.stringify({ quantity: 5, promotion: "fiveFour" }),
     });
@@ -40,5 +39,4 @@ test("server quote never trusts client total and requires configured price", asy
       body: JSON.stringify({ quantity: 5, promotion: "fiveFour", total: 1 }),
     });
     assert.equal(forged.statusCode, 400);
-  }
 });
