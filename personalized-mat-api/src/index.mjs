@@ -1,3 +1,4 @@
+import { createCheckout } from "./payments.mjs";
 import { quotePersonalizedMats, PERSONALIZED_MAT_UNIT_PRICE_MXN } from "./personalized-mat-pricing.mjs";
 
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
@@ -20,7 +21,7 @@ export async function handler(event) {
     return respond(404, { ok: false, message: "Ruta no encontrada" });
   }
   if (path.endsWith("/checkout")) {
-    return respond(503, { ok: false, code: "CHECKOUT_NOT_READY", message: "El checkout personalizado todavia no esta disponible" });
+    return createCheckout(event);
   }
   try {
     if (typeof event?.body !== "string" || event.body.length > 8192 || event.isBase64Encoded) {
