@@ -270,7 +270,6 @@ function MatTexture({
 export default function MatCustomizer() {
   const stageRef = useRef<any>(null);
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
-  const logoControlsRef = useRef<HTMLDivElement | null>(null);
 
   const [shape, setShape] = useState<MatShape>("capsula");
   const [finish, setFinish] = useState<MatFinish>({
@@ -418,11 +417,6 @@ export default function MatCustomizer() {
 
         setLogos((prev) => [...prev, newLogo]);
         setSelectedLogoId(newLogo.id);
-        if (window.innerWidth < 1024) {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => logoControlsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
-          });
-        }
       };
 
       reader.readAsDataURL(file);
@@ -813,7 +807,7 @@ export default function MatCustomizer() {
             </div>
           </div>
 
-          <div className="order-1 sticky top-0 z-20 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:top-28 lg:bg-transparent lg:py-0">
+          <div className="order-1 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:sticky lg:top-28 lg:bg-transparent lg:py-0">
             <div className="w-full rounded-2xl border border-brand-line bg-white p-2 shadow-editorial sm:rounded-[2rem] sm:p-4">
               <div className="mb-2 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
@@ -896,7 +890,7 @@ export default function MatCustomizer() {
               </div>
 
               {selectedLogo && (
-                <div ref={logoControlsRef} className="mt-3 rounded-xl border border-gray-200 bg-brand-sand p-3 sm:mt-4 sm:p-4">
+                <div className="mt-3 rounded-xl border border-gray-200 bg-brand-sand p-3 sm:mt-4 sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900">Ajusta tu logo</h3>
