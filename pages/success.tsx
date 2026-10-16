@@ -101,7 +101,7 @@ export default function SuccessPage({
       // 💻 En escritorio: forzar descarga
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Factura-MelocotonMove-${orderId || "pedido"}.pdf`;
+      a.download = `Comprobante-MelocotonMove-${orderId || "pedido"}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -146,7 +146,7 @@ export default function SuccessPage({
           ¡Pago exitoso!
         </h1>
         <p className="text-sm text-brand-blue/70 mt-1">
-          Recibo oficial de compra ✨
+          {personalized ? "Confirmación de tu compra ✨" : "Recibo de compra ✨"}
         </p>
         <div className="absolute -bottom-3 left-0 right-0 flex justify-between px-3">
           <div className="w-6 h-6 bg-gray-50 rounded-full shadow-inner"></div>
@@ -233,8 +233,8 @@ export default function SuccessPage({
           <div className="mt-5 rounded-xl border border-brand-line bg-brand-sand p-4 text-sm leading-6 text-brand-ink">
             <p><strong>Promoción:</strong> {promotion === "msi5" ? "5% de descuento con opción de MSI" : "5×4 sin MSI"}</p>
             <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
-            <p><strong>Envío:</strong> se cotiza y paga por separado; no está incluido en este recibo.</p>
-            <p>Melocotón Move se comunicará contigo para acordar tu diseño. No es necesario haber subido un logo.</p>
+            <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el total pagado.</p>
+            <p>Nos pondremos en contacto contigo para confirmar los detalles de tu diseño.</p>
           </div>
         )}
 
@@ -259,13 +259,13 @@ export default function SuccessPage({
       {/* Botones */}
       <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8 sm:justify-end max-w-md w-full">
         {personalized && stripeReceiptUrl && (
-          <a href={stripeReceiptUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl text-center text-sm font-medium">Ver recibo oficial de Stripe</a>
+          <a href={stripeReceiptUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl text-center text-sm font-medium">Ver comprobante de pago</a>
         )}
         <button
           onClick={handleDownloadPDF}
           className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl hover:bg-brand-blue hover:text-white transition text-sm font-medium"
         >
-          Descargar recibo (PDF)
+          Descargar comprobante (PDF)
         </button>
         <button
           onClick={() => router.push("/")}
@@ -405,7 +405,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
     let shippingLabel: string | null =
       session.metadata?.shippingLabel?.trim() || null;
 
-    if (personalized) shippingLabel = "Envío por cotizar y pagar por separado";
+    if (personalized) shippingLabel = "Se cotiza por separado";
     if (!shippingLabel) {
       if (session.metadata?.hasCustomShipping === "true") {
         shippingLabel = "Incluye artículos con envío a cotizar";
