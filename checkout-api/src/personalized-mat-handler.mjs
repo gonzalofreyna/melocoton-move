@@ -1,4 +1,4 @@
-import { quotePersonalizedMats } from "./personalized-mat-pricing.mjs";
+import { quotePersonalizedMats, PERSONALIZED_MAT_UNIT_PRICE_MXN } from "./personalized-mat-pricing.mjs";
 
 /**
  * A separate endpoint for personalized mats; deliberately FAIL-CLOSED until
@@ -48,7 +48,7 @@ export function validatePersonalizedMatQuote(body, unitPriceFromServer) {
 
 /**
  * Server-authoritative quote endpoint, intentionally separate from payments.
- * Unit price must be set in checkout Lambda env by an operator, not sent by FE.
+ * Unit price is fixed in the private backend pricing module, not sent by FE.
  * Does not read or store logos; do not mistake this quote for an order.
  */
 export async function handlePersonalizedMatQuote(event) {
@@ -64,7 +64,7 @@ export async function handlePersonalizedMatQuote(event) {
     if (Object.keys(body).some((key) => !allowed.has(key))) {
       return response(400, { ok: false, message: "La solicitud contiene parámetros no autorizados." });
     }
-    const serverPrice = Number(process.env.PERSONALIZED_MAT_UNIT_PRICE_MXN);
+    const serverPrice = PERSONALIZED_MAT_UNIT_PRICE_MXN;
     const quote = validatePersonalizedMatQuote(body, serverPrice);
     return response(200, { ok: true, quote });
   } catch (err) {
