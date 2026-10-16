@@ -321,7 +321,7 @@ export default function MatCustomizer() {
           !(base.protocol === "https:" || (base.protocol === "http:" && base.hostname === "localhost"))) {
         throw new Error("URL de API inválida");
       }
-      checkoutEndpoint = new URL(base.href.replace(/\\/$/, "") + "/checkout");
+      checkoutEndpoint = new URL(base.href.replace(/\/$/, "") + "/checkout");
     } catch {
       setCheckoutError("La compra directa no está configurada correctamente.");
       return;
