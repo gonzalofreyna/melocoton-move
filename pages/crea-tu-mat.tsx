@@ -52,7 +52,7 @@ export default function CreaTuMatPage() {
         />
       </Head>
 
-      <section className="bg-brand-cream px-4 pt-10 sm:px-6 sm:pt-16" aria-label="Tapetes personalizados de Melocotón Move">
+      <section className="bg-white px-4 pt-10 sm:px-6 sm:pt-16" aria-label="Tapetes personalizados de Melocotón Move">
         <div className="mx-auto max-w-3xl">
           <nav aria-label="Ruta de navegación" className="mb-5 text-xs text-gray-600 sm:text-sm">
             <Link href="/" className="underline underline-offset-2">Inicio</Link>
@@ -84,15 +84,15 @@ export default function CreaTuMatPage() {
             </p>
           </section>
           <p className="mt-3 text-sm leading-6 text-gray-600 sm:text-base">
-            Diseña tu mat en el personalizador de abajo. Al finalizar, descarga la vista previa
-            y envía tu solicitud de compra por WhatsApp.
+            Diseña tu mat en el personalizador de abajo. Puedes consultar tu diseño por WhatsApp;
+            el pago directo se habilitará cuando esté lista la validación segura de tu promoción exclusiva.
           </p>
         </div>
       </section>
 
       <MatCustomizer />
 
-      <section aria-labelledby="personalizacion-preguntas" className="bg-brand-cream px-4 pb-14 pt-3 sm:px-6 sm:pb-20">
+      <section aria-labelledby="personalizacion-preguntas" className="bg-white px-4 pb-14 pt-3 sm:px-6 sm:pb-20">
         <div className="mx-auto max-w-3xl">
           <h2 id="personalizacion-preguntas" className="mm-heading text-2xl sm:text-3xl">
             Preguntas frecuentes sobre tapetes personalizados
