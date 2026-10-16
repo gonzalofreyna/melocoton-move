@@ -6,6 +6,10 @@ test("5x4: Stripe collects four units, metadata preserves five mats", () => {
   const p = buildCheckoutParameters({ quantity: 5, promotion: "fiveFour" }, "https://www.melocotonmove.com");
   assert.equal(p.line_items[0].quantity, 4);
   assert.equal(p.line_items[0].price_data.unit_amount, 149900);
+  assert.equal(p.line_items[1].quantity, 1);
+  assert.equal(p.line_items[1].price_data.unit_amount, 0);
+  assert.equal(p.line_items.reduce((n, li) => n + li.quantity, 0), 5);
+  assert.equal(p.line_items.reduce((n, li) => n + li.quantity * li.price_data.unit_amount, 0), 599600);
   assert.equal(p.metadata.quantity, "5");
   assert.equal(p.metadata.promotion, "fiveFour");
   assert.equal(p.payment_method_options, undefined);
@@ -18,6 +22,7 @@ test("5%: Stripe total matches backend quote and enables available card MSI", ()
   assert.equal(p.line_items[0].quantity * p.line_items[0].price_data.unit_amount, 712025);
   assert.equal(p.payment_method_options.card.installments.enabled, true);
   assert.equal(p.payment_method_types, undefined);
+  assert.equal(p.line_items.length, 1);
 });
 
 test("Stripe cannot accept client-provided amounts", () => {
