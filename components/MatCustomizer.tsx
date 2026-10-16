@@ -26,8 +26,12 @@ type LogoItem = {
   rotation: number;
 };
 
-const MAT_REAL_WIDTH_CM = 70;
-const MAT_REAL_HEIGHT_CM = 183;
+const MAT_DIMENSIONS: Record<MatShape, { height: number; width: number }> = {
+  clasico: { height: 182, width: 69 },
+  bala: { height: 182, width: 69 },
+  capsula: { height: 181, width: 68 },
+};
+const MAT_THICKNESS_MM = 5;
 const MAT_PRICE = 1499;
 const WHATSAPP_PHONE = "523310125501";
 
@@ -275,12 +279,13 @@ export default function MatCustomizer() {
     };
   }, []);
 
+  const matDimensions = MAT_DIMENSIONS[shape];
   const stageWidth = previewWidth;
   const stageHeight = Math.round(stageWidth * 1.72);
 
   const matHeight = Math.round(stageHeight * 0.86);
   const matWidth = Math.round(
-    matHeight * (MAT_REAL_WIDTH_CM / MAT_REAL_HEIGHT_CM),
+    matHeight * (matDimensions.width / matDimensions.height),
   );
 
   const matX = (stageWidth - matWidth) / 2;
@@ -438,7 +443,7 @@ export default function MatCustomizer() {
       pdf.text(`Forma: ${shape}`, 15, 26);
       pdf.text(`Acabado: ${finish.label}`, 15, 32);
       pdf.text(
-        `Medidas reales: ${MAT_REAL_HEIGHT_CM} cm x ${MAT_REAL_WIDTH_CM} cm`,
+        `Medidas: ${matDimensions.height} × ${matDimensions.width} cm · ${MAT_THICKNESS_MM} mm de espesor`,
         15,
         38,
       );
@@ -468,7 +473,7 @@ export default function MatCustomizer() {
         "",
         `Forma: ${shape}`,
         `Acabado: ${finish.label}`,
-        `Medidas: ${MAT_REAL_HEIGHT_CM} cm x ${MAT_REAL_WIDTH_CM} cm`,
+        `Medidas: ${matDimensions.height} × ${matDimensions.width} cm · ${MAT_THICKNESS_MM} mm de espesor`,
         `Cantidad: ${safeQuantity}`,
         `Precio unitario: ${formatMoney(MAT_PRICE)}`,
         `Promoción elegida: ${promoLabel}`,
@@ -809,7 +814,7 @@ export default function MatCustomizer() {
                     Vista previa
                   </h2>
                   <p className="text-xs text-gray-500 sm:text-sm">
-                    Mat real: 183 cm x 70 cm
+                    {`Medidas: ${matDimensions.height} × ${matDimensions.width} cm · ${MAT_THICKNESS_MM} mm`}
                   </p>
                 </div>
 
