@@ -80,7 +80,11 @@ export default function SuccessPage({
       } catch { return; }
 
       const storageKey = `openai_ads_order_created:${orderId}`;
-      if (localStorage.getItem(storageKey) === "sent") return;
+      try {
+        if (localStorage.getItem(storageKey) === "sent") return;
+      } catch {
+        // El almacenamiento puede estar deshabilitado; no afectar el comprobante.
+      }
 
       const pixel = window.oaiq;
       if (typeof pixel !== "function") return;
