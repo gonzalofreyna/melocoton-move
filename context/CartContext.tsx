@@ -67,7 +67,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         typeof window !== "undefined" ? localStorage.getItem("cart") : null;
       if (raw) {
         const parsed: CartItem[] = JSON.parse(raw);
-        const restored = parsed.map((i) => {
+        const restored: CartItem[] = parsed.map((i) => {
             const maxStock =
               typeof i.maxStock === "number" && Number.isFinite(i.maxStock)
                 ? Math.max(0, Math.floor(i.maxStock))
