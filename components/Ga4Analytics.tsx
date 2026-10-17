@@ -58,7 +58,12 @@ function enableAnalytics(onReady: () => void) {
   script.id = "melocoton-ga4";
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
-  script.onload = () => { if (isAllowed()) onReady(); };
+  script.onload = () => {
+    if (isAllowed()) {
+      onReady();
+      window.dispatchEvent(new Event("melocoton:ga4-ready"));
+    }
+  };
   script.onerror = () => { initialized = false; };
   document.head.appendChild(script);
 }
