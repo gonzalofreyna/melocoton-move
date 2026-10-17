@@ -58,6 +58,7 @@ function clampToStock(qty: number, maxStock?: number) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const previousCart = useRef<CartItem[]>([]);
+  const firstObservation = useRef(true);
   const [isOpen, setIsOpen] = useState(false);
 
   // ⛳ Cargar carrito desde localStorage
@@ -98,6 +99,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Solo observamos cambios ya aplicados; no alteramos las acciones del carrito.
   // La restauración desde localStorage establece su propia línea base.
   useEffect(() => {
+    // The first render starts with [] even when a saved cart exists. Do not
+    // overwrite the restored baseline or miscount hydration as add_to_cart.
+    if (firstObservation.current) {
+      firstObservation.current = false;
+      return;
+    }
     const before = previousCart.current;
     previousCart.current = cart;
     for (const item of cart) {
