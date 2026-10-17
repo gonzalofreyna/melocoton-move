@@ -7,6 +7,10 @@ assert.match(checkout, /const data = await createCheckout\(items, appliedCoupon 
 assert.match(checkout, /if \(!data\?\.ok \|\| !data\?\.url\)/);
 assert.match(checkout, /reportGa4BeginCheckout\(/);
 assert.match(checkout, /try \{\s*reportGa4BeginCheckout/);
+assert.match(checkout, /onClick=\{\(\) => \{ trackCheckoutClick\(\); void handleCheckout\(\); \}\}/);
+assert.match(checkout, /disabled=\{loading \|\| shippingLoading \|\| !shippingReady\}/);
+assert.ok(checkout.indexOf("const trackCheckoutClick") < checkout.indexOf("const handleCheckout"));
+assert.equal((checkout.match(/reportGa4BeginCheckout\(/g) || []).length, 1);
 assert.match(checkout, /window\.location\.href = data\.url/);
 assert.match(checkout, /if \(!shippingReady\)/);
 assert.match(checkout, /item_id: item\.sku\?\.trim\(\) \|\| item\.slug/);
@@ -17,4 +21,4 @@ assert.match(analytics, /value: items\.reduce/);
 assert.match(analytics, /currency: "MXN"/);
 assert.match(analytics, /"begin_checkout", \{\s*transport_type: "beacon"/);
 assert.doesNotMatch(client, /gtag|begin_checkout/);
-console.log("PASS: 14 GA4 begin_checkout smoke checks (no network calls)");
+console.log("PASS: 18 GA4 begin_checkout smoke checks (no network calls)");
