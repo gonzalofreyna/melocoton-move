@@ -15,5 +15,6 @@ assert.match(analytics, /window\.gtag\("event", "begin_checkout"/);
 assert.match(analytics, /localStorage\.getItem\(ADS_CONSENT_KEY\) !== "accepted"/);
 assert.match(analytics, /value: items\.reduce/);
 assert.match(analytics, /currency: "MXN"/);
+assert.match(analytics, /"begin_checkout", \{\s*transport_type: "beacon"/);
 assert.doesNotMatch(client, /gtag|begin_checkout/);
-console.log("PASS: 13 GA4 begin_checkout smoke checks (no network calls)");
+console.log("PASS: 14 GA4 begin_checkout smoke checks (no network calls)");
