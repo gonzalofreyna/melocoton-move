@@ -10,7 +10,7 @@ assert.match(success, /melocoton:ga4-ready/);
 assert.match(success, /session\.payment_status !== "paid"/);
 assert.match(ga, /"event", "purchase"/);
 assert.match(ga, /transaction_id: transactionId/);
-assert.match(ga, /amountTotalCents \/ 100/);
+assert.match(ga, /value: items\.reduce\(\(sum, item\) => sum \+ item\.amountSubtotal, 0\) \/ 100/);
 assert.match(ga, /localStorage\.getItem\(dedupeKey\) === "sent"/);
 assert.match(ga, /localStorage\.setItem\(dedupeKey, "sent"\)/);
 assert.match(ga, /localStorage\.getItem\(ADS_CONSENT_KEY\) !== "accepted"/);
