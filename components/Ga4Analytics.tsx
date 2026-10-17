@@ -115,8 +115,19 @@ export default function Ga4Analytics() {
       }
     };
     update();
+    // Returning from an external Stripe page can restore this document from
+    // bfcache: React stays mounted and route effects do not run again.
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      lastPage = "";
+      update();
+    };
     window.addEventListener(ADS_CONSENT_EVENT, update);
-    return () => window.removeEventListener(ADS_CONSENT_EVENT, update);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener(ADS_CONSENT_EVENT, update);
+      window.removeEventListener("pageshow", onPageShow);
+    };
   }, []);
 
   return null;
