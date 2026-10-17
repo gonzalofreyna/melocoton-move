@@ -7,10 +7,14 @@ import {
   ReactNode,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
+import { reportGa4AddToCart } from "../lib/ga4Ecommerce";
 
 export type CartItem = {
   slug: string;
+  sku?: string;
+  category?: string;
   name: string;
   price: number;
   image: string;
@@ -53,6 +57,8 @@ function clampToStock(qty: number, maxStock?: number) {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const previousCart = useRef<CartItem[]>([]);
+  const firstObservation = useRef(true);
   const [isOpen, setIsOpen] = useState(false);
 
   // ⛳ Cargar carrito desde localStorage
@@ -62,8 +68,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         typeof window !== "undefined" ? localStorage.getItem("cart") : null;
       if (raw) {
         const parsed: CartItem[] = JSON.parse(raw);
-        setCart(
-          parsed.map((i) => {
+        const restored: CartItem[] = parsed.map((i) => {
             const maxStock =
               typeof i.maxStock === "number" && Number.isFinite(i.maxStock)
                 ? Math.max(0, Math.floor(i.maxStock))
@@ -75,8 +80,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
               maxStock,
               quantity: clampToStock(i.quantity, maxStock),
             };
-          }),
-        );
+          });
+        previousCart.current = restored;
+        setCart(restored);
       }
     } catch {}
   }, []);
@@ -88,6 +94,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("cart", JSON.stringify(cart));
       }
     } catch {}
+  }, [cart]);
+
+  // Solo observamos cambios ya aplicados; no alteramos las acciones del carrito.
+  // La restauración desde localStorage establece su propia línea base.
+  useEffect(() => {
+    // The first render starts with [] even when a saved cart exists. Do not
+    // overwrite the restored baseline or miscount hydration as add_to_cart.
+    if (firstObservation.current) {
+      firstObservation.current = false;
+      return;
+    }
+    const before = previousCart.current;
+    previousCart.current = cart;
+    for (const item of cart) {
+      const oldQuantity = before.find((p) => p.slug === item.slug)?.quantity ?? 0;
+      const added = item.quantity - oldQuantity;
+      if (added > 0) {
+        reportGa4AddToCart({
+          item_id: item.sku?.trim() || item.slug,
+          item_name: item.name,
+          item_category: item.category,
+          price: item.price,
+        }, added);
+      }
+    }
   }, [cart]);
 
   // 📊 Derivados

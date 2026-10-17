@@ -115,6 +115,8 @@ export default function ProductCard({
     // addToCart abre el MiniCart, respetando stock y tipo de envío.
     addToCart({
       slug: selectedProduct.slug,
+      sku: selectedProduct.sku,
+      category: selectedProduct.category,
       name: selectedProduct.name,
       image: imageSrc,
       price: finalPrice,

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCart } from "../context/CartContext";
 import MiniCartItem from "./MiniCartItem";
 import { createCheckout } from "../lib/checkoutClient";
+import { reportGa4BeginCheckout } from "../lib/ga4Ecommerce";
 
 const MX = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -443,6 +444,24 @@ export default function MiniCart() {
     }
   };
 
+  // Analytics observes the enabled button click; checkout logic is unchanged.
+  const trackCheckoutClick = () => {
+    try {
+      reportGa4BeginCheckout(
+        cart.map((item) => ({
+          item_id: item.sku?.trim() || item.slug,
+          item_name: item.name,
+          item_category: item.category,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        appliedCoupon ?? undefined,
+      );
+    } catch (analyticsError) {
+      console.warn("GA4 begin_checkout no disponible", analyticsError);
+    }
+  };
+
   const handleCheckout = async () => {
     try {
       if (!shippingReady) {
@@ -828,7 +847,7 @@ export default function MiniCart() {
 
               {/* Botón */}
               <button
-                onClick={handleCheckout}
+                onClick={() => { trackCheckoutClick(); void handleCheckout(); }}
                 disabled={loading || shippingLoading || !shippingReady}
                 className={`w-full py-3.5 mt-2 rounded-2xl font-semibold text-[15px] shadow-sm transition ${
                   loading || shippingLoading || !shippingReady

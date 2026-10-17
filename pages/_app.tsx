@@ -13,6 +13,7 @@ import InstagramStrip from "../components/InstagramStrip";
 import MiniCart from "../components/MiniCart";
 import MobileNavbar from "../components/MobileNavbar";
 import AdsConsentBanner from "../components/AdsConsentBanner";
+import Ga4Analytics from "../components/Ga4Analytics";
 
 // 🧠 Contextos
 import { CartProvider } from "../context/CartContext";
@@ -66,6 +67,7 @@ function AppShell({ Component, pageProps }: AppProps) {
         <MiniCart />
         <MobileNavbar />
         <AdsConsentBanner />
+        <Ga4Analytics />
       </div>
     </>
   );
