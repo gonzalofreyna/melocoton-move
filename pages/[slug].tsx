@@ -565,6 +565,8 @@ export default function ProductDetail({ initialProduct, initialVariants, initial
                 onClick={() =>
                   addToCart({
                     slug: product.slug,
+                    sku: product.sku,
+                    category: product.category,
                     name: product.name,
                     image: resolveImage(product.image),
                     price: finalPrice,
