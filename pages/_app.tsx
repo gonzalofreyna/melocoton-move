@@ -12,6 +12,7 @@ import TopBanner from "../components/TopBanner";
 import InstagramStrip from "../components/InstagramStrip";
 import MiniCart from "../components/MiniCart";
 import MobileNavbar from "../components/MobileNavbar";
+import AdsConsentBanner from "../components/AdsConsentBanner";
 
 // 🧠 Contextos
 import { CartProvider } from "../context/CartContext";
@@ -64,6 +65,7 @@ function AppShell({ Component, pageProps }: AppProps) {
         <Footer />
         <MiniCart />
         <MobileNavbar />
+        <AdsConsentBanner />
       </div>
     </>
   );

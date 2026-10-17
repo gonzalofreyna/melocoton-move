@@ -1,6 +1,7 @@
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { EnvelopeIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { ADS_PREFERENCES_EVENT } from "./AdsConsentBanner";
 import { useEffect, useState } from "react";
 import { fetchConfig, AppConfig } from "../lib/fetchConfig";
 
@@ -116,6 +117,7 @@ export default function Footer() {
       {/* Derechos de autor */}
       <div className="border-t border-white/10 bg-brand-ink px-4 py-5 text-center text-xs tracking-[0.04em] text-white/60">
         © {new Date().getFullYear()} Melocotón — Todos los derechos reservados
+        <button type="button" onClick={() => window.dispatchEvent(new Event(ADS_PREFERENCES_EVENT))} className="ml-3 underline underline-offset-2 hover:text-white">Preferencias de privacidad</button>
       </div>
     </footer>
   );

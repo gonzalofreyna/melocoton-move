@@ -4,6 +4,8 @@ import Head from "next/head";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
+import { ADS_CONSENT_EVENT, ADS_CONSENT_KEY } from "../components/AdsConsentBanner";
+import { reportOpenAiPurchase } from "../lib/openaiAdsPurchase";
 
 type Item = {
   description: string | null;
@@ -63,6 +65,37 @@ export default function SuccessPage({
 
     closeCart();
   }, [ok, personalized, clearCart, closeCart]);
+
+  // La sesión de pago se valida mediante SSR antes de ofrecer este evento.
+  useEffect(() => {
+    const reportPaidOrder = () => {
+      if (typeof window.oaiq !== "function") return;
+      reportOpenAiPurchase({
+        ok,
+        orderId,
+        amountTotal,
+        currency,
+        enabled: process.env.NEXT_PUBLIC_OPENAI_ADS_PIXEL_ENABLED === "true",
+      }, {
+        consent: () => {
+          try { return localStorage.getItem(ADS_CONSENT_KEY) === "accepted"; }
+          catch { return false; }
+        },
+        previouslySent: (key) => {
+          try { return localStorage.getItem(key) === "sent"; }
+          catch { return false; }
+        },
+        markSent: (key) => {
+          try { localStorage.setItem(key, "sent"); } catch {}
+        },
+        measure: (...args) => window.oaiq?.(...args),
+      });
+    };
+
+    window.addEventListener(ADS_CONSENT_EVENT, reportPaidOrder);
+    reportPaidOrder();
+    return () => window.removeEventListener(ADS_CONSENT_EVENT, reportPaidOrder);
+  }, [ok, orderId, amountTotal, currency]);
 
   const fmt = (value?: number, curr?: string) => {
     if (value == null || !curr) return "-";
