@@ -4,6 +4,8 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
+import { ADS_CONSENT_EVENT } from "../components/AdsConsentBanner";
+import { reportGa4ProductView } from "../lib/ga4Ecommerce";
 
 import type { Product } from "../lib/fetchProducts";
 import { resolveImage } from "../lib/resolveImage";
@@ -75,6 +77,39 @@ export default function ProductDetail({ initialProduct, initialVariants, initial
     const s = String(slug).toLowerCase();
     return products.find((p) => p.slug.toLowerCase() === s) ?? initialProduct;
   }, [slug, products, initialProduct]);
+
+  // Solo una vista de ecommerce por navegación; el producto debe coincidir
+  // con el slug de la ruta, incluso mientras se actualiza el catálogo.
+  const reportedView = useRef<string | null>(null);
+  useEffect(() => {
+    if (!router.isReady || !product || !slug) return;
+    const routeSlug = String(slug).toLowerCase();
+    if (product.slug.toLowerCase() !== routeSlug) return;
+    const viewKey = router.asPath;
+    const full = Number(product.fullPrice);
+    const discount = product.discountPrice == null ? NaN : Number(product.discountPrice);
+    const validDiscount = Number.isFinite(discount) && discount > 0 &&
+      Number.isFinite(full) && Number(discount.toFixed(2)) < Number(full.toFixed(2));
+    const price = validDiscount ? discount : full;
+    if (!Number.isFinite(price) || price < 0) return;
+    const send = () => {
+      if (reportedView.current === viewKey) return;
+      if (reportGa4ProductView({
+        item_id: product.sku?.trim() || product.slug,
+        item_name: product.name,
+        item_category: product.category,
+        price,
+      })) reportedView.current = viewKey;
+    };
+    send();
+    window.addEventListener(ADS_CONSENT_EVENT, send);
+    window.addEventListener("melocoton:ga4-ready", send);
+    return () => {
+      window.removeEventListener(ADS_CONSENT_EVENT, send);
+      window.removeEventListener("melocoton:ga4-ready", send);
+    };
+  }, [router.isReady, router.asPath, slug, product?.slug, product?.sku,
+      product?.name, product?.category, product?.fullPrice, product?.discountPrice]);
 
   const variants = useMemo(() => {
     if (!product) return [];
