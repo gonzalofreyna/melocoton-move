@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
 import { ADS_CONSENT_EVENT, ADS_CONSENT_KEY } from "../components/AdsConsentBanner";
 import { reportOpenAiPurchase } from "../lib/openaiAdsPurchase";
+import { reportGa4VerifiedPurchase } from "../lib/ga4Ecommerce";
 
 type Item = {
   description: string | null;
@@ -96,6 +97,31 @@ export default function SuccessPage({
     reportPaidOrder();
     return () => window.removeEventListener(ADS_CONSENT_EVENT, reportPaidOrder);
   }, [ok, orderId, amountTotal, currency]);
+
+  // Only verified SSR payment details can trigger purchase, never a page view.
+  useEffect(() => {
+    if (!ok || !orderId || amountTotal == null || !currency || !items?.length) return;
+    const report = () => {
+      try {
+        reportGa4VerifiedPurchase({
+          transactionId: orderId,
+          amountTotalCents: amountTotal,
+          currency,
+          shippingCents: shippingCost,
+          items,
+        });
+      } catch (error) {
+        console.warn("GA4 purchase no disponible", error);
+      }
+    };
+    report();
+    window.addEventListener(ADS_CONSENT_EVENT, report);
+    window.addEventListener("melocoton:ga4-ready", report);
+    return () => {
+      window.removeEventListener(ADS_CONSENT_EVENT, report);
+      window.removeEventListener("melocoton:ga4-ready", report);
+    };
+  }, [ok, orderId, amountTotal, currency, shippingCost, items]);
 
   const fmt = (value?: number, curr?: string) => {
     if (value == null || !curr) return "-";
