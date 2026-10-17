@@ -1,0 +1,16 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const page = fs.readFileSync("pages/[slug].tsx", "utf8");
+const helper = fs.readFileSync("lib/ga4Ecommerce.ts", "utf8");
+const ga = fs.readFileSync("components/Ga4Analytics.tsx", "utf8");
+assert.match(page, /product\.slug\.toLowerCase\(\) !== routeSlug/);
+assert.match(page, /reportedView\.current === viewKey/);
+assert.match(page, /product\.sku\?\.trim\(\) \|\| product\.slug/);
+assert.match(page, /validDiscount \? discount : full/);
+assert.match(page, /reportGa4ProductView/);
+assert.match(helper, /localStorage\.getItem\(ADS_CONSENT_KEY\) !== "accepted"/);
+assert.match(helper, /window\.gtag\("event", "view_item"/);
+assert.match(helper, /currency: "MXN"/);
+assert.match(helper, /quantity: 1/);
+assert.match(ga, /melocoton:ga4-ready/);
+console.log("PASS: 10 offline GA4 view_item checks (no network calls)");
