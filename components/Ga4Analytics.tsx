@@ -10,7 +10,7 @@ type Gtag = (...args: unknown[]) => void;
 
 declare global {
   interface Window {
-    dataLayer?: unknown[][];
+    dataLayer?: IArguments[];
     gtag?: Gtag;
     [key: `ga-disable-${string}`]: unknown;
   }
@@ -43,7 +43,7 @@ function enableAnalytics(onReady: () => void) {
 
   initialized = true;
   window.dataLayer = window.dataLayer || [];
-  window.gtag = (...args: unknown[]) => { window.dataLayer?.push(args); };
+  window.gtag = function gtag(..._args: unknown[]) { window.dataLayer?.push(arguments); };
   window.gtag("consent", "default", {
     analytics_storage: "denied",
     ad_storage: "denied",
