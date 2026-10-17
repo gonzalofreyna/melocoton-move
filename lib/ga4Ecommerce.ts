@@ -88,7 +88,7 @@ type VerifiedPurchase = {
   amountTotalCents: number;
   currency: string;
   shippingCents?: number | null;
-  items: Array<{ description: string | null; quantity: number; amountSubtotal: number }>;
+  items: Array<{ description: string | null; quantity: number; amountSubtotal: number; paidAmountCents?: number }>;
 };
 
 /** Called only with details produced by server-verified /success. */
@@ -102,7 +102,8 @@ export function reportGa4VerifiedPurchase(purchase: VerifiedPurchase): boolean {
   if (!transactionId || !Number.isFinite(amountTotalCents) || amountTotalCents < 0 || currency.toUpperCase() !== "MXN") return false;
   if (!items.length || items.some((i) =>
     !Number.isInteger(i.quantity) || i.quantity <= 0 ||
-    !Number.isFinite(i.amountSubtotal) || i.amountSubtotal < 0
+    !Number.isFinite(i.amountSubtotal) || i.amountSubtotal < 0 ||
+    (i.paidAmountCents != null && (!Number.isFinite(i.paidAmountCents) || i.paidAmountCents < 0))
   )) return false;
 
   const dedupeKey = "melocoton:ga4:purchase:" + transactionId;
@@ -116,13 +117,13 @@ export function reportGa4VerifiedPurchase(purchase: VerifiedPurchase): boolean {
     transaction_id: transactionId,
     currency: "MXN",
     // GA4 item revenue excludes shipping; derive from verified receipt lines.
-    value: items.reduce((sum, item) => sum + item.amountSubtotal, 0) / 100,
+    value: items.reduce((sum, item) => sum + (item.paidAmountCents ?? item.amountSubtotal), 0) / 100,
     ...(shippingCents != null && Number.isFinite(shippingCents) && shippingCents >= 0
       ? { shipping: shippingCents / 100 } : {}),
     items: items.map((i, index) => ({
       item_id: i.description || "receipt-item-" + (index + 1),
       item_name: i.description || "Artículo",
-      price: i.amountSubtotal / 100 / i.quantity,
+      price: (i.paidAmountCents ?? i.amountSubtotal) / 100 / i.quantity,
       quantity: i.quantity,
     })),
   });
