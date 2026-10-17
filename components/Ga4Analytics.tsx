@@ -115,17 +115,23 @@ export default function Ga4Analytics() {
       }
     };
     update();
-    // Returning from an external Stripe page can restore this document from
-    // bfcache: React stays mounted and route effects do not run again.
+    // After leaving for Stripe, browser Back may restore this document without
+    // remounting React. pagehide marks the departure; pageshow resumes tracking.
+    // Handle both persisted and non-persisted history restores.
+    let wasHiddenByNavigation = false;
+    const onPageHide = () => { wasHiddenByNavigation = true; };
     const onPageShow = (event: PageTransitionEvent) => {
-      if (!event.persisted) return;
+      if (!event.persisted && !wasHiddenByNavigation) return;
+      wasHiddenByNavigation = false;
       lastPage = "";
       update();
     };
     window.addEventListener(ADS_CONSENT_EVENT, update);
+    window.addEventListener("pagehide", onPageHide);
     window.addEventListener("pageshow", onPageShow);
     return () => {
       window.removeEventListener(ADS_CONSENT_EVENT, update);
+      window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("pageshow", onPageShow);
     };
   }, []);
