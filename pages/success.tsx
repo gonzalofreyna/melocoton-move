@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
 import { ADS_CONSENT_EVENT, ADS_CONSENT_KEY } from "../components/AdsConsentBanner";
+import { reportOpenAiPurchase } from "../lib/openaiAdsPurchase";
 
 type Item = {
   description: string | null;
@@ -68,33 +69,27 @@ export default function SuccessPage({
   // La sesión de pago se valida mediante SSR antes de ofrecer este evento.
   useEffect(() => {
     const reportPaidOrder = () => {
-      if (
-        process.env.NEXT_PUBLIC_OPENAI_ADS_PIXEL_ENABLED !== "true" ||
-        !ok || !orderId || !orderId.startsWith("cs_live_") ||
-        !Number.isInteger(amountTotal) || (amountTotal ?? 0) < 0 ||
-        !currency
-      ) return;
-
-      try {
-        if (localStorage.getItem(ADS_CONSENT_KEY) !== "accepted") return;
-      } catch { return; }
-
-      const storageKey = `openai_ads_order_created:${orderId}`;
-      try {
-        if (localStorage.getItem(storageKey) === "sent") return;
-      } catch {
-        // El almacenamiento puede estar deshabilitado; no afectar el comprobante.
-      }
-
-      const pixel = window.oaiq;
-      if (typeof pixel !== "function") return;
-      pixel("measure", "order_created", {
-        type: "contents",
-        amount: amountTotal,
-        currency: currency.toUpperCase(),
-      }, { event_id: orderId });
-      // Protección local contra visitas repetidas al mismo comprobante.
-      try { localStorage.setItem(storageKey, "sent"); } catch {}
+      if (typeof window.oaiq !== "function") return;
+      reportOpenAiPurchase({
+        ok,
+        orderId,
+        amountTotal,
+        currency,
+        enabled: process.env.NEXT_PUBLIC_OPENAI_ADS_PIXEL_ENABLED === "true",
+      }, {
+        consent: () => {
+          try { return localStorage.getItem(ADS_CONSENT_KEY) === "accepted"; }
+          catch { return false; }
+        },
+        previouslySent: (key) => {
+          try { return localStorage.getItem(key) === "sent"; }
+          catch { return false; }
+        },
+        markSent: (key) => {
+          try { localStorage.setItem(key, "sent"); } catch {}
+        },
+        measure: (...args) => window.oaiq?.(...args),
+      });
     };
 
     window.addEventListener(ADS_CONSENT_EVENT, reportPaidOrder);
