@@ -12,6 +12,7 @@ type Item = {
   description: string | null;
   quantity: number;
   amountSubtotal: number;
+  paidAmountCents?: number;
 };
 
 type SuccessProps = {
@@ -381,6 +382,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
                 description: "Mat profesional personalizado" + (data.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
                 quantity: data.quantity,
                 amountSubtotal: data.amountTotal,
+                paidAmountCents: data.amountTotal,
               }],
               shippingLabel: "Se cotiza por separado",
               orderId: sessionId,
@@ -437,6 +439,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
           description: "Mat profesional personalizado" + (session.metadata?.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
           quantity: Number(session.metadata?.quantity) || 0,
           amountSubtotal: session.amount_total ?? 0,
+          paidAmountCents: session.amount_total ?? 0,
         }]
       : (session.line_items?.data || [])
           .filter((li) => li.description !== "Costo de envío")
@@ -444,6 +447,8 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
             description: li.description || "Artículo",
             quantity: li.quantity || 0,
             amountSubtotal: li.amount_subtotal ?? li.amount_total ?? 0,
+            // Analytics only: Stripe line amount_total reflects line discounts.
+            paidAmountCents: li.amount_total ?? li.amount_subtotal ?? 0,
           }));
 
     const sd = session.collected_information?.shipping_details ?? null;
