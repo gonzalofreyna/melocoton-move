@@ -13,4 +13,7 @@ assert.match(ga, /requestAnimationFrame/);
 assert.match(ga, /page_location: fullUrl/);
 assert.match(ga, /ga-disable-/);
 assert.match(app, /<Ga4Analytics \/>/);
-console.log("PASS: 10 GA4 integration smoke checks (no network calls)");
+assert.match(ga, /addEventListener\("pageshow", onPageShow\)/);
+assert.match(ga, /if \(!event\.persisted\) return;/);
+assert.match(ga, /lastPage = "";/);
+console.log("PASS: 13 GA4 integration smoke checks (no network calls)");
