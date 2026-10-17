@@ -82,3 +82,49 @@ export function reportGa4BeginCheckout(items: CheckoutItem[], coupon?: string): 
   });
   return true;
 }
+
+type VerifiedPurchase = {
+  transactionId: string;
+  amountTotalCents: number;
+  currency: string;
+  shippingCents?: number | null;
+  items: Array<{ description: string | null; quantity: number; amountSubtotal: number }>;
+};
+
+/** Called only with details produced by server-verified /success. */
+export function reportGa4VerifiedPurchase(purchase: VerifiedPurchase): boolean {
+  if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID) return false;
+  try {
+    if (localStorage.getItem(ADS_CONSENT_KEY) !== "accepted") return false;
+  } catch { return false; }
+  if (typeof window.gtag !== "function") return false;
+  const { transactionId, amountTotalCents, currency, shippingCents, items } = purchase;
+  if (!transactionId || !Number.isFinite(amountTotalCents) || amountTotalCents < 0 || currency.toUpperCase() !== "MXN") return false;
+  if (!items.length || items.some((i) =>
+    !Number.isInteger(i.quantity) || i.quantity <= 0 ||
+    !Number.isFinite(i.amountSubtotal) || i.amountSubtotal < 0
+  )) return false;
+
+  const dedupeKey = "melocoton:ga4:purchase:" + transactionId;
+  try {
+    if (localStorage.getItem(dedupeKey) === "sent") return false;
+  } catch { return false; }
+
+  // Stripe sends money as integer cents. Names are verified line item
+  // descriptions; do not invent SKUs absent from the verified receipt.
+  window.gtag("event", "purchase", {
+    transaction_id: transactionId,
+    currency: "MXN",
+    value: amountTotalCents / 100,
+    ...(shippingCents != null && Number.isFinite(shippingCents) && shippingCents >= 0
+      ? { shipping: shippingCents / 100 } : {}),
+    items: items.map((i, index) => ({
+      item_id: i.description || "receipt-item-" + (index + 1),
+      item_name: i.description || "Artículo",
+      price: i.amountSubtotal / 100 / i.quantity,
+      quantity: i.quantity,
+    })),
+  });
+  try { localStorage.setItem(dedupeKey, "sent"); } catch {}
+  return true;
+}
