@@ -32,15 +32,6 @@ export default function Document() {
   return (
     <Html lang="es">
       <Head>
-        {/* OpenAI Ads: habilitar solo tras revisar consentimiento y privacidad. */}
-        {process.env.NEXT_PUBLIC_OPENAI_ADS_PIXEL_ENABLED === "true" && (
-          <script
-            id="openai-ads-pixel"
-            dangerouslySetInnerHTML={{
-              __html: '!function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f)}(window,document,"script","https://bzrcdn.openai.com/sdk/oaiq.min.js");oaiq("init",{pixelId:"TVeQMpjz2WRGsjw89bLGSF",debug:false});',
-            }}
-          />
-        )}
         {/* 🖼️ Favicon */}
         <link
           rel="icon"
