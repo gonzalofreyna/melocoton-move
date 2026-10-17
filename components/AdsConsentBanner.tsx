@@ -29,14 +29,13 @@ function startPixel() {
 }
 
 export default function AdsConsentBanner() {
-  const [choice, setChoice] = useState<Choice>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(ADS_CONSENT_KEY);
+    let stored: string | null = null;
+    try { stored = localStorage.getItem(ADS_CONSENT_KEY); } catch {}
     const initial: Choice = stored === "accepted" || stored === "rejected" ? stored : null;
-    setChoice(initial);
     setOpen(initial === null);
     setReady(true);
     if (initial === "accepted") {
@@ -50,7 +49,6 @@ export default function AdsConsentBanner() {
 
   const choose = (next: Exclude<Choice, null>) => {
     try { localStorage.setItem(ADS_CONSENT_KEY, next); } catch {}
-    setChoice(next);
     setOpen(false);
     if (next === "accepted") {
       startPixel();
@@ -63,25 +61,37 @@ export default function AdsConsentBanner() {
   if (!ready || !open) return null;
 
   return (
-    <section role="dialog" aria-label="Preferencias de privacidad" aria-modal="false"
-      className="fixed inset-x-3 bottom-24 z-[100] mx-auto max-w-lg rounded-2xl border border-brand-blue/10 bg-white px-5 py-5 text-brand-ink shadow-2xl sm:bottom-6 sm:px-6">
-      <h2 className="text-base font-semibold">Tu privacidad también importa</h2>
+    <section
+      role="dialog"
+      aria-label="Preferencias de privacidad"
+      aria-modal="false"
+      className="fixed inset-x-3 bottom-[calc(6.25rem+env(safe-area-inset-bottom))] z-[100] mx-auto max-w-lg rounded-2xl border border-brand-blue/10 bg-white px-4 py-4 text-brand-ink shadow-2xl sm:bottom-6 sm:px-6 sm:py-5"
+    >
+      <h2 className="text-base font-semibold">Tu privacidad importa</h2>
       <p className="mt-2 text-sm leading-relaxed text-gray-600">
-        Usamos tecnologías necesarias para que la tienda funcione. Con tu permiso,
-        también utilizamos medición publicitaria para saber si nuestros anuncios generan compras.
-        Puedes aceptar, rechazar o cambiar tu elección cuando quieras.
+        Usamos cookies necesarias para el funcionamiento de la tienda y, con tu permiso,
+        herramientas para medir el rendimiento de nuestros anuncios.
       </p>
-      <p className="mt-2 text-xs text-gray-500">
-        Consulta nuestro <Link href="/legal/aviso-de-privacidad" className="underline underline-offset-2">aviso de privacidad</Link>.
+      <p className="mt-2 text-xs leading-relaxed text-gray-500">
+        Puedes cambiar tu elección cuando quieras. Consulta nuestro{" "}
+        <Link href="/legal/aviso-de-privacidad" className="underline underline-offset-2">
+          aviso de privacidad
+        </Link>.
       </p>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <button type="button" onClick={() => choose("rejected")}
-          className="rounded-xl border border-brand-blue/30 px-5 py-3 text-sm font-semibold text-brand-blue">
-          Rechazar publicidad
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => choose("rejected")}
+          className="min-h-11 rounded-xl border border-brand-blue/30 px-3 py-2 text-sm font-semibold text-brand-blue"
+        >
+          Solo necesarias
         </button>
-        <button type="button" onClick={() => choose("accepted")}
-          className="rounded-xl bg-brand-blue px-5 py-3 text-sm font-semibold text-white">
-          Aceptar publicidad
+        <button
+          type="button"
+          onClick={() => choose("accepted")}
+          className="min-h-11 rounded-xl bg-brand-blue px-3 py-2 text-sm font-semibold text-white"
+        >
+          Aceptar todas
         </button>
       </div>
     </section>
