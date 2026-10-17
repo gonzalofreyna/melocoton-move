@@ -39,7 +39,10 @@ export default function AdsConsentBanner() {
     setChoice(initial);
     setOpen(initial === null);
     setReady(true);
-    if (initial === "accepted") startPixel();
+    if (initial === "accepted") {
+      startPixel();
+      window.dispatchEvent(new Event(ADS_CONSENT_EVENT));
+    }
     const show = () => setOpen(true);
     window.addEventListener(ADS_PREFERENCES_EVENT, show);
     return () => window.removeEventListener(ADS_PREFERENCES_EVENT, show);
