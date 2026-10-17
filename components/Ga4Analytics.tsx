@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { ADS_CONSENT_EVENT, ADS_CONSENT_KEY } from "./AdsConsentBanner";
 
@@ -73,12 +73,38 @@ function disableAnalytics() {
 /** Client-only GA4 page views. The SDK is never requested before opt-in. */
 export default function Ga4Analytics() {
   const router = useRouter();
+  const currentPath = useRef(router.asPath);
+  currentPath.current = router.asPath;
+
+  // Next.js has committed the new page by the time this effect runs. Wait for
+  // the next paints so next/head can update document.title as well.
+  useEffect(() => {
+    if (!measurementId || !router.isReady) return;
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        if (currentPath.current === router.asPath) sendPageView(router.asPath);
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [router.asPath, router.isReady]);
 
   useEffect(() => {
     if (!measurementId) return;
     const update = () => {
       if (isAllowed()) {
-        enableAnalytics(() => sendPageView(router.asPath));
+        enableAnalytics(() => {
+          // On consent and script load, use the latest location rather than a
+          // stale route captured before an asynchronous script load.
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+              sendPageView(currentPath.current);
+            });
+          });
+        });
       } else {
         disableAnalytics();
       }
@@ -86,14 +112,7 @@ export default function Ga4Analytics() {
     update();
     window.addEventListener(ADS_CONSENT_EVENT, update);
     return () => window.removeEventListener(ADS_CONSENT_EVENT, update);
-  }, [router.asPath]);
-
-  useEffect(() => {
-    if (!measurementId) return;
-    const onRoute = (path: string) => sendPageView(path);
-    router.events.on("routeChangeComplete", onRoute);
-    return () => router.events.off("routeChangeComplete", onRoute);
-  }, [router.events]);
+  }, []);
 
   return null;
 }
