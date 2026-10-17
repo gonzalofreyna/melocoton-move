@@ -7,10 +7,14 @@ import {
   ReactNode,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
+import { reportGa4AddToCart } from "../lib/ga4Ecommerce";
 
 export type CartItem = {
   slug: string;
+  sku?: string;
+  category?: string;
   name: string;
   price: number;
   image: string;
@@ -53,6 +57,8 @@ function clampToStock(qty: number, maxStock?: number) {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const cartRef = useRef<CartItem[]>([]);
+  useEffect(() => { cartRef.current = cart; }, [cart]);
   const [isOpen, setIsOpen] = useState(false);
 
   // ⛳ Cargar carrito desde localStorage
@@ -62,8 +68,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         typeof window !== "undefined" ? localStorage.getItem("cart") : null;
       if (raw) {
         const parsed: CartItem[] = JSON.parse(raw);
-        setCart(
-          parsed.map((i) => {
+        const restored = parsed.map((i) => {
             const maxStock =
               typeof i.maxStock === "number" && Number.isFinite(i.maxStock)
                 ? Math.max(0, Math.floor(i.maxStock))
@@ -75,8 +80,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
               maxStock,
               quantity: clampToStock(i.quantity, maxStock),
             };
-          }),
-        );
+          });
+        cartRef.current = restored;
+        setCart(restored);
       }
     } catch {}
   }, []);
@@ -154,36 +160,45 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggleCart = useCallback(() => setIsOpen((p) => !p), []);
 
   const addToCart = (item: Omit<CartItem, "quantity">) => {
-    setCart((prev) => {
-      const maxStock =
-        typeof item.maxStock === "number" && Number.isFinite(item.maxStock)
-          ? Math.max(0, Math.floor(item.maxStock))
-          : undefined;
+    const prev = cartRef.current;
+    const maxStock =
+      typeof item.maxStock === "number" && Number.isFinite(item.maxStock)
+        ? Math.max(0, Math.floor(item.maxStock))
+        : undefined;
+    if (maxStock === 0) return;
 
-      if (maxStock === 0) return prev;
-
-      const existing = prev.find((p) => p.slug === item.slug);
-      if (existing) {
-        const nextQty = clampToStock(existing.quantity + 1, existing.maxStock);
-        if (nextQty === existing.quantity) return prev;
-        return prev.map((p) =>
-          p.slug === item.slug ? { ...p, quantity: nextQty } : p,
-        );
-      }
-
-      return [
+    const existing = prev.find((p) => p.slug === item.slug);
+    let next: CartItem[];
+    if (existing) {
+      const nextQty = clampToStock(existing.quantity + 1, existing.maxStock);
+      if (nextQty === existing.quantity) return;
+      next = prev.map((p) => p.slug === item.slug ? { ...p, quantity: nextQty } : p);
+    } else {
+      const qty = clampToStock(1, maxStock);
+      if (qty === 0) return;
+      next = [
         ...prev,
         {
           ...item,
           freeShipping: item.freeShipping === true,
           shippingType: item.shippingType || "standard",
           maxStock,
-          quantity: clampToStock(1, maxStock),
+          quantity: qty,
         },
       ];
-    });
+    }
 
-    setIsOpen(true); // abrir MiniCart al agregar
+    // Analytics runs only after a successful state transition, never inside
+    // React's updater (which may be invoked more than once in Strict Mode).
+    cartRef.current = next;
+    setCart(next);
+    setIsOpen(true);
+    reportGa4AddToCart({
+      item_id: item.sku?.trim() || item.slug,
+      item_name: item.name,
+      item_category: item.category,
+      price: item.price,
+    });
   };
 
   const removeFromCart = (slug: string) =>
