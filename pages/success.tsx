@@ -4,6 +4,7 @@ import Head from "next/head";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
+import { ADS_CONSENT_EVENT, ADS_CONSENT_KEY } from "../components/AdsConsentBanner";
 
 type Item = {
   description: string | null;
@@ -64,39 +65,37 @@ export default function SuccessPage({
     closeCart();
   }, [ok, personalized, clearCart, closeCart]);
 
-  // OpenAI Ads: registrar solo sesiones pagadas y verificadas por el servidor.
-  // El ID de Stripe permite identificar la misma compra en futuras integraciones.
+  // La sesión de pago se valida mediante SSR antes de ofrecer este evento.
   useEffect(() => {
-    if (
-      process.env.NEXT_PUBLIC_OPENAI_ADS_PIXEL_ENABLED !== "true" ||
-      !ok || !orderId || !orderId.startsWith("cs_live_") ||
-      !Number.isInteger(amountTotal) || (amountTotal ?? 0) < 0 ||
-      !currency
-    ) return;
+    const reportPaidOrder = () => {
+      if (
+        process.env.NEXT_PUBLIC_OPENAI_ADS_PIXEL_ENABLED !== "true" ||
+        !ok || !orderId || !orderId.startsWith("cs_live_") ||
+        !Number.isInteger(amountTotal) || (amountTotal ?? 0) < 0 ||
+        !currency
+      ) return;
 
-    const storageKey = `openai_ads_order_created:${orderId}`;
-    try {
+      try {
+        if (localStorage.getItem(ADS_CONSENT_KEY) !== "accepted") return;
+      } catch { return; }
+
+      const storageKey = `openai_ads_order_created:${orderId}`;
       if (localStorage.getItem(storageKey) === "sent") return;
-    } catch {
-      // Si no hay almacenamiento disponible, event_id conserva identidad estable.
-    }
 
-    type Oaiq = (...args: unknown[]) => void;
-    const pixel = (window as Window & { oaiq?: Oaiq }).oaiq;
-    if (typeof pixel !== "function") return;
+      const pixel = window.oaiq;
+      if (typeof pixel !== "function") return;
+      pixel("measure", "order_created", {
+        type: "contents",
+        amount: amountTotal,
+        currency: currency.toUpperCase(),
+      }, { event_id: orderId });
+      // Protección local contra visitas repetidas al mismo comprobante.
+      try { localStorage.setItem(storageKey, "sent"); } catch {}
+    };
 
-    // Stripe representa el total en la unidad monetaria mínima (centavos).
-    pixel("measure", "order_created", {
-      type: "contents",
-      amount: amountTotal,
-      currency: currency.toUpperCase(),
-    }, { event_id: orderId });
-
-    try {
-      localStorage.setItem(storageKey, "sent");
-    } catch {
-      // La medición no debe interferir con la página de confirmación.
-    }
+    window.addEventListener(ADS_CONSENT_EVENT, reportPaidOrder);
+    reportPaidOrder();
+    return () => window.removeEventListener(ADS_CONSENT_EVENT, reportPaidOrder);
   }, [ok, orderId, amountTotal, currency]);
 
   const fmt = (value?: number, curr?: string) => {
