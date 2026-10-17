@@ -52,7 +52,10 @@ export default function AdsConsentBanner() {
     try { localStorage.setItem(ADS_CONSENT_KEY, next); } catch {}
     setChoice(next);
     setOpen(false);
-    if (next === "accepted") startPixel();
+    if (next === "accepted") {
+      startPixel();
+      if (process.env.NEXT_PUBLIC_OPENAI_ADS_PIXEL_ENABLED === "true") window.oaiq?.("consent", true);
+    }
     else window.oaiq?.("consent", false);
     window.dispatchEvent(new Event(ADS_CONSENT_EVENT));
   };
