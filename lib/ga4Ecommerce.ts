@@ -115,7 +115,8 @@ export function reportGa4VerifiedPurchase(purchase: VerifiedPurchase): boolean {
   window.gtag("event", "purchase", {
     transaction_id: transactionId,
     currency: "MXN",
-    value: amountTotalCents / 100,
+    // GA4 item revenue excludes shipping; derive from verified receipt lines.
+    value: items.reduce((sum, item) => sum + item.amountSubtotal, 0) / 100,
     ...(shippingCents != null && Number.isFinite(shippingCents) && shippingCents >= 0
       ? { shipping: shippingCents / 100 } : {}),
     items: items.map((i, index) => ({
