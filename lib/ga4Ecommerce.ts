@@ -67,6 +67,7 @@ export function reportGa4BeginCheckout(items: CheckoutItem[], coupon?: string): 
     item.price < 0 || !Number.isInteger(item.quantity) || item.quantity <= 0
   )) return false;
   window.gtag("event", "begin_checkout", {
+    transport_type: "beacon",
     currency: "MXN",
     // GA4 ecommerce value excludes shipping and tax, and is the sum of items.
     value: items.reduce((total, item) => total + item.price * item.quantity, 0),
