@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCart } from "../context/CartContext";
 import MiniCartItem from "./MiniCartItem";
 import { createCheckout } from "../lib/checkoutClient";
+import { reportGa4BeginCheckout } from "../lib/ga4Ecommerce";
 
 const MX = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -487,6 +488,23 @@ export default function MiniCart() {
 
       if (!data?.ok || !data?.url) {
         throw new Error(data?.message || "No se recibió URL de Stripe.");
+      }
+
+      // Medición aislada: una URL válida confirma que AWS creó el checkout.
+      // Un fallo en Analytics nunca debe bloquear ni retrasar el pago.
+      try {
+        reportGa4BeginCheckout(
+          cart.map((item) => ({
+            item_id: item.sku?.trim() || item.slug,
+            item_name: item.name,
+            item_category: item.category,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          appliedCoupon ?? undefined,
+        );
+      } catch (analyticsError) {
+        console.warn("GA4 begin_checkout no disponible", analyticsError);
       }
 
       window.location.href = data.url; // 🚀 redirige al checkout de Stripe
