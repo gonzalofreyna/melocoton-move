@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { loadEnvConfig } from "@next/env";
+import nextEnv from "@next/env";
+const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 // Read-only audit against the same active product API used by the store/feed.
 // No DB writes, checkout calls, or inventory mutations.
