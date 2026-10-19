@@ -42,6 +42,18 @@ export function buildMerchantFeed(products: Product[]) {
       excluded.invalid++;
       continue;
     }
+    // Merchant shipping groups use the delivery TOTAL from the database.
+    // Google Merchant Center must be configured so handling + transit equals
+    // this total; the feed does not invent a separate carrier transit time.
+    const estimate = p.shippingEstimate;
+    const minDays = estimate?.minBusinessDays;
+    const maxDays = estimate?.maxBusinessDays;
+    if (!Number.isInteger(minDays) || !Number.isInteger(maxDays) ||
+        minDays == null || maxDays == null || minDays < 0 || maxDays < minDays) {
+      excluded.invalid++;
+      continue;
+    }
+    const shippingLabel = `entrega-${minDays}-${maxDays}-habiles`;
     seen.add(id);
     const hasSale = Number.isFinite(offer) && offer > 0 && offer < price;
     const link = new URL("/" + encodeURIComponent(p.slug), SITE).toString();
@@ -56,6 +68,7 @@ export function buildMerchantFeed(products: Product[]) {
       ...additionalImages.map((url) => xmlNode("additional_image_link", url)),
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
+      xmlNode("shipping_label", shippingLabel),
       // Reference shipping rate for non-reformer products only; checkout remains Skydropx-based.
       '<g:shipping><g:country>MX</g:country><g:price>199.00 MXN</g:price></g:shipping>',
       xmlNode("price", price.toFixed(2) + " MXN"),
