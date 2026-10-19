@@ -18,6 +18,7 @@ const absoluteImage = (value: string) => {
 export function buildMerchantFeed(products: Product[]) {
   const excluded = { missingStock: 0, customShipping: 0, invalid: 0 };
   const seen = new Set<string>();
+  const isReformer = (p: Product) => /reformer/i.test([p.name, p.slug, p.category].join(" "));
   const entries: string[] = [];
 
   for (const p of products) {
@@ -27,7 +28,7 @@ export function buildMerchantFeed(products: Product[]) {
       continue;
     }
     // Custom shipping is quoted separately; do not imply a standard checkout delivery.
-    if (p.shippingType === "custom") {
+    if (p.shippingType === "custom" || isReformer(p)) {
       excluded.customShipping++;
       continue;
     }
@@ -55,6 +56,8 @@ export function buildMerchantFeed(products: Product[]) {
       ...additionalImages.map((url) => xmlNode("additional_image_link", url)),
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
+      // Reference shipping rate for non-reformer products only; checkout remains Skydropx-based.
+      '<g:shipping><g:country>MX</g:country><g:price>199.00 MXN</g:price></g:shipping>',
       xmlNode("price", price.toFixed(2) + " MXN"),
       ...(hasSale ? [xmlNode("sale_price", offer.toFixed(2) + " MXN")] : []),
       xmlNode("brand", p.brand?.trim() || "Melocotón Move"),
