@@ -55,8 +55,6 @@ export function buildMerchantFeed(products: Product[]) {
       ...additionalImages.map((url) => xmlNode("additional_image_link", url)),
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
-      // Merchant Center reference cost only. Checkout continues to quote Skydropx.
-      '<g:shipping><g:country>MX</g:country><g:price>199.00 MXN</g:price></g:shipping>',
       xmlNode("price", price.toFixed(2) + " MXN"),
       ...(hasSale ? [xmlNode("sale_price", offer.toFixed(2) + " MXN")] : []),
       xmlNode("brand", p.brand?.trim() || "Melocotón Move"),
