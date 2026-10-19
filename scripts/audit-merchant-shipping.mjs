@@ -1,6 +1,6 @@
+#!/usr/bin/env node
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
-#!/usr/bin/env node
 // Read-only audit against the same active product API used by the store/feed.
 // No DB writes, checkout calls, or inventory mutations.
 const url = process.env.NEXT_PUBLIC_API_PRODUCTS_URL;
