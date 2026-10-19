@@ -44,12 +44,15 @@ export function buildMerchantFeed(products: Product[]) {
     seen.add(id);
     const hasSale = Number.isFinite(offer) && offer > 0 && offer < price;
     const link = new URL("/" + encodeURIComponent(p.slug), SITE).toString();
+    const additionalImages = [...new Set((p.gallery || []).map(absoluteImage).filter((url): url is string => Boolean(url)))]
+      .filter((url) => url !== image).slice(0, 10);
     const item = [
       xmlNode("id", id),
       xmlNode("title", p.name),
       xmlNode("description", p.description),
       xmlNode("link", link),
       xmlNode("image_link", image),
+      ...additionalImages.map((url) => xmlNode("additional_image_link", url)),
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
       xmlNode("price", price.toFixed(2) + " MXN"),
