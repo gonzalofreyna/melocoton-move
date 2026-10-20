@@ -322,7 +322,7 @@ export default function MatCustomizer() {
       if (!previewWrapRef.current) return;
 
       const availableWidth = previewWrapRef.current.clientWidth;
-      setPreviewWidth(Math.min(window.innerWidth < 640 ? 300 : 420, Math.max(160, availableWidth)));
+      setPreviewWidth(Math.min(window.innerWidth < 640 ? 145 : 420, Math.max(160, availableWidth)));
     };
 
     updatePreviewWidth();
@@ -844,7 +844,7 @@ export default function MatCustomizer() {
 
               <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
                 <div>
-                  <p className="text-xs text-gray-500 sm:text-sm">Precio por mat</p>
+                  <p className="hidden text-xs text-gray-500 sm:block sm:text-sm">Precio por mat</p>
                   <p className="text-lg font-bold text-gray-900 sm:text-2xl">
                     {formatMoney(MAT_PRICE)}
                   </p>
@@ -950,9 +950,9 @@ export default function MatCustomizer() {
             </div>
           </div>
 
-          <div className="order-1 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:sticky lg:top-28 lg:bg-transparent lg:py-0">
+          <div className="order-1 sticky top-16 z-20 w-full min-w-0 self-start bg-white py-1 shadow-sm sm:static sm:shadow-none lg:order-2 lg:sticky lg:top-28 lg:z-auto lg:bg-transparent lg:py-0">
             <div className="w-full rounded-2xl border border-brand-line bg-white p-2 shadow-editorial sm:rounded-[2rem] sm:p-4">
-              <div className="mb-2 flex items-center justify-between gap-3 sm:mb-4">
+              <div className="mb-1 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-gray-900 sm:text-lg">
                     Vista previa
