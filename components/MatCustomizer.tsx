@@ -166,6 +166,7 @@ function LogoImage({
   const logoWidth = (matWidth * logo.widthPercent) / 100;
   const ratio = image ? image.height / image.width : 1;
   const logoHeight = logoWidth * ratio;
+  const snapRotation = (degrees: number) => ((Math.round(degrees / 45) * 45) % 360 + 360) % 360;
 
   useMemo(() => {
     if (selected && transformerRef.current && shapeRef.current) {
@@ -179,8 +180,10 @@ function LogoImage({
       <KonvaImage
         ref={shapeRef}
         image={tintedImage}
-        x={logo.x}
-        y={logo.y}
+        x={logo.x + logoWidth / 2}
+        y={logo.y + logoHeight / 2}
+        offsetX={logoWidth / 2}
+        offsetY={logoHeight / 2}
         width={logoWidth}
         height={logoHeight}
         rotation={logo.rotation}
@@ -190,8 +193,8 @@ function LogoImage({
         onDragEnd={(e) => {
           onChange({
             ...logo,
-            x: e.target.x(),
-            y: e.target.y(),
+            x: e.target.x() - logoWidth / 2,
+            y: e.target.y() - logoHeight / 2,
           });
         }}
         onTransformEnd={() => {
@@ -203,12 +206,14 @@ function LogoImage({
 
           const newWidth = Math.max(20, node.width() * scaleX);
           const newPercent = Math.round((newWidth / matWidth) * 100);
+          const boundedWidth = matWidth * Math.min(100, Math.max(5, newPercent)) / 100;
+          const boundedHeight = boundedWidth * ratio;
 
           onChange({
             ...logo,
-            x: node.x(),
-            y: node.y(),
-            rotation: node.rotation(),
+            x: node.x() - boundedWidth / 2,
+            y: node.y() - boundedHeight / 2,
+            rotation: snapRotation(node.rotation()),
             widthPercent: Math.min(100, Math.max(5, newPercent)),
           });
         }}
@@ -218,6 +223,8 @@ function LogoImage({
         <Transformer
           ref={transformerRef}
           rotateEnabled
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={23}
           keepRatio
           enabledAnchors={[
             "top-left",
@@ -950,7 +957,15 @@ export default function MatCustomizer() {
                               className="min-h-11 w-full accent-brand-wine" aria-label="Agrandar o reducir logo"/>
                             <span className="text-xs text-gray-500">+</span>
                           </div>
-                          <p className="text-xs text-gray-600">Podrás moverlo sobre el tapete en la vista previa.</p>
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                             <span className="text-sm font-semibold text-gray-800">Girar logo</span>
+                             <div className="flex items-center gap-2">
+                               <button type="button" aria-label="Girar 45 grados a la izquierda" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+315)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↶</button>
+                               <span className="min-w-12 text-center text-sm font-semibold tabular-nums">{selectedLogo.rotation}°</span>
+                               <button type="button" aria-label="Girar 45 grados a la derecha" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+45)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↷</button>
+                             </div>
+                           </div>
+                           <p className="text-xs text-gray-600">Podrás moverlo sobre el tapete en la vista previa.</p>
                         </div>
                       )}
                       <button type="button" onClick={()=>setPersonalizeMode("text")} className="min-h-11 w-full text-sm font-medium text-brand-wine">También quiero escribir un nombre →</button>
@@ -1304,15 +1319,13 @@ export default function MatCustomizer() {
                         onChange={(e) => updateLogo({ ...selectedLogo, widthPercent: Number(e.target.value) })}
                         className="h-8 w-full accent-brand-wine" />
                     </label>
-                    <label className="block">
-                      <span className="mb-1 flex justify-between gap-2 text-xs font-medium text-gray-700">
-                        <span>Rotación</span><span>{Math.round(selectedLogo.rotation)}°</span>
-                      </span>
-                      <input type="range" min="-180" max="180" value={selectedLogo.rotation}
-                        aria-label="Rotación del logo"
-                        onChange={(e) => updateLogo({ ...selectedLogo, rotation: Number(e.target.value) })}
-                        className="h-8 w-full accent-brand-wine" />
-                    </label>
+                    <div className="flex items-center justify-between gap-2">
+                       <span className="text-xs font-medium text-gray-700">Girar logo · {selectedLogo.rotation}°</span>
+                       <div className="flex gap-2">
+                         <button type="button" aria-label="Girar 45 grados a la izquierda" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+315)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↶</button>
+                         <button type="button" aria-label="Girar 45 grados a la derecha" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+45)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↷</button>
+                       </div>
+                     </div>
                   </div>
                   <p className="mt-1 text-xs leading-5 text-gray-500">
                     También puedes tocar y arrastrar el logo sobre el mat.
