@@ -301,11 +301,6 @@ export default function MatCustomizer() {
     setEngravings(items => [...items,{id,text:"",font:"elegante",position:"centro",sizeCm:6,rotation:0,x:50,y:50}]);
     setSelectedTextId(id);
   };
-  const duplicateText = (item: EngravingItem) => {
-    const id = crypto.randomUUID();
-    setEngravings(prev => [...prev, {...item,id,y:Math.min(90,item.y+9)}]);
-    setSelectedTextId(id);
-  };
   const removeText = (id: string) => {
     setEngravings(items => items.filter(item => item.id !== id));
     if (selectedTextId === id) setSelectedTextId("");
@@ -739,9 +734,6 @@ export default function MatCustomizer() {
                       <div className="flex items-center justify-between gap-2">
                         <button type="button" onClick={() => setSelectedTextId(item.id)}
                           className="text-sm font-semibold text-gray-900">Texto {index+1} {selectedTextId===item.id ? "· Seleccionado" : ""}</button>
-                        <button type="button" onClick={() => duplicateText(item)}
-                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-800"
-                          aria-label={`Duplicar texto ${index+1}`}>Duplicar</button>
                         <button type="button" onClick={() => removeText(item.id)}
                           className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700"
                           aria-label={`Eliminar texto ${index+1}`}>Eliminar</button>
