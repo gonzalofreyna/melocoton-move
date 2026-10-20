@@ -577,8 +577,7 @@ export default function MatCustomizer() {
             src = "data:image/png;base64," + traced.previewPng;
           } catch (error) {
             console.warn("Logo requiere revisión manual:", error);
-            setUploadMessage("No pudimos trazar automáticamente este logo. Podemos revisarlo contigo por WhatsApp; también puedes continuar tu compra.");
-            return;
+            setUploadMessage("Este logo necesita revisión manual. Lo mostraremos sin modificar para que puedas continuar tu diseño y compra.");
           }
         }
 
@@ -592,7 +591,7 @@ export default function MatCustomizer() {
         };
         setLogos((prev) => [...prev, newLogo]);
         setSelectedLogoId(newLogo.id);
-        setUploadMessage(file.type === "image/svg+xml" ? "Logo SVG cargado" : "Logo trazado automáticamente");
+        if (file.type === "image/svg+xml" || src !== original) setUploadMessage(file.type === "image/svg+xml" ? "Logo SVG cargado" : "Logo trazado automáticamente");
       };
       reader.readAsDataURL(file);
     });
