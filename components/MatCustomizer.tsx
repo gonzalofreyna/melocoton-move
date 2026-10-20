@@ -932,7 +932,7 @@ export default function MatCustomizer() {
                 aria-busy={checkoutLoading}
                 className="mm-button mt-3 w-full py-4 text-base font-bold disabled:cursor-wait disabled:opacity-60"
               >
-                {checkoutLoading ? "Conectando con Stripe…" : "Comprar ahora"}
+                {checkoutLoading ? "Preparando tu compra…" : "Comprar ahora"}
               </button>
               <button
                 type="button"
