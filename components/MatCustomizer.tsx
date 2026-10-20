@@ -305,6 +305,7 @@ export default function MatCustomizer() {
     setEngravings(items => items.filter(item => item.id !== id));
     if (selectedTextId === id) setSelectedTextId("");
   };
+  const [personalizeMode, setPersonalizeMode] = useState<"text" | "logo">("text");
   const [selectedLogoId, setSelectedLogoId] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -773,6 +774,66 @@ export default function MatCustomizer() {
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
                   Hazlo tuyo: nombre o logo
                 </h2>
+                <div className="lg:hidden">
+                  <p className="mb-3 text-sm text-gray-600">Elige cómo quieres personalizarlo. Puedes usar las dos opciones.</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" aria-pressed={personalizeMode === "text"} onClick={() => setPersonalizeMode("text")}
+                      className={`min-h-12 rounded-xl border px-2 text-sm font-semibold ${personalizeMode === "text" ? "border-brand-wine bg-brand-sand" : "border-gray-200"}`}>Escribir nombre</button>
+                    <button type="button" aria-pressed={personalizeMode === "logo"} onClick={() => setPersonalizeMode("logo")}
+                      className={`min-h-12 rounded-xl border px-2 text-sm font-semibold ${personalizeMode === "logo" ? "border-brand-wine bg-brand-sand" : "border-gray-200"}`}>Subir logo</button>
+                  </div>
+                  {personalizeMode === "text" ? (
+                    <div className="mt-4 space-y-3">
+                      {engravings.map((item, index) => (
+                        <div key={item.id} className="rounded-xl border border-brand-line p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <label htmlFor={`mat-text-${item.id}`} className="text-sm font-semibold">Nombre o frase {engravings.length > 1 ? index + 1 : ""}</label>
+                            {(item.text || engravings.length > 1) && <button type="button" onClick={() => removeText(item.id)} className="min-h-10 text-xs font-semibold text-red-700">Eliminar</button>}
+                          </div>
+                          <input id={`mat-text-${item.id}`} type="text" maxLength={120} value={item.text}
+                            onFocus={() => setSelectedTextId(item.id)} onChange={e => updateText(item.id, {text:e.target.value})}
+                            placeholder="Ej. Ana Victoria" className="mt-1 min-h-12 w-full rounded-xl border border-gray-300 bg-white px-3 text-base" />
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            <label className="text-xs font-semibold">Estilo de letra
+                              <select value={item.font} onChange={e=>updateText(item.id,{font:e.target.value as EngravingItem["font"]})}
+                                className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2 text-sm">
+                                <option value="elegante">Elegante</option><option value="moderna">Moderna</option><option value="manuscrita">Manuscrita</option>
+                              </select>
+                            </label>
+                            <label className="text-xs font-semibold">Ubicación
+                              <select value={["superior","centro","inferior"].includes(item.position) ? item.position : "centro"}
+                                onChange={e=>{const p=TEXT_PRESETS.find(p=>p.value===e.target.value);if(p)updateText(item.id,{position:p.value,x:p.x,y:p.y});}}
+                                className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2 text-sm">
+                                <option value="superior">Arriba</option><option value="centro">Centro</option><option value="inferior">Abajo</option>
+                              </select>
+                            </label>
+                          </div>
+                          <details className="mt-3 text-sm text-gray-600">
+                            <summary className="cursor-pointer py-2 font-medium">Ajustar tamaño (opcional)</summary>
+                            <label className="mt-2 block text-xs">Tamaño de letra
+                              <input type="range" min="0.5" max="6" step="0.1" value={item.sizeCm}
+                                onChange={e=>updateText(item.id,{sizeCm:Number(e.target.value)})} className="mt-2 w-full accent-brand-wine"/>
+                            </label>
+                          </details>
+                        </div>
+                      ))}
+                      <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine text-sm font-semibold text-brand-wine">+ Añadir otro texto</button>
+                      <button type="button" onClick={()=>setPersonalizeMode("logo")} className="min-h-11 w-full text-sm font-medium text-brand-wine">También quiero agregar mi logo →</button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-brand-wine bg-brand-sand/40 p-4 text-center">
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" multiple className="sr-only" onChange={e=>handleLogoUpload(e.target.files)} />
+                        <span className="font-semibold">Seleccionar mi logo</span>
+                        <span className="mt-1 text-xs text-gray-600">PNG, JPG, WEBP o SVG</span>
+                      </label>
+                      {uploadMessage && <p role="status" className="text-sm text-green-700">{uploadMessage}</p>}
+                      {logos.length > 0 && <p className="text-sm font-semibold text-gray-700">{logos.length} {logos.length === 1 ? "archivo cargado" : "archivos cargados"} ✓</p>}
+                      <button type="button" onClick={()=>setPersonalizeMode("text")} className="min-h-11 w-full text-sm font-medium text-brand-wine">También quiero escribir un nombre →</button>
+                    </div>
+                  )}
+                </div>
+                <div className="hidden lg:block">
                 <div className="mb-4 space-y-3">
                   {engravings.map((item,index) => (
                     <div key={item.id} className="space-y-3 rounded-xl border border-brand-line bg-brand-sand/40 p-3 sm:p-4">
@@ -880,6 +941,7 @@ export default function MatCustomizer() {
                 )}
 
 
+                </div>
                 <button type="button" onClick={() => setMobileStep("preview")} className="mm-button mt-5 w-full py-3 lg:hidden">Ver mi tapete →</button>
               </div>
             </div>
