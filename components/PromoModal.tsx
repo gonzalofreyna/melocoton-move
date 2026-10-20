@@ -40,7 +40,7 @@ export default function PromoModal() {
     const timer = window.setTimeout(() => {
       setOpen(true);
       try { localStorage.setItem(key, JSON.stringify(new Date().toISOString())); } catch {}
-    }, 3500);
+    }, 1000);
     return () => window.clearTimeout(timer);
   }, [enabled, key, frequency]);
 
