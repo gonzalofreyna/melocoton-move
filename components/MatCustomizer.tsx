@@ -700,8 +700,10 @@ export default function MatCustomizer() {
 
   const removeSelectedLogo = () => {
     if (!selectedLogoId) return;
-    setLogos((prev) => prev.filter((logo) => logo.id !== selectedLogoId));
-    setSelectedLogoId(null);
+    const remaining = logos.filter((logo) => logo.id !== selectedLogoId);
+    setLogos(remaining);
+    // Si quedan logos, mantener seleccionado uno para mostrar tamaño y rotación.
+    setSelectedLogoId(remaining.length ? remaining[remaining.length - 1].id : null);
   };
 
   return (
