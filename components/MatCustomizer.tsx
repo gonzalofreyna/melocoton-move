@@ -349,6 +349,18 @@ export default function MatCustomizer() {
     ? "#" + [1, 3, 5].map((i) => Math.max(0, Math.round(parseInt(finish.value.slice(i, i + 2), 16) * 0.65)).toString(16).padStart(2, "0")).join("")
     : "#554b46";
   const matY = Math.round(stageHeight * 0.06);
+  const engravingGeometry = (item: EngravingItem) => {
+    const requestedPx = item.sizeCm * matHeight / matDimensions.height;
+    const estimatedCharsWidth = [...item.text.trim()].reduce((sum,ch) => sum + (ch === " " ? .32 : .58), 0);
+    const actualFontSize = Math.min(requestedPx, matWidth * .90 / Math.max(1, estimatedCharsWidth));
+    const width = Math.min(matWidth * .90, Math.max(actualFontSize, estimatedCharsWidth * actualFontSize));
+    const height = Math.max(8, actualFontSize * 1.35);
+    const left = (matWidth - width) * item.x / 100;
+    const top = (matHeight - height) * item.y / 100;
+    return {width,height,left,top,fontSize:actualFontSize,xCm:Number((left/matWidth*matDimensions.width).toFixed(1)),
+      yCm:Number((top/matHeight*matDimensions.height).toFixed(1)),
+      effectiveSizeCm:Number((actualFontSize/matHeight*matDimensions.height).toFixed(1))};
+  };
 
   const selectedLogo = logos.find((logo) => logo.id === selectedLogoId);
   const safeQuantity = Math.min(99, Math.max(1, Math.floor(quantity || 1)));
@@ -418,8 +430,9 @@ export default function MatCustomizer() {
           sessionStorage.setItem("melocoton_design_" + sessionId, JSON.stringify({
             texts: engravings.filter(t => t.text.trim()).map(t => ({
               text:t.text.trim(),font:t.font,position:t.position,sizeCm:t.sizeCm,
-              xCm:Number((t.x * matDimensions.width / 100).toFixed(1)),
-              yCm:Number((t.y * matDimensions.height / 100).toFixed(1)),
+              xCm:engravingGeometry(t).xCm,
+              yCm:engravingGeometry(t).yCm,
+              effectiveSizeCm:engravingGeometry(t).effectiveSizeCm,
             })),
             shape, finish: finish.label, quantity: safeQuantity,
             logoCount: logos.length,
@@ -542,7 +555,7 @@ export default function MatCustomizer() {
 
       const message = [
         "Hola, quiero comprar un tapete personalizado.",
-        ...engravings.filter(t => t.text.trim()).map((t,i) => `Texto ${i+1}: "${t.text.trim()}" · ${t.font} · ${t.position} · alto ${t.sizeCm.toFixed(1)} cm · X ${(t.x*matDimensions.width/100).toFixed(1)} cm, Y ${(t.y*matDimensions.height/100).toFixed(1)} cm`),
+        ...engravings.filter(t => t.text.trim()).map((t,i) => `Texto ${i+1}: "${t.text.trim()}" · ${t.font} · ${t.position} · alto aprox. ${engravingGeometry(t).effectiveSizeCm} cm · X ${engravingGeometry(t).xCm} cm, Y ${engravingGeometry(t).yCm} cm`),
         "",
         `Forma: ${shape}`,
         `Acabado: ${finish.label}`,
@@ -757,7 +770,7 @@ export default function MatCustomizer() {
                           </button>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-600">Coordenadas: X {(item.x*matDimensions.width/100).toFixed(1)} cm · Y {(item.y*matDimensions.height/100).toFixed(1)} cm.</p>
+                      <p className="text-xs text-gray-600">Coordenadas desde borde izquierdo/superior: X {engravingGeometry(item).xCm} cm · Y {engravingGeometry(item).yCm} cm. {engravingGeometry(item).effectiveSizeCm < item.sizeCm-.1 && "El texto se ajustó para caber en el ancho del tapete."}</p>
                     </div>
                   ))}
                   <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine bg-white px-4 py-2 text-sm font-semibold text-brand-wine">
@@ -985,26 +998,20 @@ export default function MatCustomizer() {
                       </Group>
 
                       {engravings.filter(t => t.text.trim()).map(item => {
-                        const requestedPx = item.sizeCm * matHeight / matDimensions.height;
-                        const estimatedCharsWidth = [...item.text.trim()].reduce((sum,ch) => sum + (ch===" "?0.32:0.58),0);
-                        const actualFontSize = Math.min(requestedPx, matWidth * .90 / Math.max(1,estimatedCharsWidth));
-                        const estimatedWidth = Math.min(matWidth*.90, Math.max(actualFontSize,estimatedCharsWidth*actualFontSize));
-                        const boxHeight = Math.max(8,actualFontSize*1.35);
-                        const x = matX + (matWidth-estimatedWidth) * item.x/100;
-                        const y = matY + (matHeight-boxHeight) * item.y/100;
+                        const g = engravingGeometry(item);
                         return <KonvaText key={item.id} text={item.text.trim()}
-                          x={x} y={y} width={estimatedWidth} height={boxHeight}
-                          fontFamily={engravingFonts[item.font]} fontSize={actualFontSize}
+                          x={matX+g.left} y={matY+g.top} width={g.width} height={g.height}
+                          fontFamily={engravingFonts[item.font]} fontSize={g.fontSize}
                           fill={engravingColor} align="center" verticalAlign="middle" wrap="none"
                           draggable onClick={() => setSelectedTextId(item.id)} onTap={() => setSelectedTextId(item.id)}
                           dragBoundFunc={pos => ({
-                            x: Math.max(matX + matWidth*.05,Math.min(matX+matWidth*.95-estimatedWidth,pos.x)),
-                            y: Math.max(matY + matHeight*.12,Math.min(matY+matHeight*.88-boxHeight,pos.y)),
+                            x: Math.max(matX + matWidth*.02,Math.min(matX+matWidth*.98-g.width,pos.x)),
+                            y: Math.max(matY + matHeight*.12,Math.min(matY+matHeight*.88-g.height,pos.y)),
                           })}
                           onDragEnd={e => updateText(item.id,{
                             position:"libre",
-                            x:Math.round((e.target.x()-matX)/(matWidth-estimatedWidth)*1000)/10,
-                            y:Math.round((e.target.y()-matY)/(matHeight-boxHeight)*1000)/10,
+                            x:Math.round((e.target.x()-matX)/(matWidth-g.width)*1000)/10,
+                            y:Math.round((e.target.y()-matY)/(matHeight-g.height)*1000)/10,
                           })}
                         />;
                       })}
