@@ -9,6 +9,7 @@ import {
   Group,
   Image as KonvaImage,
   Transformer,
+  Text as KonvaText,
 } from "react-konva";
 import useImage from "use-image";
 import jsPDF from "jspdf";
@@ -278,6 +279,10 @@ export default function MatCustomizer() {
     label: "Negro carbón",
   });
   const [logos, setLogos] = useState<LogoItem[]>([]);
+  const [engravingText, setEngravingText] = useState("");
+  const [engravingFont, setEngravingFont] = useState<"elegante" | "moderna" | "manuscrita">("elegante");
+  const [engravingPosition, setEngravingPosition] = useState<"superior" | "centro" | "inferior">("centro");
+  const [textPlacement, setTextPlacement] = useState({ x: 10, y: 50 });
   const [selectedLogoId, setSelectedLogoId] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -317,6 +322,10 @@ export default function MatCustomizer() {
   );
 
   const matX = (stageWidth - matWidth) / 2;
+  const engravingFonts = { elegante: "Georgia", moderna: "Arial", manuscrita: "cursive" };
+  const engravingColor = finish.type === "solid" && /^#[0-9a-f]{6}$/i.test(finish.value)
+    ? "#" + [1, 3, 5].map((i) => Math.max(0, Math.round(parseInt(finish.value.slice(i, i + 2), 16) * 0.65)).toString(16).padStart(2, "0")).join("")
+    : "#554b46";
   const matY = Math.round(stageHeight * 0.06);
 
   const selectedLogo = logos.find((logo) => logo.id === selectedLogoId);
@@ -378,6 +387,26 @@ export default function MatCustomizer() {
         destination.hostname.endsWith(".checkout.stripe.com")
       )) {
         throw new Error("La respuesta de pago no es válida.");
+      }
+      // Diseño temporal por sesión de Stripe; no se persiste en la base de datos.
+      // La confirmación solo podrá abrirse en este mismo navegador.
+      const sessionId = destination.pathname.match(/cs_(?:live|test)_[A-Za-z0-9]+/)?.[0];
+      if (sessionId) {
+        try {
+          sessionStorage.setItem("melocoton_design_" + sessionId, JSON.stringify({
+            text: engravingText.trim(),
+            font: engravingFont,
+            position: engravingPosition,
+            xPercent: textPlacement.x,
+            yPercent: textPlacement.y,
+            xCm: Math.round(textPlacement.x * matDimensions.width) / 100,
+            yCm: Math.round(textPlacement.y * matDimensions.height) / 100,
+            shape, finish: finish.label, quantity: safeQuantity,
+            logoCount: logos.length,
+          }));
+        } catch (error) {
+          console.warn("No se pudo conservar el diseño temporalmente", error);
+        }
       }
       window.location.assign(destination.toString());
     } catch (error) {
@@ -492,7 +521,10 @@ export default function MatCustomizer() {
       link.click();
 
       const message = [
-        "Hola, quiero comprar un mat personalizado.",
+        "Hola, quiero comprar un tapete personalizado.",
+        engravingText.trim() ? `Texto: ${engravingText.trim()}` : "Sin texto",
+        engravingText.trim() ? `Tipografía: ${engravingFont}` : "",
+        engravingText.trim() ? `Posición: ${engravingPosition} (x: ${(textPlacement.x * matDimensions.width / 100).toFixed(1)} cm; y: ${(textPlacement.y * matDimensions.height / 100).toFixed(1)} cm, desde la esquina superior izquierda)` : "",
         "",
         `Forma: ${shape}`,
         `Acabado: ${finish.label}`,
@@ -663,8 +695,47 @@ export default function MatCustomizer() {
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                  3. Sube tu logo o diseño
+                  3. Personaliza tu tapete
                 </h2>
+                <div className="mb-4 space-y-3 rounded-xl border border-brand-line bg-brand-sand/40 p-3 sm:p-4">
+                  <label className="block text-sm font-semibold text-gray-900" htmlFor="engraving-text">Añade un nombre, iniciales o frase</label>
+                  <input
+                    id="engraving-text"
+                    type="text"
+                    maxLength={48}
+                    value={engravingText}
+                    onChange={(e) => setEngravingText(e.target.value.replace(/[\r\n]/g, ""))}
+                    placeholder="Ej. Sofía"
+                    className="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-base text-gray-900"
+                  />
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="text-xs font-semibold text-gray-800">Tipografía
+                      <select value={engravingFont} onChange={(e) => setEngravingFont(e.target.value as typeof engravingFont)}
+                        className="mt-1 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm">
+                        <option value="elegante">Elegante · Serif</option>
+                        <option value="moderna">Minimalista · Sans</option>
+                        <option value="manuscrita">Manuscrita</option>
+                      </select>
+                    </label>
+                    <label className="text-xs font-semibold text-gray-800">Posición del texto
+                      <select value={engravingPosition} onChange={(e) => {
+                          const value = e.target.value as typeof engravingPosition;
+                          setEngravingPosition(value);
+                          setTextPlacement({ x: 10, y: value === "superior" ? 17 : value === "inferior" ? 77 : 50 });
+                        }}
+                        className="mt-1 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm">
+                        <option value="superior">Superior</option>
+                        <option value="centro">Centro</option>
+                        <option value="inferior">Inferior</option>
+                      </select>
+                    </label>
+                  </div>
+                  <p className="text-xs leading-5 text-gray-600">
+                    Arrastra el texto en la vista previa para ajustar su posición. El grabado se representa tono sobre tono.
+                    {engravingText.trim() && ` Coordenadas: X ${(textPlacement.x * matDimensions.width / 100).toFixed(1)} cm · Y ${(textPlacement.y * matDimensions.height / 100).toFixed(1)} cm.`}
+                  </p>
+                </div>
+                <p className="mb-2 text-xs font-semibold text-gray-600">O sube un logo o diseño</p>
 
                 <label className="flex min-h-14 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-center transition hover:border-gray-500 sm:rounded-3xl sm:px-5 sm:py-8">
                   <input
@@ -883,6 +954,29 @@ export default function MatCustomizer() {
                         )}
                       </Group>
 
+                      {engravingText.trim() && (
+                        <KonvaText
+                          text={engravingText.trim()}
+                          x={matX + matWidth * textPlacement.x / 100}
+                          y={matY + matHeight * textPlacement.y / 100}
+                          width={matWidth * 0.8}
+                          height={Math.max(18, matWidth * 0.18)}
+                          fontFamily={engravingFonts[engravingFont]}
+                          fontSize={Math.max(12, matWidth * 0.115)}
+                          fill={engravingColor}
+                          align="center"
+                          verticalAlign="middle"
+                          draggable
+                          dragBoundFunc={(pos) => ({
+                            x: Math.max(matX + matWidth * 0.05, Math.min(matX + matWidth * 0.15, pos.x)),
+                            y: Math.max(matY + matHeight * 0.12, Math.min(matY + matHeight * 0.80, pos.y)),
+                          })}
+                          onDragEnd={(e) => setTextPlacement({
+                            x: Math.round((e.target.x() - matX) / matWidth * 1000) / 10,
+                            y: Math.round((e.target.y() - matY) / matHeight * 1000) / 10,
+                          })}
+                        />
+                      )}
                       {logos.map((logo) => (
                         <LogoImage
                           key={logo.id}
