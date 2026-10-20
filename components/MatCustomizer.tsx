@@ -561,13 +561,27 @@ export default function MatCustomizer() {
 
       reader.onload = async () => {
         const original = String(reader.result);
-        // SVG ya contiene sus propias transparencias y formas vectoriales.
         let src = original;
+
         if (file.type !== "image/svg+xml") {
-          // Potrace puede cerrar huecos interiores de letras (o, a, e, etc.).
-          // Priorizar la limpieza original, que conserva los trazos del logo.
-          src = await removePlainWhiteBackground(original);
+          try {
+            setUploadMessage("Trazando tu logo…");
+            const response = await fetch("/api/trace-logo", {
+              method: "POST",
+              headers: { "Content-Type": file.type || "application/octet-stream" },
+              body: file,
+            });
+            if (!response.ok) throw new Error("No se pudo trazar el logo");
+            const traced = await response.json() as { previewPng?: string };
+            if (!traced.previewPng) throw new Error("No se recibió el trazado");
+            src = "data:image/png;base64," + traced.previewPng;
+          } catch (error) {
+            console.warn("Logo requiere revisión manual:", error);
+            setUploadMessage("No pudimos trazar automáticamente este logo. Podemos revisarlo contigo por WhatsApp; también puedes continuar tu compra.");
+            return;
+          }
         }
+
         const newLogo: LogoItem = {
           id: crypto.randomUUID(),
           src,
@@ -576,11 +590,10 @@ export default function MatCustomizer() {
           widthPercent: 25,
           rotation: 0,
         };
-
         setLogos((prev) => [...prev, newLogo]);
         setSelectedLogoId(newLogo.id);
+        setUploadMessage(file.type === "image/svg+xml" ? "Logo SVG cargado" : "Logo trazado automáticamente");
       };
-
       reader.readAsDataURL(file);
     });
   };
