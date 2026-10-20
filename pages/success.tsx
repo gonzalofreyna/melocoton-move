@@ -56,7 +56,7 @@ export default function SuccessPage({
   const pdfRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [whatsAppDesign, setWhatsAppDesign] = useState<null | {
-    text?: string; font?: string; position?: string; xCm?: number; yCm?: number;
+    texts?: Array<{text:string;font:string;position:string;xCm:number;yCm:number}>;
     shape?: string; finish?: string; quantity?: number; logoCount?: number;
   }>(null);
 
@@ -77,12 +77,9 @@ export default function SuccessPage({
       "Cantidad: " + (d.quantity ?? "por confirmar"),
       "Forma: " + (d.shape ?? "por confirmar"),
       "Color / acabado: " + (d.finish ?? "por confirmar"),
-      "Texto a grabar: " + (d.text || "Sin texto"),
-      ...(d.text ? [
-        "Tipografía: " + (d.font ?? "por confirmar"),
-        "Posición: " + (d.position ?? "libre"),
-        "Coordenadas aproximadas desde la esquina superior izquierda: X " + (d.xCm ?? "—") + " cm; Y " + (d.yCm ?? "—") + " cm",
-      ] : []),
+      ...(d.texts?.length ? d.texts.map((t,i) =>
+        "Texto "+(i+1)+": "+t.text+" · Fuente: "+t.font+" · Posición: "+t.position+
+        " · X: "+t.xCm+" cm · Y: "+t.yCm+" cm (desde esquina superior izquierda)") : ["Sin texto a grabar"]),
       "Logos / imágenes agregadas: " + (d.logoCount ?? 0),
       "Adjuntaré la imagen de referencia si incluí un logo o diseño.",
       "Por favor, confirmen los detalles antes del grabado.",
