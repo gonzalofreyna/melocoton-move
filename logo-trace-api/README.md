@@ -1,26 +1,36 @@
-# Melocotón Logo Trace — independent AWS Lambda
+# Melocotón Logo Trace — AWS Lambda independiente (ZIP)
 
-The code stays in the same GitHub repository, but is deployed independently as a Lambda **container image**. It is NOT imported by Next.js or AWS Amplify Hosting.
+El código permanece en el mismo repositorio, pero se ejecuta en AWS Lambda, separado de Next.js y Amplify Hosting.
 
-## Deployment
-1. Build the `logo-trace-api/Dockerfile` into a Linux AWS Lambda container image, publish it to ECR, and create/update the Lambda from that image.
-2. Expose the function with an API Gateway HTTP API route `POST /trace` and CORS preflight `OPTIONS /trace`, or an equivalent HTTPS endpoint that passes API Gateway v2 events.
-3. Configure `ALLOWED_ORIGIN` on Lambda with the exact browser origin. For local testing use `http://localhost:3000`; for production use the actual storefront domain. A single-origin configuration needs extending before testing a second origin. Configure CORS on the gateway to allow the same origin, POST/OPTIONS, and the Content-Type header.
-4. Set `NEXT_PUBLIC_LOGO_TRACE_API_URL` in the frontend environment (local `.env.local` and in Amplify environment variables before production deployment) to the **complete** HTTPS URL ending in `/trace`. Restart or rebuild Next.js after changing it.
+## Infraestructura de pruebas
+- Lambda: `melocoton-logo-trace` (Node.js 22.x, x86_64, 1024 MB, timeout 30 s, handler `index.handler`).
+- API Gateway HTTP API: `POST https://fl1yl99528.execute-api.us-east-1.amazonaws.com/default/trace`.
+- CORS del gateway: permitir `http://localhost:3000`, método POST y header Content-Type; antes de publicar, añadir el dominio real de la tienda.
+- La respuesta JSON contiene `previewPng`, un PNG con transparencia codificado en base64.
 
-The editor uploads raster PNG/JPG/WEBP to that URL. SVG is used directly. The response uses `previewPng` (base64 transparent PNG). On failure, the original image stays available for manual review; checkout is never blocked.
+## Conectar la web local
+Agregar en el `.env.local` de la raíz del repositorio:
 
-## Local isolated API testing
-```bash
-cd logo-trace-api
-npm install --include=optional
-ALLOWED_ORIGIN=http://localhost:3000 npm start
+```env
+NEXT_PUBLIC_LOGO_TRACE_API_URL=https://fl1yl99528.execute-api.us-east-1.amazonaws.com/default/trace
 ```
-Then set `NEXT_PUBLIC_LOGO_TRACE_API_URL=http://localhost:8080/trace` in the Next.js root `.env.local`.
 
-## Cautions
-- Never embed AWS keys in `NEXT_PUBLIC_*` variables.
-- Binary trace results can alter holes and fine lines; review real logos and test before enabling the feature in production.
-- The service does not persist user logos; it processes them in memory.
-- There is no ZIP to upload when using the provided Dockerfile; the standard path is ECR + Lambda container image.
-- Avoid merging until actual AWS tracing and checkout have been tested.
+Reiniciar `npm run dev`. El componente `components/MatCustomizer.tsx` ya consume esta variable; no hay servidor Next.js adicional para procesar logos. Para producción, configurar la misma variable en Amplify **antes de compilar**, después de comprobar seguridad, CORS y calidad.
+
+## Preparar actualizaciones del ZIP desde macOS Apple Silicon
+
+Desde la raíz del proyecto:
+
+```bash
+mkdir -p lambda-package
+cp logo-trace-api/package.json lambda-package/package.json
+npm install --prefix lambda-package --omit=dev --include=optional --os=linux --cpu=x64 --libc=glibc
+cp logo-trace-api/src/process.mjs lambda-package/process.mjs
+```
+
+Crear `lambda-package/index.mjs` con una exportación `handler` que lea el cuerpo binario de API Gateway v2 (`event.isBase64Encoded`) y llame a `traceLogo`. El `index.mjs` subido a AWS por consola es la fuente de verdad del handler actual; **el antiguo `src/lambda.mjs` del proyecto no es idéntico y no debe sustituirlo sin adaptarlo**. Crear ZIP con `index.mjs`, `process.mjs`, `package.json` y `node_modules/` en la raíz, y subirlo por la consola Lambda (Code → Upload from → .zip file). Los artefactos locales están ignorados por Git.
+
+## Validación
+Una solicitud `curl` con Content-Type image/png a la ruta de API Gateway respondió HTTP 200 y `previewPng`. Eso confirma el funcionamiento del procesador desde línea de comandos, **no valida todavía CORS del navegador, fidelidad de todos los logos, ni despliegue de Amplify**.
+
+No persistimos archivos de logos ni los almacenamos en S3. El editor mantiene la compra accesible cuando hay un fallo de trazado. Antes de producción: revisar las dependencias con vulnerabilidades, limitar solicitudes/tamaño, configurar alertas de costes y probar trazados reales y el checkout.
