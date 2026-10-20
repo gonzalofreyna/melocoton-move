@@ -925,30 +925,6 @@ export default function MatCustomizer() {
                       </label>
                       {uploadMessage && <p role="status" className="text-sm text-green-700">{uploadMessage}</p>}
                       {logos.length > 0 && <p className="text-sm font-semibold text-gray-700">{logos.length} {logos.length === 1 ? "archivo cargado" : "archivos cargados"} ✓</p>}
-                      {selectedLogo && (
-                        <div className="rounded-xl border border-brand-line bg-white p-3">
-                          <div className="flex items-center justify-between">
-                            <label htmlFor="mobile-logo-size" className="text-sm font-semibold text-gray-800">Tamaño de tu logo</label>
-                            <button type="button" onClick={removeSelectedLogo} className="min-h-10 text-xs font-semibold text-red-700">Eliminar logo</button>
-                          </div>
-                          <div className="mt-2 flex items-center gap-3">
-                            <span className="text-xs text-gray-500">−</span>
-                            <input id="mobile-logo-size" type="range" min="5" max="100" step="1" value={selectedLogo.widthPercent}
-                              onChange={e=>updateLogo({...selectedLogo,widthPercent:Number(e.target.value)})}
-                              className="min-h-11 w-full accent-brand-wine" aria-label="Agrandar o reducir logo"/>
-                            <span className="text-xs text-gray-500">+</span>
-                          </div>
-                          <div className="mt-3 flex items-center justify-between gap-2">
-                             <span className="text-sm font-semibold text-gray-800">Girar logo</span>
-                             <div className="flex items-center gap-2">
-                               <button type="button" aria-label="Girar 45 grados a la izquierda" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+315)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↶</button>
-                               <span className="min-w-12 text-center text-sm font-semibold tabular-nums">{selectedLogo.rotation}°</span>
-                               <button type="button" aria-label="Girar 45 grados a la derecha" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+45)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↷</button>
-                             </div>
-                           </div>
-                           <p className="text-xs text-gray-600">Podrás moverlo sobre el tapete en la vista previa.</p>
-                        </div>
-                      )}
                       <button type="button" onClick={()=>setPersonalizeMode("text")} className="min-h-11 w-full text-sm font-medium text-brand-wine">También quiero escribir un nombre →</button>
                     </div>
                   )}
@@ -1280,37 +1256,28 @@ export default function MatCustomizer() {
               </div>
 
               {selectedLogo && (
-                <div className="mt-3 hidden rounded-xl border border-gray-200 bg-brand-sand p-3 sm:mt-4 sm:p-4 lg:block">
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-900">Ajusta tu logo</h3>
-                      <p className="text-xs text-gray-500">Los cambios se ven arriba, en tu mat.</p>
-                    </div>
-                    <button type="button" onClick={removeSelectedLogo} className="shrink-0 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600">
-                      Eliminar
-                    </button>
+                <div className="mt-2 rounded-xl border border-brand-line bg-white p-3 sm:mt-3" aria-label="Ajustar logo seleccionado">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-brand-ink">Ajusta tu logo</span>
+                    <button type="button" onClick={removeSelectedLogo} className="min-h-10 px-2 text-xs font-semibold text-red-700">Eliminar</button>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="mb-1 flex justify-between gap-2 text-xs font-medium text-gray-700">
-                        <span>Tamaño</span><span>{selectedLogo.widthPercent}%</span>
-                      </span>
-                      <input type="range" min="5" max="100" value={selectedLogo.widthPercent}
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2 sm:items-center">
+                    <label className="block min-w-0">
+                      <span className="flex justify-between text-xs font-medium text-gray-700"><span>Tamaño</span><span>{selectedLogo.widthPercent}%</span></span>
+                      <input type="range" min="5" max="100" step="1" value={selectedLogo.widthPercent}
                         aria-label="Tamaño del logo"
-                        onChange={(e) => updateLogo({ ...selectedLogo, widthPercent: Number(e.target.value) })}
-                        className="h-8 w-full accent-brand-wine" />
+                        onChange={e=>updateLogo({...selectedLogo,widthPercent:Number(e.target.value)})}
+                        className="mt-1 min-h-10 w-full accent-brand-wine"/>
                     </label>
                     <div className="flex items-center justify-between gap-2">
-                       <span className="text-xs font-medium text-gray-700">Girar logo · {selectedLogo.rotation}°</span>
-                       <div className="flex gap-2">
-                         <button type="button" aria-label="Girar 45 grados a la izquierda" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+315)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↶</button>
-                         <button type="button" aria-label="Girar 45 grados a la derecha" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+45)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↷</button>
-                       </div>
-                     </div>
+                      <span className="text-xs font-medium text-gray-700">Girar · {selectedLogo.rotation}°</span>
+                      <div className="flex items-center gap-2">
+                        <button type="button" aria-label="Girar 45 grados a la izquierda" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+315)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↶</button>
+                        <button type="button" aria-label="Girar 45 grados a la derecha" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+45)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↷</button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-gray-500">
-                    También puedes tocar y arrastrar el logo sobre el mat.
-                  </p>
+                  <p className="mt-1 text-xs text-gray-500">Arrastra el logo sobre el tapete para colocarlo.</p>
                 </div>
               )}
 
