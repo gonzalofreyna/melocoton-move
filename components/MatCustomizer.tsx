@@ -563,10 +563,11 @@ export default function MatCustomizer() {
         const original = String(reader.result);
         let src = original;
 
-        if (file.type !== "image/svg+xml") {
+        const traceUrl = process.env.NEXT_PUBLIC_LOGO_TRACE_API_URL;
+        if (file.type !== "image/svg+xml" && traceUrl) {
           try {
             setUploadMessage("Trazando tu logo…");
-            const response = await fetch("/api/trace-logo", {
+            const response = await fetch(traceUrl, {
               method: "POST",
               headers: { "Content-Type": file.type || "application/octet-stream" },
               body: file,
@@ -581,6 +582,9 @@ export default function MatCustomizer() {
           }
         }
 
+        if (file.type !== "image/svg+xml" && !traceUrl) {
+          setUploadMessage("Logo cargado. Cuando conectemos el procesador AWS se trazará automáticamente; puedes continuar la compra.");
+        }
         const newLogo: LogoItem = {
           id: crypto.randomUUID(),
           src,
