@@ -1,20 +1,26 @@
-# Logo tracing module for Next.js / Amplify Hosting
+# Melocotón Logo Trace — independent AWS Lambda
 
-The logo tracing module lives in this repository and runs inside Next.js, using the **same-origin** `POST /api/trace-logo` route defined in `pages/api/trace-logo.js`. It does not require a separately deployed AWS Lambda, API Gateway, S3 or Docker image.
+The code stays in the same GitHub repository, but is deployed independently as a Lambda **container image**. It is NOT imported by Next.js or AWS Amplify Hosting.
 
-The root package's `predev` and `prebuild` install the dependencies inside this folder. Amplify Hosting must deploy Next.js with SSR support (not static export), Node 20, and must run `npm run build` so the prebuild script executes. Test the live Amplify deployment after publishing.
+## Deployment
+1. Build the `logo-trace-api/Dockerfile` into a Linux AWS Lambda container image, publish it to ECR, and create/update the Lambda from that image.
+2. Expose the function with an API Gateway HTTP API route `POST /trace` and CORS preflight `OPTIONS /trace`, or an equivalent HTTPS endpoint that passes API Gateway v2 events.
+3. Configure `ALLOWED_ORIGIN` on Lambda with the exact browser origin. For local testing use `http://localhost:3000`; for production use the actual storefront domain. A single-origin configuration needs extending before testing a second origin. Configure CORS on the gateway to allow the same origin, POST/OPTIONS, and the Content-Type header.
+4. Set `NEXT_PUBLIC_LOGO_TRACE_API_URL` in the frontend environment (local `.env.local` and in Amplify environment variables before production deployment) to the **complete** HTTPS URL ending in `/trace`. Restart or rebuild Next.js after changing it.
 
-## Local test
+The editor uploads raster PNG/JPG/WEBP to that URL. SVG is used directly. The response uses `previewPng` (base64 transparent PNG). On failure, the original image stays available for manual review; checkout is never blocked.
+
+## Local isolated API testing
 ```bash
-# from repository root:
-npm run dev
+cd logo-trace-api
+npm install --include=optional
+ALLOWED_ORIGIN=http://localhost:3000 npm start
 ```
-No second terminal or `NEXT_PUBLIC_LOGO_TRACE_API_URL` is necessary; remove the old variable from `.env.local`.
+Then set `NEXT_PUBLIC_LOGO_TRACE_API_URL=http://localhost:8080/trace` in the Next.js root `.env.local`.
 
-The API accepts raw PNG/JPG/WEBP in a POST request with its image content type, max 5 MB, returning a base64 transparent PNG as `previewPng`. SVG files bypass this API in the editor. On processing errors the editor falls back to its browser-side cleanup with a visible message; payment remains accessible.
-
-Images are processed in memory and not stored. This is a bitmap-to-vector approximation intended for preview, **not** a guarantee of laser-ready production art. Review detailed or multicolor logos.
-
-Legacy standalone Lambda, server and Docker scaffolding remains in `src/lambda.mjs`, `src/server.mjs` and `Dockerfile` for now, but none of them runs in Amplify. They can be removed in a separate cleanup after deployment verification.
-
-Before merging, test `npm run build`, uploads through `/api/trace-logo`, downloads, and the checkout flow locally, then validate deployment in an Amplify preview environment.
+## Cautions
+- Never embed AWS keys in `NEXT_PUBLIC_*` variables.
+- Binary trace results can alter holes and fine lines; review real logos and test before enabling the feature in production.
+- The service does not persist user logos; it processes them in memory.
+- There is no ZIP to upload when using the provided Dockerfile; the standard path is ECR + Lambda container image.
+- Avoid merging until actual AWS tracing and checkout have been tested.
