@@ -97,24 +97,50 @@ export default function PromoModal() {
               <span aria-hidden="true" className="text-2xl leading-none">×</span>
             </button>
             {image ? (
-              <a href={promo?.imageLink || destination} aria-label="Personalizar un tapete para regalar" className="flex min-h-0 w-full flex-shrink-0 items-center justify-center bg-[#F6EDE7] md:w-[52%]">
-                <img src={image} alt={imageAlt}
-                  className="block h-auto max-h-[64dvh] w-auto max-w-full object-contain md:max-h-[min(78dvh,620px)]" />
-              </a>
+              <>
+                {/* Móvil: creativo Story 9:16 sin bordes ni recortes, con CTA superpuesto */}
+                <div className="relative w-full md:hidden">
+                  <a href={promo?.imageLink || destination} aria-label="Personalizar un tapete para regalar" className="block">
+                    <img src={image} alt={imageAlt} className="block h-auto w-full" />
+                  </a>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent" />
+                  <a href={destination}
+                    className="absolute inset-x-5 bottom-4 flex min-h-12 items-center justify-center rounded-full bg-[#741D32] px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#60202D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                    {promo?.buttonText || "Personalizar un tapete"}
+                  </a>
+                  <h2 id="holiday-modal-title" className="sr-only">{title}</h2>
+                  <p id="holiday-modal-description" className="sr-only">{description}</p>
+                </div>
+                {/* Escritorio: imagen a la izquierda y contenido a la derecha */}
+                <a href={promo?.imageLink || destination} aria-label="Personalizar un tapete para regalar"
+                   className="hidden min-h-0 bg-[#F6EDE7] md:flex md:w-[52%] md:items-center md:justify-center">
+                  <img src={image} alt={imageAlt} className="block max-h-[min(78dvh,620px)] w-full object-contain" />
+                </a>
+                <div className="hidden w-full flex-col items-center justify-center px-8 py-9 text-center text-[#50383B] md:flex md:w-[48%]">
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#956569]">Navidad con Melocotón</p>
+                  <h2 className="font-serif text-4xl leading-[1.12]">{title}</h2>
+                  <p className="mt-4 max-w-[290px] text-[15px] leading-relaxed text-[#685356]">{description}</p>
+                  <a href={destination}
+                    className="mt-6 flex min-h-12 w-full max-w-[290px] items-center justify-center rounded-full bg-[#741D32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#60202D]">
+                    {promo?.buttonText || "Personalizar un tapete"}
+                  </a>
+                </div>
+              </>
             ) : (
-              <div className="flex h-[135px] w-full flex-shrink-0 items-center justify-center bg-gradient-to-br from-[#F4DCD0] to-[#E6A8A7] px-6 text-center sm:h-[170px] md:h-auto md:min-h-[390px] md:w-[52%]">
-                <span className="font-serif text-3xl italic text-[#741D32]">Un regalo muy suyo.</span>
-              </div>
+              <>
+                <div className="flex h-[135px] w-full flex-shrink-0 items-center justify-center bg-gradient-to-br from-[#F4DCD0] to-[#E6A8A7] px-6 text-center sm:h-[170px] md:h-auto md:min-h-[390px] md:w-[52%]">
+                  <span className="font-serif text-3xl italic text-[#741D32]">Un regalo muy suyo.</span>
+                </div>
+                <div className="flex w-full flex-col items-center justify-center px-5 pb-5 pt-3 text-center text-[#50383B] sm:px-8 sm:py-9 md:w-[48%] md:px-9">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#956569]">Navidad con Melocotón</p>
+                  <h2 id="holiday-modal-title" className="font-serif text-[29px] leading-[1.12] sm:text-4xl">{title}</h2>
+                  <p id="holiday-modal-description" className="mt-4 max-w-[290px] text-[15px] leading-relaxed text-[#685356]">{description}</p>
+                  <a href={destination} className="mt-6 flex min-h-12 w-full max-w-[290px] items-center justify-center rounded-full bg-[#741D32] px-6 py-3 text-sm font-semibold text-white">
+                    {promo?.buttonText || "Personalizar un tapete"}
+                  </a>
+                </div>
+              </>
             )}
-            <div className={`flex w-full flex-col items-center justify-center px-5 pb-5 pt-3 text-center text-[#50383B] sm:px-8 sm:py-9 md:w-[48%] md:px-9 ${image ? "md:py-9" : ""}`}>
-              <p className={`mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#956569] ${image ? "hidden md:block" : ""}`}>Navidad con Melocotón</p>
-              <h2 id="holiday-modal-title" className={`font-serif text-[29px] leading-[1.12] sm:text-4xl ${image ? "sr-only md:not-sr-only" : ""}`}>{title}</h2>
-              <p id="holiday-modal-description" className={`mt-4 max-w-[290px] text-[15px] leading-relaxed text-[#685356] ${image ? "sr-only md:not-sr-only" : ""}`}>{description}</p>
-              <a href={destination} className={`flex min-h-12 w-full max-w-[290px] items-center justify-center ${image ? "mt-1 md:mt-6" : "mt-6"} rounded-full bg-[#741D32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#60202D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#741D32]`}>
-                {promo?.buttonText || "Personalizar un tapete"}
-              </a>
-              <p className={`mt-3 text-xs text-[#80696B] ${image ? "hidden md:block" : ""}`}>Personaliza desde una sola pieza</p>
-            </div>
           </motion.div>
         </motion.div>
       )}
