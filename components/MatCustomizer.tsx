@@ -132,17 +132,34 @@ function getMatRadius(shape: MatShape, width: number) {
 function LogoImage({
   logo,
   matWidth,
+  tintColor,
   selected,
   onSelect,
   onChange,
 }: {
   logo: LogoItem;
   matWidth: number;
+  tintColor: string | null;
   selected: boolean;
   onSelect: () => void;
   onChange: (logo: LogoItem) => void;
 }) {
   const [image] = useImage(logo.src);
+  const tintedImage = useMemo(() => {
+    if (!image || !tintColor || typeof document === "undefined") return image;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx || !canvas.width || !canvas.height) return image;
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "source-in";
+      ctx.fillStyle = tintColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return canvas;
+    } catch { return image; }
+  }, [image, tintColor]);
   const shapeRef = useRef<any>(null);
   const transformerRef = useRef<any>(null);
 
@@ -161,7 +178,7 @@ function LogoImage({
     <>
       <KonvaImage
         ref={shapeRef}
-        image={image}
+        image={tintedImage}
         x={logo.x}
         y={logo.y}
         width={logoWidth}
@@ -411,7 +428,7 @@ export default function MatCustomizer() {
   const matX = (stageWidth - matWidth) / 2;
   const engravingFonts = { elegante: "Georgia", moderna: "Arial", manuscrita: "cursive" };
   const engravingColor = finish.type === "solid" && /^#[0-9a-f]{6}$/i.test(finish.value)
-    ? "#" + [1, 3, 5].map((i) => Math.max(0, Math.round(parseInt(finish.value.slice(i, i + 2), 16) * 0.65)).toString(16).padStart(2, "0")).join("")
+    ? "#" + [1, 3, 5].map((i) => Math.max(0, Math.round(parseInt(finish.value.slice(i, i + 2), 16) * 0.4)).toString(16).padStart(2, "0")).join("")
     : "#554b46";
   const matY = Math.round(stageHeight * 0.06);
   const engravingGeometry = (item: EngravingItem) => {
@@ -700,8 +717,8 @@ export default function MatCustomizer() {
               {{quantity:"¿Cuántos tapetes necesitas?",shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Revisa y paga"}[mobileStep]}
             </p>
             {mobileStep === "preview" && <button type="button" onClick={downloadPNG} className="mt-3 min-h-11 w-full rounded-xl border border-brand-wine bg-white px-3 text-sm font-semibold text-brand-wine">Descargar mi diseño PNG</button>}
-            {mobileStep === "preview" && <button type="button" onClick={() => setMobileStep("checkout")}
-              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Revisar compra →</button>}
+            {mobileStep === "preview" && <button type="button" onClick={() => { setMobileStep("checkout"); document.getElementById("mat-checkout")?.scrollIntoView({behavior:"smooth",block:"start"}); }}
+              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Ir a cantidad y pago ↓</button>}
             {mobileStep !== "quantity" && <button type="button" onClick={() => {
               const previous: Record<string, "quantity" | "shape" | "color" | "design" | "preview"> = {shape:"quantity",color:"shape",design:"color",preview:"design",checkout:"preview"};
               setMobileStep(previous[mobileStep]);
@@ -1052,9 +1069,9 @@ export default function MatCustomizer() {
                 <button type="button" onClick={() => setMobileStep("preview")} className="mm-button mt-5 w-full py-3 lg:hidden">Ver mi tapete →</button>
               </div>
             </div>
-            <div className={`order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5 ${mobileStep === "checkout" ? "" : "hidden lg:block"}`}>
+            <div id="mat-checkout" className="order-4 mb-4 scroll-mt-24 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
               <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                Cantidad y pago
+                Comprar tu tapete
               </h2>
 
               <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
@@ -1255,6 +1272,7 @@ export default function MatCustomizer() {
                           key={logo.id}
                           logo={logo}
                           matWidth={matWidth}
+                          tintColor={finish.type === "solid" ? engravingColor : null}
                           selected={logo.id === selectedLogoId}
                           onSelect={() => setSelectedLogoId(logo.id)}
                           onChange={updateLogo}
