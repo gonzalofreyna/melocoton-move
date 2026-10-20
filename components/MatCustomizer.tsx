@@ -318,7 +318,7 @@ export default function MatCustomizer() {
   const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design">("shape");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
+  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("fiveFour");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
