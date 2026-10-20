@@ -610,7 +610,7 @@ export default function MatCustomizer() {
               {{quantity:"¿Cuántos tapetes necesitas?",shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Revisa y paga"}[mobileStep]}
             </p>
             {mobileStep === "preview" && <button type="button" onClick={() => setMobileStep("checkout")}
-              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Continuar a pagar →</button>}
+              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Revisar compra →</button>}
             {mobileStep !== "quantity" && <button type="button" onClick={() => {
               const previous: Record<string, "quantity" | "shape" | "color" | "design" | "preview"> = {shape:"quantity",color:"shape",design:"color",preview:"design",checkout:"preview"};
               setMobileStep(previous[mobileStep]);
@@ -686,7 +686,7 @@ export default function MatCustomizer() {
                     </button>
                   ))}
                 </div>
-                <button type="button" onClick={() => {setMobileStep("color");setFinishPickerOpen(true);}} className="mm-button mt-5 w-full py-3 lg:hidden">Siguiente: elegir color →</button>
+                <button type="button" onClick={() => {setMobileStep("color");setFinishPickerOpen(true);}} className="mm-button mt-5 w-full py-3 lg:hidden">Elegir color →</button>
               </div>
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-5 ${mobileStep === "color" ? "" : "hidden lg:block"}`}>
@@ -767,7 +767,7 @@ export default function MatCustomizer() {
                 <p aria-live="polite" className="mt-2 text-xs text-gray-600">
                   {finish.type === "solid" ? "Color aplicado a la vista previa." : "Textura aplicada a la vista previa."}
                 </p>
-                <button type="button" onClick={() => setMobileStep("design")} className="mm-button mt-5 w-full py-3 lg:hidden">Siguiente: hazlo tuyo →</button>
+                <button type="button" onClick={() => setMobileStep("design")} className="mm-button mt-5 w-full py-3 lg:hidden">Hazlo tuyo →</button>
               </div>
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
@@ -829,6 +829,22 @@ export default function MatCustomizer() {
                       </label>
                       {uploadMessage && <p role="status" className="text-sm text-green-700">{uploadMessage}</p>}
                       {logos.length > 0 && <p className="text-sm font-semibold text-gray-700">{logos.length} {logos.length === 1 ? "archivo cargado" : "archivos cargados"} ✓</p>}
+                      {selectedLogo && (
+                        <div className="rounded-xl border border-brand-line bg-white p-3">
+                          <div className="flex items-center justify-between">
+                            <label htmlFor="mobile-logo-size" className="text-sm font-semibold text-gray-800">Tamaño de tu logo</label>
+                            <button type="button" onClick={removeSelectedLogo} className="min-h-10 text-xs font-semibold text-red-700">Eliminar logo</button>
+                          </div>
+                          <div className="mt-2 flex items-center gap-3">
+                            <span className="text-xs text-gray-500">−</span>
+                            <input id="mobile-logo-size" type="range" min="5" max="100" step="1" value={selectedLogo.widthPercent}
+                              onChange={e=>updateLogo({...selectedLogo,widthPercent:Number(e.target.value)})}
+                              className="min-h-11 w-full accent-brand-wine" aria-label="Agrandar o reducir logo"/>
+                            <span className="text-xs text-gray-500">+</span>
+                          </div>
+                          <p className="text-xs text-gray-600">Podrás moverlo sobre el tapete en la vista previa.</p>
+                        </div>
+                      )}
                       <button type="button" onClick={()=>setPersonalizeMode("text")} className="min-h-11 w-full text-sm font-medium text-brand-wine">También quiero escribir un nombre →</button>
                     </div>
                   )}
