@@ -310,7 +310,8 @@ export default function MatCustomizer() {
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
   const [finishCategory, setFinishCategory] = useState<"solid" | "texture">("solid");
-  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design" | "preview" | "checkout">("shape");
+  const [mobileStep, setMobileStep] = useState<"quantity" | "shape" | "color" | "design" | "preview" | "checkout">("quantity");
+  const [quoteRequested, setQuoteRequested] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
@@ -454,6 +455,7 @@ export default function MatCustomizer() {
       Math.max(1, Math.floor(Number(value) || 1)),
     );
     setQuantity(cleanValue);
+    setQuoteRequested(false);
     setPromotionMode(cleanValue >= 5 ? "fiveFour" : "msi5");
   };
 
@@ -595,24 +597,58 @@ export default function MatCustomizer() {
         <div className="grid gap-3 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
           <nav aria-label="Pasos del personalizador" className="order-1 rounded-2xl bg-brand-sand p-3 lg:hidden">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-brand-ink">Paso {["shape","color","design","preview","checkout"].indexOf(mobileStep) + 1} de 5</p>
-              <p className="text-sm font-bold text-brand-ink">Desde {formatMoney(MAT_PRICE)}</p>
+              <p className="text-xs font-semibold text-brand-ink">Paso {["quantity","shape","color","design","preview","checkout"].indexOf(mobileStep) + 1} de 6</p>
+              <p className="text-xs font-semibold text-brand-ink">Tu tapete, a tu manera</p>
             </div>
-            <div className="grid grid-cols-5 gap-1" aria-hidden="true">
-              {(["shape","color","design","preview","checkout"] as const).map((step,index) => (
-                <span key={step} className={`h-1.5 rounded-full ${["shape","color","design","preview","checkout"].indexOf(mobileStep) >= index ? "bg-brand-wine" : "bg-gray-300"}`} />
+            <div className="grid grid-cols-6 gap-1" aria-hidden="true">
+              {(["quantity","shape","color","design","preview","checkout"] as const).map((step,index) => (
+                <span key={step} className={`h-1.5 rounded-full ${["quantity","shape","color","design","preview","checkout"].indexOf(mobileStep) >= index ? "bg-brand-wine" : "bg-gray-300"}`} />
               ))}
             </div>
             <p className="mt-3 text-sm font-semibold text-brand-ink">
-              {{shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Cantidad y pago"}[mobileStep]}
+              {{quantity:"¿Cuántos tapetes necesitas?",shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Revisa y paga"}[mobileStep]}
             </p>
             {mobileStep === "preview" && <button type="button" onClick={() => setMobileStep("checkout")}
-              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Comprar ahora →</button>}
-            {mobileStep !== "shape" && <button type="button" onClick={() => {
-              const previous: Record<string, "shape" | "color" | "design" | "preview"> = {color:"shape",design:"color",preview:"design",checkout:"preview"};
+              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Continuar a pagar →</button>}
+            {mobileStep !== "quantity" && <button type="button" onClick={() => {
+              const previous: Record<string, "quantity" | "shape" | "color" | "design" | "preview"> = {shape:"quantity",color:"shape",design:"color",preview:"design",checkout:"preview"};
               setMobileStep(previous[mobileStep]);
             }} className="mt-2 min-h-10 text-sm font-semibold text-brand-wine">← Atrás</button>}
           </nav>
+          <div className={`order-2 rounded-2xl border border-brand-line bg-white p-5 shadow-editorial lg:hidden ${mobileStep === "quantity" ? "" : "hidden"}`}>
+            <h2 className="text-lg font-semibold text-brand-ink">Primero, ¿cuántos tapetes te gustaría personalizar?</h2>
+            <p className="mt-2 text-sm text-gray-600">Elige una cantidad para conocer el precio y tu promoción.</p>
+            <div className="mt-5 flex items-center justify-center gap-4">
+              <button type="button" onClick={() => updateMatQuantity(safeQuantity - 1)}
+                disabled={safeQuantity <= 1} aria-label="Quitar un tapete"
+                className="h-12 w-12 rounded-xl border border-gray-300 text-2xl disabled:opacity-40">−</button>
+              <input type="number" min={1} max={99} value={safeQuantity}
+                onChange={e => updateMatQuantity(Number(e.target.value))}
+                aria-label="Cantidad de tapetes"
+                className="h-12 w-20 rounded-xl border border-gray-300 text-center text-xl font-bold" />
+              <button type="button" onClick={() => updateMatQuantity(safeQuantity + 1)}
+                disabled={safeQuantity >= 99} aria-label="Agregar un tapete"
+                className="h-12 w-12 rounded-xl border border-gray-300 text-2xl disabled:opacity-40">+</button>
+            </div>
+            {!quoteRequested ? (
+              <button type="button" onClick={() => setQuoteRequested(true)}
+                className="mm-button mt-5 w-full py-3">Ver mi cotización →</button>
+            ) : (
+              <div className="mt-5" aria-live="polite">
+                <div className="rounded-xl bg-brand-sand p-4">
+                  <p className="text-xs text-gray-700">Tu cotización estimada · sin envío</p>
+                  <p className="mt-1 text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
+                  <p className="mt-2 text-sm font-semibold text-brand-ink">
+                    {promotionMode === "fiveFour" ? "Promoción 5×4 aplicada automáticamente" : "5% de descuento + opción de meses sin intereses"}
+                  </p>
+                  {savings > 0 && <p className="mt-1 text-sm text-green-700">Ahorras {formatMoney(savings)}</p>}
+                  <p className="mt-2 text-xs text-gray-600">Las promociones pueden cambiarse antes de pagar. Los meses sin intereses dependen de la tarjeta.</p>
+                </div>
+                <button type="button" onClick={() => setMobileStep("shape")}
+                  className="mm-button mt-4 w-full py-3">Comenzar a personalizar →</button>
+              </div>
+            )}
+          </div>
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
             <div className="contents lg:block lg:rounded-[2rem] lg:border-0 lg:p-0 lg:shadow-none">
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-6 ${mobileStep === "shape" ? "" : "hidden lg:block"}`}>
