@@ -281,6 +281,59 @@ function MatTexture({
     </Group>
   );
 }
+// Elimina únicamente el fondo casi blanco conectado con el exterior.
+// Conserva el interior del logo, sus trazos blancos aislados y la transparencia original.
+async function removePlainWhiteBackground(source: string): Promise<string> {
+  return new Promise(resolve => {
+    const image = new window.Image();
+    image.onload = () => {
+      try {
+        const ratio = Math.min(1, 1400 / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * ratio));
+        const height = Math.max(1, Math.round(image.naturalHeight * ratio));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) { resolve(source); return; }
+        ctx.drawImage(image, 0, 0, width, height);
+        const frame = ctx.getImageData(0, 0, width, height);
+        const rgba = frame.data;
+        const isWhite = (i: number) => rgba[i * 4 + 3] > 0 &&
+          rgba[i * 4] >= 242 && rgba[i * 4 + 1] >= 242 && rgba[i * 4 + 2] >= 242;
+        const total = width * height;
+        let whiteEdges = 0, visibleEdges = 0;
+        const checkEdge = (i: number) => { if (rgba[i * 4 + 3] > 0) { visibleEdges++; if (isWhite(i)) whiteEdges++; } };
+        for (let x=0;x<width;x++) {checkEdge(x);checkEdge((height-1)*width+x);}
+        for (let y=1;y<height-1;y++) {checkEdge(y*width);checkEdge(y*width+width-1);}
+        // No alteramos imágenes sin fondo claramente blanco: mejor conservar que borrar el diseño.
+        if (visibleEdges === 0 || whiteEdges / visibleEdges < 0.75) { resolve(source); return; }
+        const visited = new Uint8Array(total);
+        const queue = new Int32Array(total);
+        let head = 0, tail = 0;
+        const push = (index: number) => {
+          if (!visited[index] && isWhite(index)) {visited[index]=1;queue[tail++]=index;}
+        };
+        for(let x=0;x<width;x++){push(x);push((height-1)*width+x);}
+        for(let y=1;y<height-1;y++){push(y*width);push(y*width+width-1);}
+        while(head<tail){
+          const index=queue[head++];
+          const x=index%width,y=Math.floor(index/width);
+          if(x>0)push(index-1);
+          if(x+1<width)push(index+1);
+          if(y>0)push(index-width);
+          if(y+1<height)push(index+width);
+        }
+        for(let i=0;i<tail;i++) rgba[queue[i]*4+3]=0;
+        ctx.putImageData(frame,0,0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch {resolve(source);}
+    };
+    image.onerror = () => resolve(source);
+    image.src = source;
+  });
+}
+
 export default function MatCustomizer() {
   const stageRef = useRef<any>(null);
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
@@ -472,10 +525,13 @@ export default function MatCustomizer() {
     Array.from(files).forEach((file) => {
       const reader = new FileReader();
 
-      reader.onload = () => {
+      reader.onload = async () => {
+        const original = String(reader.result);
+        // SVG ya contiene sus propias transparencias y formas vectoriales.
+        const src = file.type === "image/svg+xml" ? original : await removePlainWhiteBackground(original);
         const newLogo: LogoItem = {
           id: crypto.randomUUID(),
-          src: String(reader.result),
+          src,
           x: matX + matWidth * 0.375,
           y: matY + matHeight * 0.4,
           widthPercent: 25,
