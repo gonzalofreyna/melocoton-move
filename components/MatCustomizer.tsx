@@ -288,17 +288,17 @@ export default function MatCustomizer() {
   const [shape, setShape] = useState<MatShape>("bala");
   const [finish, setFinish] = useState<MatFinish>({
     type: "solid",
-    value: "#3D3A3B",
-    label: "Negro carbón",
+    value: "#741D32",
+    label: "Vino",
   });
   const [logos, setLogos] = useState<LogoItem[]>([]);
-  const [engravings, setEngravings] = useState<EngravingItem[]>([{id:"initial",text:"",font:"elegante",position:"centro",sizeCm:3,rotation:0,x:50,y:50}]);
+  const [engravings, setEngravings] = useState<EngravingItem[]>([{id:"initial",text:"",font:"elegante",position:"centro",sizeCm:5,rotation:0,x:50,y:50}]);
   const [selectedTextId, setSelectedTextId] = useState("initial");
   const selectedText = engravings.find(e => e.id === selectedTextId);
   const updateText = (id: string, patch: Partial<EngravingItem>) => setEngravings(items => items.map(item => item.id === id ? {...item,...patch} : item));
   const addText = () => {
     const id = crypto.randomUUID();
-    setEngravings(items => [...items,{id,text:"",font:"elegante",position:"centro",sizeCm:3,rotation:0,x:50,y:50}]);
+    setEngravings(items => [...items,{id,text:"",font:"elegante",position:"centro",sizeCm:5,rotation:0,x:50,y:50}]);
     setSelectedTextId(id);
   };
   const duplicateText = (item: EngravingItem) => {
