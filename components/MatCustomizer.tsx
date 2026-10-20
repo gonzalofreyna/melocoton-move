@@ -283,7 +283,7 @@ function MatTexture({
 }
 // Elimina únicamente el fondo casi blanco conectado con el exterior.
 // Conserva el interior del logo, sus trazos blancos aislados y la transparencia original.
-async // Limpia fondos claros uniformes y conectados a los bordes, incluidos blancos cálidos.
+// Limpia fondos claros uniformes y conectados a los bordes, incluidos blancos cálidos.
 // No sustituye la revisión vectorial previa al grabado.
 function removePlainWhiteBackground(source: string): Promise<string> {
   return new Promise(resolve => {
