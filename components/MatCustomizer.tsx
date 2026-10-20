@@ -538,7 +538,31 @@ export default function MatCustomizer() {
       reader.onload = async () => {
         const original = String(reader.result);
         // SVG ya contiene sus propias transparencias y formas vectoriales.
-        const src = file.type === "image/svg+xml" ? original : await removePlainWhiteBackground(original);
+        let src = original;
+        if (file.type !== "image/svg+xml") {
+          const traceUrl = process.env.NEXT_PUBLIC_LOGO_TRACE_API_URL;
+          if (traceUrl) {
+            try {
+              setUploadMessage("Preparando tu logo…");
+              const response = await fetch(traceUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type || "application/octet-stream" },
+                body: file,
+              });
+              if (!response.ok) throw new Error("Trace failed");
+              const traced = await response.json() as { previewPng?: string };
+              if (!traced.previewPng) throw new Error("Missing traced PNG");
+              src = "data:image/png;base64," + traced.previewPng;
+              setUploadMessage("Logo preparado correctamente");
+            } catch (error) {
+              console.warn("No fue posible procesar el logo automáticamente", error);
+              src = await removePlainWhiteBackground(original);
+              setUploadMessage("Tu logo se cargó, pero no pudimos vectorizarlo. Revisa cómo se ve antes de comprar.");
+            }
+          } else {
+            src = await removePlainWhiteBackground(original);
+          }
+        }
         const newLogo: LogoItem = {
           id: crypto.randomUUID(),
           src,
@@ -675,6 +699,7 @@ export default function MatCustomizer() {
             <p className="mt-3 text-sm font-semibold text-brand-ink">
               {{quantity:"¿Cuántos tapetes necesitas?",shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Revisa y paga"}[mobileStep]}
             </p>
+            {mobileStep === "preview" && <button type="button" onClick={downloadPNG} className="mt-3 min-h-11 w-full rounded-xl border border-brand-wine bg-white px-3 text-sm font-semibold text-brand-wine">Descargar mi diseño PNG</button>}
             {mobileStep === "preview" && <button type="button" onClick={() => setMobileStep("checkout")}
               className="mm-button mt-3 w-full py-3 text-sm font-semibold">Revisar compra →</button>}
             {mobileStep !== "quantity" && <button type="button" onClick={() => {
