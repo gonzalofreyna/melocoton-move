@@ -8,8 +8,8 @@
     "start": "next start",
     "verify:node": "node -e \"const v=+process.versions.node.split('.')[0]; if(v!==20){console.error('❌ Node 20 requerido'); process.exit(1)}\"",
     "preinstall": "npm run verify:node",
-    "prebuild": "npm install --prefix logo-trace-api --omit=dev --no-audit --no-fund",
-    "predev": "npm install --prefix logo-trace-api --omit=dev --no-audit --no-fund"
+    "prebuild": "npm install --include=optional --prefix logo-trace-api --omit=dev --no-audit --no-fund",
+    "predev": "npm install --include=optional --prefix logo-trace-api --omit=dev --no-audit --no-fund"
   },
   "engines": {
     "node": ">=20 <21",
