@@ -310,10 +310,10 @@ export default function MatCustomizer() {
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
   const [finishCategory, setFinishCategory] = useState<"solid" | "texture">("solid");
-  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design">("shape");
+  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design" | "preview" | "checkout">("shape");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("fiveFour");
+  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -454,6 +454,7 @@ export default function MatCustomizer() {
       Math.max(1, Math.floor(Number(value) || 1)),
     );
     setQuantity(cleanValue);
+    setPromotionMode(cleanValue >= 5 ? "fiveFour" : "msi5");
   };
 
   const handleLogoUpload = (files: FileList | null) => {
@@ -592,25 +593,31 @@ export default function MatCustomizer() {
     <section aria-label="Personalizador de tapetes" className="bg-white px-3 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-3 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
-          <nav aria-label="Pasos del personalizador" className="order-2 grid grid-cols-3 gap-1 rounded-2xl bg-brand-sand p-1.5 lg:hidden">
-            {([
-              ["shape", "Forma"],
-              ["color", "Color"],
-              ["design", "Diseño"],
-            ] as const).map(([step, label]) => (
-              <button key={step} type="button"
-                aria-current={mobileStep === step ? "step" : undefined}
-                onClick={() => { setMobileStep(step); if (step === "color") { setFinishPickerOpen(true); setFinishCategory(finish.type); } }}
-                className={`min-h-11 rounded-xl px-1 py-2 text-xs font-semibold transition ${mobileStep === step ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>
-                {label}
-              </button>
-            ))}
+          <nav aria-label="Pasos del personalizador" className="order-1 rounded-2xl bg-brand-sand p-3 lg:hidden">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-brand-ink">Paso {["shape","color","design","preview","checkout"].indexOf(mobileStep) + 1} de 5</p>
+              <p className="text-sm font-bold text-brand-ink">Desde {formatMoney(MAT_PRICE)}</p>
+            </div>
+            <div className="grid grid-cols-5 gap-1" aria-hidden="true">
+              {(["shape","color","design","preview","checkout"] as const).map((step,index) => (
+                <span key={step} className={`h-1.5 rounded-full ${["shape","color","design","preview","checkout"].indexOf(mobileStep) >= index ? "bg-brand-wine" : "bg-gray-300"}`} />
+              ))}
+            </div>
+            <p className="mt-3 text-sm font-semibold text-brand-ink">
+              {{shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Cantidad y pago"}[mobileStep]}
+            </p>
+            {mobileStep === "preview" && <button type="button" onClick={() => setMobileStep("checkout")}
+              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Continuar a cantidad y pago →</button>}
+            {mobileStep !== "shape" && <button type="button" onClick={() => {
+              const previous: Record<string, "shape" | "color" | "design" | "preview"> = {color:"shape",design:"color",preview:"design",checkout:"preview"};
+              setMobileStep(previous[mobileStep]);
+            }} className="mt-2 min-h-10 text-sm font-semibold text-brand-wine">← Atrás</button>}
           </nav>
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
             <div className="contents lg:block lg:rounded-[2rem] lg:border-0 lg:p-0 lg:shadow-none">
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-6 ${mobileStep === "shape" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                  1. Elige la forma
+                  Elige la forma
                 </h2>
 
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -642,11 +649,12 @@ export default function MatCustomizer() {
                     </button>
                   ))}
                 </div>
+                <button type="button" onClick={() => {setMobileStep("color");setFinishPickerOpen(true);}} className="mm-button mt-5 w-full py-3 lg:hidden">Siguiente: elegir color →</button>
               </div>
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-5 ${mobileStep === "color" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                  2. Elige color o textura
+                  Elige color o textura
                 </h2>
                 <button
                   type="button"
@@ -722,11 +730,12 @@ export default function MatCustomizer() {
                 <p aria-live="polite" className="mt-2 text-xs text-gray-600">
                   {finish.type === "solid" ? "Color aplicado a la vista previa." : "Textura aplicada a la vista previa."}
                 </p>
+                <button type="button" onClick={() => setMobileStep("design")} className="mm-button mt-5 w-full py-3 lg:hidden">Siguiente: hazlo tuyo →</button>
               </div>
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                  3. Personaliza tu tapete
+                  Hazlo tuyo: nombre o logo
                 </h2>
                 <div className="mb-4 space-y-3">
                   {engravings.map((item,index) => (
@@ -796,7 +805,7 @@ export default function MatCustomizer() {
                   <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine bg-white px-4 py-2 text-sm font-semibold text-brand-wine">
                     + Añadir otro texto
                   </button>
-                  <p className="text-xs leading-5 text-gray-600">Escribe y mira el resultado arriba. Puedes arrastrar cada texto para acomodarlo. La vista previa es ilustrativa.</p>
+                  <p className="text-xs leading-5 text-gray-600">Puedes mover el texto sobre el tapete. La vista previa es ilustrativa.</p>
                 </div>
                 <p className="mb-2 text-xs font-semibold text-gray-600">O sube un logo o diseño</p>
 
@@ -835,11 +844,12 @@ export default function MatCustomizer() {
                 )}
 
 
+                <button type="button" onClick={() => setMobileStep("preview")} className="mm-button mt-5 w-full py-3 lg:hidden">Ver mi tapete →</button>
               </div>
             </div>
-            <div className="order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
+            <div className={`order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5 ${mobileStep === "checkout" ? "" : "hidden lg:block"}`}>
               <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                4. Cantidad y cotización
+                Cantidad y pago
               </h2>
 
               <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
@@ -950,7 +960,7 @@ export default function MatCustomizer() {
             </div>
           </div>
 
-          <div className="order-1 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:sticky lg:top-28 lg:bg-transparent lg:py-0">
+          <div className={`order-2 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:sticky lg:top-28 lg:bg-transparent lg:py-0 ${["design","preview","checkout"].includes(mobileStep) ? "" : "hidden lg:block"}`}>
             <div className="w-full rounded-2xl border border-brand-line bg-white p-2 shadow-editorial sm:rounded-[2rem] sm:p-4">
               <div className="mb-1 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
