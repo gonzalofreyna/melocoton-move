@@ -1026,7 +1026,7 @@ export default function MatCustomizer() {
                           draggable onClick={() => setSelectedTextId(item.id)} onTap={() => setSelectedTextId(item.id)}
                           dragBoundFunc={pos => ({
                             x: Math.max(matX + matWidth*.02,Math.min(matX+matWidth*.98-g.width,pos.x)),
-                            y: Math.max(matY + matHeight*.12,Math.min(matY+matHeight*.88-g.height,pos.y)),
+                            y: Math.max(matY + matHeight*.12,Math.min(matY+matHeight*.95-g.height,pos.y)),
                           })}
                           onDragEnd={e => updateText(item.id,{
                             position:"libre",
