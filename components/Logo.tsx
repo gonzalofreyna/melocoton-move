@@ -20,7 +20,7 @@ export default function Logo({ className = "", tone = "dark" }: { className?: st
           maskRepeat: "no-repeat",
           maskSize: "contain",
           maskPosition: "center",
-          background: tone === "light" ? "#FFFFFF" : "#3E3236",
+          backgroundColor: tone === "light" ? "#FFFFFF" : "#3E3236",
           backgroundSize: "400% 400%",
           backgroundPosition: "0% 50%",
         }}
