@@ -283,54 +283,64 @@ function MatTexture({
 }
 // Elimina únicamente el fondo casi blanco conectado con el exterior.
 // Conserva el interior del logo, sus trazos blancos aislados y la transparencia original.
-async function removePlainWhiteBackground(source: string): Promise<string> {
+async // Limpia fondos claros uniformes y conectados a los bordes, incluidos blancos cálidos.
+// No sustituye la revisión vectorial previa al grabado.
+function removePlainWhiteBackground(source: string): Promise<string> {
   return new Promise(resolve => {
     const image = new window.Image();
     image.onload = () => {
       try {
-        const ratio = Math.min(1, 1400 / Math.max(image.naturalWidth, image.naturalHeight));
-        const width = Math.max(1, Math.round(image.naturalWidth * ratio));
-        const height = Math.max(1, Math.round(image.naturalHeight * ratio));
+        const scale = Math.min(1, 1400 / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        if (!ctx) { resolve(source); return; }
-        ctx.drawImage(image, 0, 0, width, height);
-        const frame = ctx.getImageData(0, 0, width, height);
-        const rgba = frame.data;
-        const isWhite = (i: number) => rgba[i * 4 + 3] > 0 &&
-          rgba[i * 4] >= 242 && rgba[i * 4 + 1] >= 242 && rgba[i * 4 + 2] >= 242;
-        const total = width * height;
-        let whiteEdges = 0, visibleEdges = 0;
-        const checkEdge = (i: number) => { if (rgba[i * 4 + 3] > 0) { visibleEdges++; if (isWhite(i)) whiteEdges++; } };
-        for (let x=0;x<width;x++) {checkEdge(x);checkEdge((height-1)*width+x);}
-        for (let y=1;y<height-1;y++) {checkEdge(y*width);checkEdge(y*width+width-1);}
-        // No alteramos imágenes sin fondo claramente blanco: mejor conservar que borrar el diseño.
-        if (visibleEdges === 0 || whiteEdges / visibleEdges < 0.75) { resolve(source); return; }
-        const visited = new Uint8Array(total);
-        const queue = new Int32Array(total);
-        let head = 0, tail = 0;
-        const push = (index: number) => {
-          if (!visited[index] && isWhite(index)) {visited[index]=1;queue[tail++]=index;}
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d", {willReadFrequently:true});
+        if (!ctx) {resolve(source);return;}
+        ctx.drawImage(image,0,0,width,height);
+        const pixels=ctx.getImageData(0,0,width,height);
+        const data=pixels.data,total=width*height;
+        const corners=[0,width-1,(height-1)*width,(height*width)-1];
+        const cornerColors=corners.map(i=>[data[4*i],data[4*i+1],data[4*i+2],data[4*i+3]]);
+        const candidates=cornerColors.filter(c=>c[3]>=240 && Math.min(c[0],c[1],c[2])>=198 &&
+          Math.max(c[0],c[1],c[2])-Math.min(c[0],c[1],c[2])<42);
+        if(candidates.length<3){resolve(source);return;}
+        const bg=[0,1,2].map(c=>candidates.reduce((sum,v)=>sum+v[c],0)/candidates.length);
+        const distance=(i:number)=>{
+          const p=i*4;
+          return Math.sqrt((data[p]-bg[0])**2+(data[p+1]-bg[1])**2+(data[p+2]-bg[2])**2);
         };
-        for(let x=0;x<width;x++){push(x);push((height-1)*width+x);}
-        for(let y=1;y<height-1;y++){push(y*width);push(y*width+width-1);}
+        // El fondo debe dominar el marco para no borrar accidentalmente un logo claro.
+        let edges=0,similar=0;
+        const count=(i:number)=>{if(data[i*4+3]>=200){edges++;if(distance(i)<52)similar++;}};
+        for(let x=0;x<width;x++){count(x);count((height-1)*width+x);}
+        for(let y=1;y<height-1;y++){count(y*width);count(y*width+width-1);}
+        if(!edges || similar/edges<0.72){resolve(source);return;}
+        const visited=new Uint8Array(total),queue=new Int32Array(total);
+        let head=0,tail=0;
+        const add=(i:number)=>{
+          if(!visited[i] && data[i*4+3]>0 && distance(i)<65){visited[i]=1;queue[tail++]=i;}
+        };
+        for(let x=0;x<width;x++){add(x);add((height-1)*width+x);}
+        for(let y=1;y<height-1;y++){add(y*width);add(y*width+width-1);}
         while(head<tail){
-          const index=queue[head++];
-          const x=index%width,y=Math.floor(index/width);
-          if(x>0)push(index-1);
-          if(x+1<width)push(index+1);
-          if(y>0)push(index-width);
-          if(y+1<height)push(index+width);
+          const i=queue[head++],x=i%width,y=Math.floor(i/width);
+          if(x>0)add(i-1);if(x+1<width)add(i+1);
+          if(y>0)add(i-width);if(y+1<height)add(i+width);
         }
-        for(let i=0;i<tail;i++) rgba[queue[i]*4+3]=0;
-        ctx.putImageData(frame,0,0);
+        if(tail<total*0.015 || tail>total*0.96){resolve(source);return;}
+        for(let j=0;j<tail;j++){
+          const i=queue[j],p=i*4,d=distance(i);
+          // Suaviza bordes claros de JPG para evitar halos rectangulares.
+          const alpha=d<=28?0:Math.round(255*Math.min(1,(d-28)/37));
+          data[p+3]=Math.min(data[p+3],alpha);
+        }
+        ctx.putImageData(pixels,0,0);
         resolve(canvas.toDataURL("image/png"));
-      } catch {resolve(source);}
+      }catch{resolve(source);}
     };
-    image.onerror = () => resolve(source);
-    image.src = source;
+    image.onerror=()=>resolve(source);
+    image.src=source;
   });
 }
 
@@ -1231,7 +1241,7 @@ export default function MatCustomizer() {
               </div>
 
               {selectedLogo && (
-                <div className="mt-3 rounded-xl border border-gray-200 bg-brand-sand p-3 sm:mt-4 sm:p-4">
+                <div className="mt-3 hidden rounded-xl border border-gray-200 bg-brand-sand p-3 sm:mt-4 sm:p-4 lg:block">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900">Ajusta tu logo</h3>
