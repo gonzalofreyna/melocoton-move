@@ -1,7 +1,7 @@
 // pages/success.tsx
 import { GetServerSideProps } from "next";
 import Head from "next/head";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useCart } from "../context/CartContext";
 import { ADS_CONSENT_EVENT, ADS_CONSENT_KEY } from "../components/AdsConsentBanner";
@@ -55,6 +55,37 @@ export default function SuccessPage({
   const { clearCart, closeCart } = useCart();
   const pdfRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [whatsAppDesign, setWhatsAppDesign] = useState<null | {
+    texts?: Array<{text:string;font:string;position:string;sizeCm?:number;effectiveSizeCm?:number;xCm:number;yCm:number}>;
+    shape?: string; finish?: string; quantity?: number; logoCount?: number;
+  }>(null);
+
+  useEffect(() => {
+    if (!ok || !personalized || !orderId) return;
+    try {
+      const raw = sessionStorage.getItem("melocoton_design_" + orderId);
+      if (raw) setWhatsAppDesign(JSON.parse(raw));
+    } catch {}
+  }, [ok, personalized, orderId]);
+
+  const openWhatsAppDesign = () => {
+    if (!ok || !personalized || !orderId || !whatsAppDesign) return;
+    const d = whatsAppDesign;
+    const lines = [
+      "Hola Melocotón Move, ya realicé el pago de mi tapete personalizado.",
+      "Pago confirmado · Pedido: " + orderId,
+      "Cantidad: " + (d.quantity ?? "por confirmar"),
+      "Forma: " + (d.shape ?? "por confirmar"),
+      "Color / acabado: " + (d.finish ?? "por confirmar"),
+      ...(d.texts?.length ? d.texts.map((t,i) =>
+        "Texto "+(i+1)+": "+t.text+" · Fuente: "+t.font+" · Posición: "+t.position+
+        " · Tamaño: "+(t.effectiveSizeCm ?? t.sizeCm ?? "—")+" cm · X: "+t.xCm+" cm · Y: "+t.yCm+" cm (desde esquina superior izquierda)") : ["Sin texto a grabar"]),
+      "Logos / imágenes agregadas: " + (d.logoCount ?? 0),
+      "Adjuntaré la imagen de referencia si incluí un logo o diseño.",
+      "Por favor, confirmen los detalles antes del grabado.",
+    ];
+    window.open("https://wa.me/523310125501?text=" + encodeURIComponent(lines.join("\n")), "_blank", "noopener,noreferrer");
+  };
 
   useEffect(() => {
     if (!ok || personalized) return;
@@ -294,7 +325,7 @@ export default function SuccessPage({
             <p><strong>Promoción:</strong> {promotion === "msi5" ? "5% de descuento con opción de MSI" : "5×4 sin MSI"}</p>
             <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
             <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el total pagado.</p>
-            <p>Nos pondremos en contacto contigo para confirmar los detalles de tu diseño.</p>
+            <p>Si personalizaste tu tapete, utiliza el botón «Enviar diseño por WhatsApp» para compartir las coordenadas y especificaciones. Confirma el envío del mensaje dentro de WhatsApp.</p>
           </div>
         )}
 
@@ -318,6 +349,17 @@ export default function SuccessPage({
 
       {/* Botones */}
       <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8 sm:justify-end max-w-md w-full">
+        {personalized && whatsAppDesign && (
+          <button onClick={openWhatsAppDesign} type="button"
+            className="w-full sm:w-auto bg-green-700 text-white px-4 py-3 sm:py-2 rounded-xl text-center text-sm font-semibold">
+            Enviar diseño por WhatsApp
+          </button>
+        )}
+        {personalized && !whatsAppDesign && (
+          <p className="w-full text-xs text-amber-800">
+            No encontramos el diseño en este navegador. Contáctanos por WhatsApp e indica tu número de pedido.
+          </p>
+        )}
         {personalized && stripeReceiptUrl && (
           <a href={stripeReceiptUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto border border-brand-blue text-brand-blue px-4 py-3 sm:py-2 rounded-xl text-center text-sm font-medium">Ver comprobante de pago</a>
         )}

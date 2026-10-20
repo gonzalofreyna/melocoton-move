@@ -9,6 +9,7 @@ import {
   Group,
   Image as KonvaImage,
   Transformer,
+  Text as KonvaText,
 } from "react-konva";
 import useImage from "use-image";
 import jsPDF from "jspdf";
@@ -17,6 +18,19 @@ type MatShape = "capsula" | "clasico" | "bala";
 type MatFinish =
   | { type: "solid"; value: string; label: string }
   | { type: "texture"; value: string; label: string };
+type TextPosition = "superior" | "superior-izquierda" | "superior-derecha" | "centro" | "centro-izquierda" | "centro-derecha" | "inferior" | "inferior-izquierda" | "inferior-derecha" | "libre";
+const TEXT_PRESETS: { value: TextPosition; label: string; x: number; y: number }[] = [
+  { value: "superior-izquierda", label: "Arriba izq.", x: 5, y: 18 },
+  { value: "superior", label: "Arriba centro", x: 50, y: 18 },
+  { value: "superior-derecha", label: "Arriba der.", x: 95, y: 18 },
+  { value: "centro-izquierda", label: "Centro izq.", x: 5, y: 50 },
+  { value: "centro", label: "Centro", x: 50, y: 50 },
+  { value: "centro-derecha", label: "Centro der.", x: 95, y: 50 },
+  { value: "inferior-izquierda", label: "Abajo izq.", x: 5, y: 82 },
+  { value: "inferior", label: "Abajo centro", x: 50, y: 82 },
+  { value: "inferior-derecha", label: "Abajo der.", x: 95, y: 82 },
+];
+type EngravingItem = { id: string; text: string; font: "elegante" | "moderna" | "manuscrita"; position: TextPosition; sizeCm: number; rotation: number; x: number; y: number };
 type LogoItem = {
   id: string;
   src: string;
@@ -271,13 +285,26 @@ export default function MatCustomizer() {
   const stageRef = useRef<any>(null);
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
 
-  const [shape, setShape] = useState<MatShape>("capsula");
+  const [shape, setShape] = useState<MatShape>("bala");
   const [finish, setFinish] = useState<MatFinish>({
     type: "solid",
-    value: "#3D3A3B",
-    label: "Negro carbón",
+    value: "#741D32",
+    label: "Vino",
   });
   const [logos, setLogos] = useState<LogoItem[]>([]);
+  const [engravings, setEngravings] = useState<EngravingItem[]>([{id:"initial",text:"",font:"elegante",position:"centro",sizeCm:6,rotation:0,x:50,y:50}]);
+  const [selectedTextId, setSelectedTextId] = useState("initial");
+  const selectedText = engravings.find(e => e.id === selectedTextId);
+  const updateText = (id: string, patch: Partial<EngravingItem>) => setEngravings(items => items.map(item => item.id === id ? {...item,...patch} : item));
+  const addText = () => {
+    const id = crypto.randomUUID();
+    setEngravings(items => [...items,{id,text:"",font:"elegante",position:"centro",sizeCm:6,rotation:0,x:50,y:50}]);
+    setSelectedTextId(id);
+  };
+  const removeText = (id: string) => {
+    setEngravings(items => items.filter(item => item.id !== id));
+    if (selectedTextId === id) setSelectedTextId("");
+  };
   const [selectedLogoId, setSelectedLogoId] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -286,7 +313,7 @@ export default function MatCustomizer() {
   const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design">("shape");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
+  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("fiveFour");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -295,7 +322,7 @@ export default function MatCustomizer() {
       if (!previewWrapRef.current) return;
 
       const availableWidth = previewWrapRef.current.clientWidth;
-      setPreviewWidth(Math.min(window.innerWidth < 640 ? 130 : 420, Math.max(160, availableWidth)));
+      setPreviewWidth(Math.min(window.innerWidth < 640 ? 145 : 420, Math.max(160, availableWidth)));
     };
 
     updatePreviewWidth();
@@ -317,7 +344,23 @@ export default function MatCustomizer() {
   );
 
   const matX = (stageWidth - matWidth) / 2;
+  const engravingFonts = { elegante: "Georgia", moderna: "Arial", manuscrita: "cursive" };
+  const engravingColor = finish.type === "solid" && /^#[0-9a-f]{6}$/i.test(finish.value)
+    ? "#" + [1, 3, 5].map((i) => Math.max(0, Math.round(parseInt(finish.value.slice(i, i + 2), 16) * 0.65)).toString(16).padStart(2, "0")).join("")
+    : "#554b46";
   const matY = Math.round(stageHeight * 0.06);
+  const engravingGeometry = (item: EngravingItem) => {
+    const requestedPx = item.sizeCm * matHeight / matDimensions.height;
+    const estimatedCharsWidth = [...item.text.trim()].reduce((sum,ch) => sum + (ch === " " ? .32 : .58), 0);
+    const actualFontSize = Math.min(requestedPx, matWidth * .90 / Math.max(1, estimatedCharsWidth));
+    const width = Math.min(matWidth * .90, Math.max(actualFontSize, estimatedCharsWidth * actualFontSize));
+    const height = Math.max(8, actualFontSize * 1.35);
+    const left = (matWidth - width) * item.x / 100;
+    const top = (matHeight - height) * item.y / 100;
+    return {width,height,left,top,fontSize:actualFontSize,xCm:Number((left/matWidth*matDimensions.width).toFixed(1)),
+      yCm:Number((top/matHeight*matDimensions.height).toFixed(1)),
+      effectiveSizeCm:Number((actualFontSize/matHeight*matDimensions.height).toFixed(1))};
+  };
 
   const selectedLogo = logos.find((logo) => logo.id === selectedLogoId);
   const safeQuantity = Math.min(99, Math.max(1, Math.floor(quantity || 1)));
@@ -378,6 +421,25 @@ export default function MatCustomizer() {
         destination.hostname.endsWith(".checkout.stripe.com")
       )) {
         throw new Error("La respuesta de pago no es válida.");
+      }
+      // Diseño temporal por sesión de Stripe; no se persiste en la base de datos.
+      // La confirmación solo podrá abrirse en este mismo navegador.
+      const sessionId = destination.pathname.match(/cs_(?:live|test)_[A-Za-z0-9]+/)?.[0];
+      if (sessionId) {
+        try {
+          sessionStorage.setItem("melocoton_design_" + sessionId, JSON.stringify({
+            texts: engravings.filter(t => t.text.trim()).map(t => ({
+              text:t.text.trim(),font:t.font,position:t.position,sizeCm:t.sizeCm,rotation:t.rotation,
+              xCm:engravingGeometry(t).xCm,
+              yCm:engravingGeometry(t).yCm,
+              effectiveSizeCm:engravingGeometry(t).effectiveSizeCm,
+            })),
+            shape, finish: finish.label, quantity: safeQuantity,
+            logoCount: logos.length,
+          }));
+        } catch (error) {
+          console.warn("No se pudo conservar el diseño temporalmente", error);
+        }
       }
       window.location.assign(destination.toString());
     } catch (error) {
@@ -492,7 +554,8 @@ export default function MatCustomizer() {
       link.click();
 
       const message = [
-        "Hola, quiero comprar un mat personalizado.",
+        "Hola, quiero comprar un tapete personalizado.",
+        ...engravings.filter(t => t.text.trim()).map((t,i) => `Texto ${i+1}: "${t.text.trim()}" · ${t.font} · ${t.position} · alto aprox. ${engravingGeometry(t).effectiveSizeCm} cm · giro ${t.rotation}° · X ${engravingGeometry(t).xCm} cm, Y ${engravingGeometry(t).yCm} cm`),
         "",
         `Forma: ${shape}`,
         `Acabado: ${finish.label}`,
@@ -663,8 +726,79 @@ export default function MatCustomizer() {
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                  3. Sube tu logo o diseño
+                  3. Personaliza tu tapete
                 </h2>
+                <div className="mb-4 space-y-3">
+                  {engravings.map((item,index) => (
+                    <div key={item.id} className="space-y-3 rounded-xl border border-brand-line bg-brand-sand/40 p-3 sm:p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <button type="button" onClick={() => setSelectedTextId(item.id)}
+                          className="text-sm font-semibold text-gray-900">Texto {index+1} {selectedTextId===item.id ? "· Seleccionado" : ""}</button>
+                        <button type="button" onClick={() => removeText(item.id)}
+                          className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700"
+                          aria-label={`Eliminar texto ${index+1}`}>Eliminar</button>
+                      </div>
+                      <label className="block text-xs font-semibold text-gray-800">Nombre, iniciales o frase
+                        <textarea rows={2} maxLength={120} value={item.text} onFocus={() => setSelectedTextId(item.id)}
+                          onChange={e => updateText(item.id,{text:e.target.value})}
+                          placeholder="Ej. Sofía o una frase corta" className="mt-1 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-base text-gray-900"/>
+                      </label>
+                      <p className="text-right text-xs text-gray-500">{item.text.length}/120 caracteres</p>
+                      <label className="block text-xs font-semibold text-gray-800">
+                        Altura aproximada del texto: {item.sizeCm.toFixed(1)} cm
+                        <input type="range" min="0.5" max="6" step="0.1" value={item.sizeCm}
+                          onChange={e => updateText(item.id,{sizeCm:Number(e.target.value)})}
+                          className="mt-2 w-full accent-brand-wine" aria-label={`Tamaño del texto ${index+1}`}/>
+                        <span className="mt-1 flex justify-between text-xs text-gray-500"><span>Pequeño</span><span>Grande</span></span>
+                      </label>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label className="text-xs font-semibold text-gray-800">Tipografía
+                          <select value={item.font} onChange={e => updateText(item.id,{font:e.target.value as EngravingItem["font"]})}
+                            className="mt-1 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm">
+                            <option value="elegante">Elegante · Serif</option><option value="moderna">Minimalista · Sans</option><option value="manuscrita">Manuscrita</option>
+                          </select>
+                        </label>
+                      </div>
+                      <p className="text-xs font-semibold text-gray-800">¿Dónde lo ponemos?</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {TEXT_PRESETS.filter(p=>["superior","centro","inferior"].includes(p.value)).map(preset=>(
+                          <button key={preset.value} type="button"
+                            onClick={()=>updateText(item.id,{position:preset.value,x:preset.x,y:preset.y})}
+                            aria-pressed={item.position===preset.value}
+                            className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-semibold ${item.position===preset.value?"border-brand-wine bg-brand-sand":"border-gray-300 bg-white"}`}>
+                            {preset.value==="superior"?"Arriba":preset.value==="inferior"?"Abajo":"Centro"}
+                          </button>
+                        ))}
+                      </div>
+                      <details className="rounded-xl border border-gray-200 bg-white p-3">
+                        <summary className="cursor-pointer text-sm font-semibold text-gray-800">Más opciones (opcional)</summary>
+                        <p className="mt-3 text-xs font-semibold text-gray-700">Colocar en una esquina</p>
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          {TEXT_PRESETS.filter(p=>!["superior","centro","inferior"].includes(p.value)).map(preset=>(
+                            <button key={preset.value} type="button"
+                              onClick={()=>updateText(item.id,{position:preset.value,x:preset.x,y:preset.y})}
+                              aria-pressed={item.position===preset.value}
+                              className={`min-h-11 rounded-lg border px-1 py-2 text-[11px] ${item.position===preset.value?"border-brand-wine bg-brand-sand":"border-gray-300"}`}>
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                        <label className="mt-4 block text-xs font-semibold text-gray-700">
+                          Girar: {item.rotation}°
+                          <input type="range" min="-90" max="90" step="5" value={item.rotation}
+                            onChange={e=>updateText(item.id,{rotation:Number(e.target.value)})}
+                            className="mt-2 w-full accent-brand-wine" aria-label={`Girar texto ${index+1}`}/>
+                        </label>
+                        <p className="mt-3 text-xs text-gray-600">Coordenadas aproximadas: X {engravingGeometry(item).xCm} cm · Y {engravingGeometry(item).yCm} cm.</p>
+                      </details>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine bg-white px-4 py-2 text-sm font-semibold text-brand-wine">
+                    + Añadir otro texto
+                  </button>
+                  <p className="text-xs leading-5 text-gray-600">Escribe y mira el resultado arriba. Puedes arrastrar cada texto para acomodarlo. La vista previa es ilustrativa.</p>
+                </div>
+                <p className="mb-2 text-xs font-semibold text-gray-600">O sube un logo o diseño</p>
 
                 <label className="flex min-h-14 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-center transition hover:border-gray-500 sm:rounded-3xl sm:px-5 sm:py-8">
                   <input
@@ -710,7 +844,7 @@ export default function MatCustomizer() {
 
               <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
                 <div>
-                  <p className="text-xs text-gray-500 sm:text-sm">Precio por mat</p>
+                  <p className="hidden text-xs text-gray-500 sm:block sm:text-sm">Precio por mat</p>
                   <p className="text-lg font-bold text-gray-900 sm:text-2xl">
                     {formatMoney(MAT_PRICE)}
                   </p>
@@ -798,7 +932,7 @@ export default function MatCustomizer() {
                 aria-busy={checkoutLoading}
                 className="mm-button mt-3 w-full py-4 text-base font-bold disabled:cursor-wait disabled:opacity-60"
               >
-                {checkoutLoading ? "Conectando con Stripe…" : "Comprar ahora"}
+                {checkoutLoading ? "Preparando tu compra…" : "Comprar ahora"}
               </button>
               <button
                 type="button"
@@ -816,9 +950,9 @@ export default function MatCustomizer() {
             </div>
           </div>
 
-          <div className="order-1 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:sticky lg:top-28 lg:bg-transparent lg:py-0">
+          <div className="order-1 sticky top-16 z-20 w-full min-w-0 self-start bg-white py-1 shadow-sm sm:static sm:shadow-none lg:order-2 lg:sticky lg:top-28 lg:z-auto lg:bg-transparent lg:py-0">
             <div className="w-full rounded-2xl border border-brand-line bg-white p-2 shadow-editorial sm:rounded-[2rem] sm:p-4">
-              <div className="mb-2 flex items-center justify-between gap-3 sm:mb-4">
+              <div className="mb-1 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-gray-900 sm:text-lg">
                     Vista previa
@@ -883,6 +1017,24 @@ export default function MatCustomizer() {
                         )}
                       </Group>
 
+                      {engravings.filter(t => t.text.trim()).map(item => {
+                        const g = engravingGeometry(item);
+                        return <KonvaText key={item.id} text={item.text.trim()} rotation={item.rotation}
+                          x={matX+g.left} y={matY+g.top} width={g.width} height={g.height}
+                          fontFamily={engravingFonts[item.font]} fontSize={g.fontSize}
+                          fill={engravingColor} align="center" verticalAlign="middle" wrap="word"
+                          draggable onClick={() => setSelectedTextId(item.id)} onTap={() => setSelectedTextId(item.id)}
+                          dragBoundFunc={pos => ({
+                            x: Math.max(matX + matWidth*.02,Math.min(matX+matWidth*.98-g.width,pos.x)),
+                            y: Math.max(matY + matHeight*.12,Math.min(matY+matHeight*.95-g.height,pos.y)),
+                          })}
+                          onDragEnd={e => updateText(item.id,{
+                            position:"libre",
+                            x:Math.round((e.target.x()-matX)/(matWidth-g.width)*1000)/10,
+                            y:Math.round((e.target.y()-matY)/(matHeight-g.height)*1000)/10,
+                          })}
+                        />;
+                      })}
                       {logos.map((logo) => (
                         <LogoImage
                           key={logo.id}
