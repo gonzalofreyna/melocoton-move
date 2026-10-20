@@ -332,7 +332,7 @@ export default function MatCustomizer() {
     return () => {
       window.removeEventListener("resize", updatePreviewWidth);
     };
-  }, []);
+  }, [mobileStep]);
 
   const matDimensions = MAT_DIMENSIONS[shape];
   const stageWidth = previewWidth;
@@ -607,7 +607,7 @@ export default function MatCustomizer() {
               {{shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Cantidad y pago"}[mobileStep]}
             </p>
             {mobileStep === "preview" && <button type="button" onClick={() => setMobileStep("checkout")}
-              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Continuar a cantidad y pago →</button>}
+              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Comprar ahora →</button>}
             {mobileStep !== "shape" && <button type="button" onClick={() => {
               const previous: Record<string, "shape" | "color" | "design" | "preview"> = {color:"shape",design:"color",preview:"design",checkout:"preview"};
               setMobileStep(previous[mobileStep]);
@@ -899,10 +899,10 @@ export default function MatCustomizer() {
                     <span className="block font-semibold">5% + MSI</span>
                     <span className="mt-1 block text-[11px] font-normal text-gray-600">Meses según tarjeta</span>
                   </button>
-                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} onClick={() => setPromotionMode("fiveFour")}
-                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} disabled={safeQuantity < 5} onClick={() => setPromotionMode("fiveFour")}
+                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
                     <span className="block font-semibold">5×4 · Sin MSI</span>
-                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Lleva 5, paga 4</span>
+                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 tapetes</span>
                   </button>
                 </div>
               </div>
