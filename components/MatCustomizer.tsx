@@ -564,23 +564,9 @@ export default function MatCustomizer() {
         // SVG ya contiene sus propias transparencias y formas vectoriales.
         let src = original;
         if (file.type !== "image/svg+xml") {
-          try {
-            setUploadMessage("Preparando tu logo…");
-            const response = await fetch("/api/trace-logo", {
-              method: "POST",
-              headers: { "Content-Type": file.type || "application/octet-stream" },
-              body: file,
-            });
-            if (!response.ok) throw new Error("Trace failed");
-            const traced = await response.json() as { previewPng?: string };
-            if (!traced.previewPng) throw new Error("Missing traced PNG");
-            src = "data:image/png;base64," + traced.previewPng;
-            setUploadMessage("Logo preparado correctamente");
-          } catch (error) {
-            console.warn("No fue posible procesar el logo automáticamente", error);
-            src = await removePlainWhiteBackground(original);
-            setUploadMessage("Tu logo se cargó, pero no pudimos trazarlo. Revisa cómo se ve antes de comprar.");
-          }
+          // Potrace puede cerrar huecos interiores de letras (o, a, e, etc.).
+          // Priorizar la limpieza original, que conserva los trazos del logo.
+          src = await removePlainWhiteBackground(original);
         }
         const newLogo: LogoItem = {
           id: crypto.randomUUID(),
