@@ -767,28 +767,38 @@ export default function MatCustomizer() {
                           </select>
                         </label>
                       </div>
-                      <details className="rounded-xl border border-gray-200 bg-white p-3">
-                        <summary className="cursor-pointer text-sm font-semibold text-gray-800">Más opciones de diseño</summary>
-                        <label className="mt-3 block text-xs font-semibold text-gray-700">
-                          Girar texto: {item.rotation}°
-                          <input type="range" min="-90" max="90" step="5" value={item.rotation}
-                            onChange={e => updateText(item.id,{rotation:Number(e.target.value)})}
-                            className="mt-2 w-full accent-brand-wine" aria-label={`Girar texto ${index+1}`}/>
-                        </label>
-                        <p className="mt-2 text-xs text-gray-500">Para un grabado recto, deja la rotación en 0°.</p>
-                      </details>
-                      <p className="text-xs font-semibold text-gray-800">¿Dónde quieres el texto?</p>
+                      <p className="text-xs font-semibold text-gray-800">¿Dónde lo ponemos?</p>
                       <div className="grid grid-cols-3 gap-2">
-                        {TEXT_PRESETS.map(preset => (
+                        {TEXT_PRESETS.filter(p=>["superior","centro","inferior"].includes(p.value)).map(preset=>(
                           <button key={preset.value} type="button"
-                            onClick={() => updateText(item.id,{position:preset.value,x:preset.x,y:preset.y})}
-                            aria-pressed={item.position === preset.value}
-                            className={`min-h-10 rounded-lg border px-1 py-2 text-[11px] font-semibold ${item.position===preset.value?"border-brand-wine bg-brand-sand text-brand-ink":"border-gray-300 bg-white text-gray-700"}`}>
-                            {preset.label}
+                            onClick={()=>updateText(item.id,{position:preset.value,x:preset.x,y:preset.y})}
+                            aria-pressed={item.position===preset.value}
+                            className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-semibold ${item.position===preset.value?"border-brand-wine bg-brand-sand":"border-gray-300 bg-white"}`}>
+                            {preset.value==="superior"?"Arriba":preset.value==="inferior"?"Abajo":"Centro"}
                           </button>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-600">Coordenadas desde borde izquierdo/superior: X {engravingGeometry(item).xCm} cm · Y {engravingGeometry(item).yCm} cm. {engravingGeometry(item).effectiveSizeCm < item.sizeCm-.1 && "El texto se ajustó para caber en el ancho del tapete."}</p>
+                      <details className="rounded-xl border border-gray-200 bg-white p-3">
+                        <summary className="cursor-pointer text-sm font-semibold text-gray-800">Más opciones (opcional)</summary>
+                        <p className="mt-3 text-xs font-semibold text-gray-700">Colocar en una esquina</p>
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          {TEXT_PRESETS.filter(p=>!["superior","centro","inferior"].includes(p.value)).map(preset=>(
+                            <button key={preset.value} type="button"
+                              onClick={()=>updateText(item.id,{position:preset.value,x:preset.x,y:preset.y})}
+                              aria-pressed={item.position===preset.value}
+                              className={`min-h-11 rounded-lg border px-1 py-2 text-[11px] ${item.position===preset.value?"border-brand-wine bg-brand-sand":"border-gray-300"}`}>
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                        <label className="mt-4 block text-xs font-semibold text-gray-700">
+                          Girar: {item.rotation}°
+                          <input type="range" min="-90" max="90" step="5" value={item.rotation}
+                            onChange={e=>updateText(item.id,{rotation:Number(e.target.value)})}
+                            className="mt-2 w-full accent-brand-wine" aria-label={`Girar texto ${index+1}`}/>
+                        </label>
+                        <p className="mt-3 text-xs text-gray-600">Coordenadas aproximadas: X {engravingGeometry(item).xCm} cm · Y {engravingGeometry(item).yCm} cm.</p>
+                      </details>
                     </div>
                   ))}
                   <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine bg-white px-4 py-2 text-sm font-semibold text-brand-wine">
