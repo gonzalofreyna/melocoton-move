@@ -2,257 +2,118 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAppConfig } from "../context/ConfigContext";
 
-// === Utilidad de frecuencia ===
-function shouldOpen(frequency: "once" | "always" | "daily", key: string) {
+type Frequency = "once" | "daily" | "always";
+function eligible(frequency: Frequency, key: string): boolean {
   if (frequency === "always") return true;
-  const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
-  if (!raw) return true;
-  if (frequency === "once") return false;
   try {
-    const last = new Date(JSON.parse(raw) as string);
-    const now = new Date();
-    return (
-      last.getFullYear() !== now.getFullYear() ||
-      last.getMonth() !== now.getMonth() ||
-      last.getDate() !== now.getDate()
-    );
+    const raw = localStorage.getItem(key);
+    if (!raw) return true;
+    if (frequency === "once") return false;
+    const previous = new Date(JSON.parse(raw) as string);
+    const today = new Date();
+    return !Number.isFinite(previous.getTime()) ||
+      previous.getFullYear() !== today.getFullYear() ||
+      previous.getMonth() !== today.getMonth() ||
+      previous.getDate() !== today.getDate();
   } catch {
     return true;
   }
 }
 
-function pad(n: number) {
-  return String(Math.max(0, n)).padStart(2, "0");
-}
-
-function getTimeLeft(targetMs: number) {
-  const now = Date.now();
-  const diff = Math.max(0, targetMs - now);
-  const seconds = Math.floor(diff / 1000) % 60;
-  const minutes = Math.floor(diff / (1000 * 60)) % 60;
-  const hours = Math.floor(diff / (1000 * 60 * 60)) % 24;
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return { diff, days, hours, minutes, seconds };
-}
-
 export default function PromoModal() {
   const { config } = useAppConfig();
-
-  // ===== Config lectura
-  const enabled = !!config?.promoModal?.enabled;
-  const title = config?.promoModal?.title ?? "🎉 Lanzamiento";
-  const text =
-    config?.promoModal?.text ?? "Novedades y promociones disponibles.";
-  const buttonText = config?.promoModal?.buttonText ?? "Ver más";
-  const buttonLink = config?.promoModal?.buttonLink ?? "/products";
-  const image = config?.promoModal?.image ?? null;
-  const imageAlt = config?.promoModal?.imageAlt ?? "Promoción";
-  const imageLink = config?.promoModal?.imageLink ?? null;
-  const frequency: "once" | "always" | "daily" =
-    (config?.promoModal?.frequency as any) ?? "once";
-  const storageKey = config?.promoModal?.storageKey ?? "promo_seen_key_v1";
-
-  // Countdown config (nuevo)
-  const countdownEnabled = !!config?.promoModal?.countdown?.enabled;
-  const launchAtStr = config?.promoModal?.countdown?.launchAt; // ISO string recomendado con zona, ej: "2025-09-15T10:00:00-06:00"
-  const afterText =
-    config?.promoModal?.countdown?.afterText ?? "¡Disponible ahora!";
-  const showWhenExpired = !!config?.promoModal?.countdown?.showWhenExpired; // si true, mostramos afterText; si false, ocultamos el bloque
-
-  // ===== Hooks (orden estable)
+  const promo = config?.promoModal;
+  const enabled = !!promo?.enabled;
+  const key = promo?.storageKey || "promo_seen_v1";
+  const frequency: Frequency = promo?.frequency || "once";
   const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [targetMs, setTargetMs] = useState<number | null>(null);
-  const [left, setLeft] = useState(() => ({
-    diff: 0,
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  }));
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
-  // Parseo del launchAt una vez (o cuando cambie en config)
   useEffect(() => {
-    if (launchAtStr) {
-      const t = new Date(launchAtStr).getTime();
-      setTargetMs(isNaN(t) ? null : t);
-    } else {
-      setTargetMs(null);
+    if (!enabled) {
+      setOpen(false);
+      return;
     }
-  }, [launchAtStr]);
-
-  // Mostrar modal según frecuencia
-  useEffect(() => {
-    if (!enabled) return;
-    try {
-      if (shouldOpen(frequency, storageKey)) {
-        setOpen(true);
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify(new Date().toISOString())
-        );
-      }
-    } catch {
+    if (!eligible(frequency, key)) return;
+    // A short delay lets customers orient themselves before seeing the offer.
+    const timer = window.setTimeout(() => {
       setOpen(true);
-    }
-  }, [enabled, frequency, storageKey]);
+      try { localStorage.setItem(key, JSON.stringify(new Date().toISOString())); } catch {}
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [enabled, key, frequency]);
 
-  // Cerrar con ESC / click afuera
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    function onClick(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node))
-        setOpen(false);
-    }
-    if (open) {
-      document.addEventListener("keydown", onKey);
-      document.addEventListener("mousedown", onClick);
-      document.body.classList.add("overflow-hidden");
-    }
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Tab") {
+        const focusables = dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]),a[href]") || [];
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey && document.activeElement === first) {event.preventDefault();last.focus();}
+        else if (!event.shiftKey && document.activeElement === last) {event.preventDefault();first.focus();}
+      }
+    };
+    document.addEventListener("keydown", onEscape);
     return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onClick);
-      document.body.classList.remove("overflow-hidden");
+      document.removeEventListener("keydown", onEscape);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
     };
   }, [open]);
 
-  // Intervalo del countdown
-  useEffect(() => {
-    if (!countdownEnabled || !targetMs) return;
-    // Primera actualización inmediata
-    setLeft(getTimeLeft(targetMs));
-    const id = setInterval(() => setLeft(getTimeLeft(targetMs)), 1000);
-    return () => clearInterval(id);
-  }, [countdownEnabled, targetMs]);
-
   if (!enabled) return null;
-
-  const showCountdown = countdownEnabled && targetMs !== null;
-  const expired = showCountdown ? left.diff <= 0 : false;
+  const destination = promo?.buttonLink || "/crea-tu-mat";
+  const image = promo?.image || null;
+  const imageAlt = promo?.imageAlt || "Tapete personalizado Melocotón Move";
+  const title = promo?.title || "Esta Navidad, regala algo único.";
+  const description = promo?.text || "Elige su color favorito, añade su nombre y crea un tapete hecho especialmente para ella.";
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          aria-modal
-          role="dialog"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 px-3 py-5 backdrop-blur-[2px] sm:px-6"
+          initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+          onMouseDown={event => {if(event.target === event.currentTarget) setOpen(false);}}
         >
           <motion.div
-            ref={wrapperRef}
-            initial={{ scale: 0.96, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.96, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-brand-line bg-brand-cream shadow-editorial-lg"
+            ref={dialogRef}
+            role="dialog" aria-modal="true" aria-labelledby="holiday-modal-title" aria-describedby="holiday-modal-description"
+            initial={{opacity:0,scale:0.97,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.98,y:10}}
+            transition={{duration:0.25}}
+            className="relative grid max-h-[calc(100dvh-2.5rem)] w-full max-w-[760px] overflow-y-auto rounded-[24px] bg-[#FCF8F4] shadow-2xl md:grid-cols-2 md:overflow-hidden"
           >
-            {/* Cerrar */}
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-4 right-4 rounded-full p-2 hover:bg-gray-100"
-              aria-label="Cerrar promoción"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-5 w-5 text-gray-500"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
+            <button ref={closeRef} type="button" onClick={() => setOpen(false)}
+              className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#533A3E] shadow-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#741D32]"
+              aria-label="Cerrar promoción">
+              <span aria-hidden="true" className="text-2xl leading-none">×</span>
             </button>
-
-            {/* Imagen */}
-            {image && (
-              <a
-                href={imageLink ?? buttonLink}
-                aria-label={imageAlt}
-                className="block"
-              >
-                <div className="relative w-full aspect-[16/9] md:aspect-auto md:h-56 overflow-hidden">
-                  <img
-                    src={image}
-                    alt={imageAlt}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
+            {image ? (
+              <a href={promo?.imageLink || destination} aria-label="Personalizar un tapete para regalar" className="block min-h-0">
+                <img src={image} alt={imageAlt}
+                  className="h-[175px] w-full object-cover object-center sm:h-[230px] md:h-full md:min-h-[390px]" />
               </a>
-            )}
-
-            {/* Contenido */}
-            <div className="p-6 md:p-7 text-center">
-              <h2 className="mm-heading text-3xl md:text-4xl">
-                {title}
-              </h2>
-              {text && (
-                <p className="mt-3 text-gray-600 mx-auto max-w-prose">{text}</p>
-              )}
-
-              {/* Countdown */}
-              {showCountdown &&
-                (expired ? (
-                  showWhenExpired ? (
-                    <p className="mt-4 text-base font-medium text-brand-blue">
-                      {afterText}
-                    </p>
-                  ) : null
-                ) : (
-                  <div className="mt-5 flex items-center justify-center">
-                    <div className="grid grid-flow-col auto-cols-max gap-4">
-                      <div className="text-center">
-                        <div className="text-4xl font-bold tabular-nums">
-                          {pad(left.days)}
-                        </div>
-                        <div className="text-xs uppercase tracking-wide text-gray-500">
-                          Días
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-4xl font-bold tabular-nums">
-                          {pad(left.hours)}
-                        </div>
-                        <div className="text-xs uppercase tracking-wide text-gray-500">
-                          Horas
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-4xl font-bold tabular-nums">
-                          {pad(left.minutes)}
-                        </div>
-                        <div className="text-xs uppercase tracking-wide text-gray-500">
-                          Min
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-4xl font-bold tabular-nums">
-                          {pad(left.seconds)}
-                        </div>
-                        <div className="text-xs uppercase tracking-wide text-gray-500">
-                          Seg
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <a
-                  href={buttonLink}
-                  className="mm-button"
-                >
-                  {buttonText}
-                </a>
+            ) : (
+              <div className="flex h-[135px] items-center justify-center bg-gradient-to-br from-[#F4DCD0] to-[#E6A8A7] px-6 text-center sm:h-[170px] md:h-auto">
+                <span className="font-serif text-3xl italic text-[#741D32]">Un regalo muy suyo.</span>
               </div>
+            )}
+            <div className="flex flex-col items-center justify-center px-6 pb-7 pt-5 text-center text-[#50383B] sm:px-8 sm:py-9 md:px-9">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#956569]">Navidad con Melocotón</p>
+              <h2 id="holiday-modal-title" className="font-serif text-[29px] leading-[1.12] sm:text-4xl">{title}</h2>
+              <p id="holiday-modal-description" className="mt-4 max-w-[290px] text-[15px] leading-relaxed text-[#685356]">{description}</p>
+              <a href={destination} className="mt-6 flex min-h-12 w-full max-w-[290px] items-center justify-center rounded-full bg-[#741D32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#60202D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#741D32]">
+                {promo?.buttonText || "Personalizar un tapete"}
+              </a>
+              <p className="mt-3 text-xs text-[#80696B]">Personaliza desde una sola pieza</p>
             </div>
           </motion.div>
         </motion.div>
