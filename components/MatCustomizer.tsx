@@ -30,7 +30,7 @@ const TEXT_PRESETS: { value: TextPosition; label: string; x: number; y: number }
   { value: "inferior", label: "Abajo centro", x: 50, y: 82 },
   { value: "inferior-derecha", label: "Abajo der.", x: 95, y: 82 },
 ];
-type EngravingItem = { id: string; text: string; font: "elegante" | "moderna" | "manuscrita"; position: TextPosition; sizeCm: number; x: number; y: number };
+type EngravingItem = { id: string; text: string; font: "elegante" | "moderna" | "manuscrita"; position: TextPosition; sizeCm: number; rotation: number; x: number; y: number };
 type LogoItem = {
   id: string;
   src: string;
@@ -292,13 +292,18 @@ export default function MatCustomizer() {
     label: "Negro carbón",
   });
   const [logos, setLogos] = useState<LogoItem[]>([]);
-  const [engravings, setEngravings] = useState<EngravingItem[]>([{id:"initial",text:"",font:"elegante",position:"centro",sizeCm:3,x:50,y:50}]);
+  const [engravings, setEngravings] = useState<EngravingItem[]>([{id:"initial",text:"",font:"elegante",position:"centro",sizeCm:3,rotation:0,x:50,y:50}]);
   const [selectedTextId, setSelectedTextId] = useState("initial");
   const selectedText = engravings.find(e => e.id === selectedTextId);
   const updateText = (id: string, patch: Partial<EngravingItem>) => setEngravings(items => items.map(item => item.id === id ? {...item,...patch} : item));
   const addText = () => {
     const id = crypto.randomUUID();
-    setEngravings(items => [...items,{id,text:"",font:"elegante",position:"centro",sizeCm:3,x:50,y:50}]);
+    setEngravings(items => [...items,{id,text:"",font:"elegante",position:"centro",sizeCm:3,rotation:0,x:50,y:50}]);
+    setSelectedTextId(id);
+  };
+  const duplicateText = (item: EngravingItem) => {
+    const id = crypto.randomUUID();
+    setEngravings(prev => [...prev, {...item,id,y:Math.min(90,item.y+9)}]);
     setSelectedTextId(id);
   };
   const removeText = (id: string) => {
@@ -429,7 +434,7 @@ export default function MatCustomizer() {
         try {
           sessionStorage.setItem("melocoton_design_" + sessionId, JSON.stringify({
             texts: engravings.filter(t => t.text.trim()).map(t => ({
-              text:t.text.trim(),font:t.font,position:t.position,sizeCm:t.sizeCm,
+              text:t.text.trim(),font:t.font,position:t.position,sizeCm:t.sizeCm,rotation:t.rotation,
               xCm:engravingGeometry(t).xCm,
               yCm:engravingGeometry(t).yCm,
               effectiveSizeCm:engravingGeometry(t).effectiveSizeCm,
@@ -555,7 +560,7 @@ export default function MatCustomizer() {
 
       const message = [
         "Hola, quiero comprar un tapete personalizado.",
-        ...engravings.filter(t => t.text.trim()).map((t,i) => `Texto ${i+1}: "${t.text.trim()}" · ${t.font} · ${t.position} · alto aprox. ${engravingGeometry(t).effectiveSizeCm} cm · X ${engravingGeometry(t).xCm} cm, Y ${engravingGeometry(t).yCm} cm`),
+        ...engravings.filter(t => t.text.trim()).map((t,i) => `Texto ${i+1}: "${t.text.trim()}" · ${t.font} · ${t.position} · alto aprox. ${engravingGeometry(t).effectiveSizeCm} cm · giro ${t.rotation}° · X ${engravingGeometry(t).xCm} cm, Y ${engravingGeometry(t).yCm} cm`),
         "",
         `Forma: ${shape}`,
         `Acabado: ${finish.label}`,
@@ -734,13 +739,16 @@ export default function MatCustomizer() {
                       <div className="flex items-center justify-between gap-2">
                         <button type="button" onClick={() => setSelectedTextId(item.id)}
                           className="text-sm font-semibold text-gray-900">Texto {index+1} {selectedTextId===item.id ? "· Seleccionado" : ""}</button>
+                        <button type="button" onClick={() => duplicateText(item)}
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-800"
+                          aria-label={`Duplicar texto ${index+1}`}>Duplicar</button>
                         <button type="button" onClick={() => removeText(item.id)}
                           className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700"
                           aria-label={`Eliminar texto ${index+1}`}>Eliminar</button>
                       </div>
                       <label className="block text-xs font-semibold text-gray-800">Nombre, iniciales o frase
-                        <input type="text" maxLength={120} value={item.text} onFocus={() => setSelectedTextId(item.id)}
-                          onChange={e => updateText(item.id,{text:e.target.value.replace(/[\\r\\n]/g,"")})}
+                        <textarea rows={2} maxLength={120} value={item.text} onFocus={() => setSelectedTextId(item.id)}
+                          onChange={e => updateText(item.id,{text:e.target.value})}
                           placeholder="Ej. Sofía o una frase corta" className="mt-1 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-base text-gray-900"/>
                       </label>
                       <p className="text-right text-xs text-gray-500">{item.text.length}/120 caracteres</p>
@@ -759,7 +767,17 @@ export default function MatCustomizer() {
                           </select>
                         </label>
                       </div>
-                      <p className="text-xs font-semibold text-gray-800">Colocación rápida (también puedes arrastrar)</p>
+                      <details className="rounded-xl border border-gray-200 bg-white p-3">
+                        <summary className="cursor-pointer text-sm font-semibold text-gray-800">Más opciones de diseño</summary>
+                        <label className="mt-3 block text-xs font-semibold text-gray-700">
+                          Girar texto: {item.rotation}°
+                          <input type="range" min="-90" max="90" step="5" value={item.rotation}
+                            onChange={e => updateText(item.id,{rotation:Number(e.target.value)})}
+                            className="mt-2 w-full accent-brand-wine" aria-label={`Girar texto ${index+1}`}/>
+                        </label>
+                        <p className="mt-2 text-xs text-gray-500">Para un grabado recto, deja la rotación en 0°.</p>
+                      </details>
+                      <p className="text-xs font-semibold text-gray-800">¿Dónde quieres el texto?</p>
                       <div className="grid grid-cols-3 gap-2">
                         {TEXT_PRESETS.map(preset => (
                           <button key={preset.value} type="button"
@@ -776,7 +794,7 @@ export default function MatCustomizer() {
                   <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine bg-white px-4 py-2 text-sm font-semibold text-brand-wine">
                     + Añadir otro texto
                   </button>
-                  <p className="text-xs leading-5 text-gray-600">Arrastra cada texto en la vista previa. Grabado ilustrado tono sobre tono.</p>
+                  <p className="text-xs leading-5 text-gray-600">Escribe y mira el resultado arriba. Puedes arrastrar cada texto para acomodarlo. La vista previa es ilustrativa.</p>
                 </div>
                 <p className="mb-2 text-xs font-semibold text-gray-600">O sube un logo o diseño</p>
 
@@ -999,10 +1017,10 @@ export default function MatCustomizer() {
 
                       {engravings.filter(t => t.text.trim()).map(item => {
                         const g = engravingGeometry(item);
-                        return <KonvaText key={item.id} text={item.text.trim()}
+                        return <KonvaText key={item.id} text={item.text.trim()} rotation={item.rotation}
                           x={matX+g.left} y={matY+g.top} width={g.width} height={g.height}
                           fontFamily={engravingFonts[item.font]} fontSize={g.fontSize}
-                          fill={engravingColor} align="center" verticalAlign="middle" wrap="none"
+                          fill={engravingColor} align="center" verticalAlign="middle" wrap="word"
                           draggable onClick={() => setSelectedTextId(item.id)} onTap={() => setSelectedTextId(item.id)}
                           dragBoundFunc={pos => ({
                             x: Math.max(matX + matWidth*.02,Math.min(matX+matWidth*.98-g.width,pos.x)),
