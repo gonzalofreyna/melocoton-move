@@ -8,12 +8,10 @@ export async function traceLogo(bytes) {
   if (!Buffer.isBuffer(bytes) || !bytes.length || bytes.length > MAX_BYTES) throw new Error("Archivo demasiado grande o vacío");
   const metadata = await sharp(bytes, { limitInputPixels: 16_000_000 }).metadata();
   if (!["jpeg","png","webp"].includes(metadata.format)) throw new Error("Formato no admitido");
-  const width = Math.min(metadata.width ?? 0, 1600);
-  const height = Math.min(metadata.height ?? 0, 1600);
-  if (!width || !height) throw new Error("Imagen inválida");
+  if (!metadata.width || !metadata.height) throw new Error("Imagen inválida");
   const normalized = await sharp(bytes).rotate().resize({width:1600,height:1600,fit:"inside",withoutEnlargement:true})
-    .flatten({background:"#ffffff"}).grayscale().normalize().png().toBuffer();
-  const { data, info } = await sharp(normalized).raw().toBuffer({resolveWithObject:true});
+    .flatten({background:"#ffffff"}).grayscale().png().toBuffer();
+  const { data } = await sharp(normalized).raw().toBuffer({resolveWithObject:true});
   let dark=0;
   for(let i=0;i<data.length;i++) if(data[i]<180) dark++;
   const ratio=dark/data.length;
