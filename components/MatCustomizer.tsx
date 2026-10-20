@@ -564,7 +564,11 @@ export default function MatCustomizer() {
         let src = original;
 
         const traceUrl = process.env.NEXT_PUBLIC_LOGO_TRACE_API_URL;
-        if (file.type !== "image/svg+xml" && traceUrl) {
+        if (file.type !== "image/svg+xml") {
+          if (!traceUrl) {
+            setUploadMessage("El procesador de logos todavía no está conectado. Puedes continuar tu compra y enviarnos el logo por WhatsApp.");
+            return;
+          }
           try {
             setUploadMessage("Trazando tu logo…");
             const response = await fetch(traceUrl, {
@@ -572,18 +576,15 @@ export default function MatCustomizer() {
               headers: { "Content-Type": file.type || "application/octet-stream" },
               body: file,
             });
-            if (!response.ok) throw new Error("No se pudo trazar el logo");
+            if (!response.ok) throw new Error(`Lambda respondió ${response.status}`);
             const traced = await response.json() as { previewPng?: string };
-            if (!traced.previewPng) throw new Error("No se recibió el trazado");
+            if (!traced.previewPng || !traced.previewPng.startsWith("iVBOR")) throw new Error("No se recibió un PNG válido");
             src = "data:image/png;base64," + traced.previewPng;
           } catch (error) {
-            console.warn("Logo requiere revisión manual:", error);
-            setUploadMessage("Este logo necesita revisión manual. Lo mostraremos sin modificar para que puedas continuar tu diseño y compra.");
+            console.warn("No se pudo obtener el trazado desde AWS:", error);
+            setUploadMessage("No pudimos procesar tu logo ahora. No lo añadimos para evitar que aparezca como un cuadro sólido. Puedes continuar tu compra y enviarnos el archivo por WhatsApp.");
+            return;
           }
-        }
-
-        if (file.type !== "image/svg+xml" && !traceUrl) {
-          setUploadMessage("Logo cargado. Cuando conectemos el procesador AWS se trazará automáticamente; puedes continuar la compra.");
         }
         const newLogo: LogoItem = {
           id: crypto.randomUUID(),
