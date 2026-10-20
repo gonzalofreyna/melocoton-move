@@ -31,3 +31,7 @@ checkout-api/lambda-package/
 checkout-api/*.zip
 # AWS Lambda build artifacts
 shipping-api/*.zip
+
+# Logo tracing Lambda ZIP (local build only)
+lambda-package/
+melocoton-logo-trace.zip

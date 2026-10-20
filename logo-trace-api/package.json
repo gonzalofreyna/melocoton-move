@@ -1,0 +1,14 @@
+{
+  "name": "melocoton-logo-trace-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5",
+    "potrace": "^2.1.8"
+  }
+}

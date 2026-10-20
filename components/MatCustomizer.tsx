@@ -132,23 +132,41 @@ function getMatRadius(shape: MatShape, width: number) {
 function LogoImage({
   logo,
   matWidth,
+  tintColor,
   selected,
   onSelect,
   onChange,
 }: {
   logo: LogoItem;
   matWidth: number;
+  tintColor: string | null;
   selected: boolean;
   onSelect: () => void;
   onChange: (logo: LogoItem) => void;
 }) {
   const [image] = useImage(logo.src);
+  const tintedImage = useMemo(() => {
+    if (!image || !tintColor || typeof document === "undefined") return image;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx || !canvas.width || !canvas.height) return image;
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "source-in";
+      ctx.fillStyle = tintColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return canvas;
+    } catch { return image; }
+  }, [image, tintColor]);
   const shapeRef = useRef<any>(null);
   const transformerRef = useRef<any>(null);
 
   const logoWidth = (matWidth * logo.widthPercent) / 100;
   const ratio = image ? image.height / image.width : 1;
   const logoHeight = logoWidth * ratio;
+  const snapRotation = (degrees: number) => ((Math.round(degrees / 45) * 45) % 360 + 360) % 360;
 
   useMemo(() => {
     if (selected && transformerRef.current && shapeRef.current) {
@@ -161,9 +179,11 @@ function LogoImage({
     <>
       <KonvaImage
         ref={shapeRef}
-        image={image}
-        x={logo.x}
-        y={logo.y}
+        image={tintedImage}
+        x={logo.x + logoWidth / 2}
+        y={logo.y + logoHeight / 2}
+        offsetX={logoWidth / 2}
+        offsetY={logoHeight / 2}
         width={logoWidth}
         height={logoHeight}
         rotation={logo.rotation}
@@ -173,8 +193,8 @@ function LogoImage({
         onDragEnd={(e) => {
           onChange({
             ...logo,
-            x: e.target.x(),
-            y: e.target.y(),
+            x: e.target.x() - logoWidth / 2,
+            y: e.target.y() - logoHeight / 2,
           });
         }}
         onTransformEnd={() => {
@@ -186,12 +206,14 @@ function LogoImage({
 
           const newWidth = Math.max(20, node.width() * scaleX);
           const newPercent = Math.round((newWidth / matWidth) * 100);
+          const boundedWidth = matWidth * Math.min(100, Math.max(5, newPercent)) / 100;
+          const boundedHeight = boundedWidth * ratio;
 
           onChange({
             ...logo,
-            x: node.x(),
-            y: node.y(),
-            rotation: node.rotation(),
+            x: node.x() - boundedWidth / 2,
+            y: node.y() - boundedHeight / 2,
+            rotation: snapRotation(node.rotation()),
             widthPercent: Math.min(100, Math.max(5, newPercent)),
           });
         }}
@@ -201,6 +223,8 @@ function LogoImage({
         <Transformer
           ref={transformerRef}
           rotateEnabled
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={23}
           keepRatio
           enabledAnchors={[
             "top-left",
@@ -281,6 +305,69 @@ function MatTexture({
     </Group>
   );
 }
+// Elimina únicamente el fondo casi blanco conectado con el exterior.
+// Conserva el interior del logo, sus trazos blancos aislados y la transparencia original.
+// Limpia fondos claros uniformes y conectados a los bordes, incluidos blancos cálidos.
+// No sustituye la revisión vectorial previa al grabado.
+function removePlainWhiteBackground(source: string): Promise<string> {
+  return new Promise(resolve => {
+    const image = new window.Image();
+    image.onload = () => {
+      try {
+        const scale = Math.min(1, 1400 / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d", {willReadFrequently:true});
+        if (!ctx) {resolve(source);return;}
+        ctx.drawImage(image,0,0,width,height);
+        const pixels=ctx.getImageData(0,0,width,height);
+        const data=pixels.data,total=width*height;
+        const corners=[0,width-1,(height-1)*width,(height*width)-1];
+        const cornerColors=corners.map(i=>[data[4*i],data[4*i+1],data[4*i+2],data[4*i+3]]);
+        const candidates=cornerColors.filter(c=>c[3]>=240 && Math.min(c[0],c[1],c[2])>=198 &&
+          Math.max(c[0],c[1],c[2])-Math.min(c[0],c[1],c[2])<42);
+        if(candidates.length<3){resolve(source);return;}
+        const bg=[0,1,2].map(c=>candidates.reduce((sum,v)=>sum+v[c],0)/candidates.length);
+        const distance=(i:number)=>{
+          const p=i*4;
+          return Math.sqrt((data[p]-bg[0])**2+(data[p+1]-bg[1])**2+(data[p+2]-bg[2])**2);
+        };
+        // El fondo debe dominar el marco para no borrar accidentalmente un logo claro.
+        let edges=0,similar=0;
+        const count=(i:number)=>{if(data[i*4+3]>=200){edges++;if(distance(i)<52)similar++;}};
+        for(let x=0;x<width;x++){count(x);count((height-1)*width+x);}
+        for(let y=1;y<height-1;y++){count(y*width);count(y*width+width-1);}
+        if(!edges || similar/edges<0.72){resolve(source);return;}
+        const visited=new Uint8Array(total),queue=new Int32Array(total);
+        let head=0,tail=0;
+        const add=(i:number)=>{
+          if(!visited[i] && data[i*4+3]>0 && distance(i)<65){visited[i]=1;queue[tail++]=i;}
+        };
+        for(let x=0;x<width;x++){add(x);add((height-1)*width+x);}
+        for(let y=1;y<height-1;y++){add(y*width);add(y*width+width-1);}
+        while(head<tail){
+          const i=queue[head++],x=i%width,y=Math.floor(i/width);
+          if(x>0)add(i-1);if(x+1<width)add(i+1);
+          if(y>0)add(i-width);if(y+1<height)add(i+width);
+        }
+        if(tail<total*0.015 || tail>total*0.96){resolve(source);return;}
+        for(let j=0;j<tail;j++){
+          const i=queue[j],p=i*4,d=distance(i);
+          // Suaviza bordes claros de JPG para evitar halos rectangulares.
+          const alpha=d<=28?0:Math.round(255*Math.min(1,(d-28)/37));
+          data[p+3]=Math.min(data[p+3],alpha);
+        }
+        ctx.putImageData(pixels,0,0);
+        resolve(canvas.toDataURL("image/png"));
+      }catch{resolve(source);}
+    };
+    image.onerror=()=>resolve(source);
+    image.src=source;
+  });
+}
+
 export default function MatCustomizer() {
   const stageRef = useRef<any>(null);
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
@@ -305,15 +392,17 @@ export default function MatCustomizer() {
     setEngravings(items => items.filter(item => item.id !== id));
     if (selectedTextId === id) setSelectedTextId("");
   };
+  const [personalizeMode, setPersonalizeMode] = useState<"text" | "logo">("text");
   const [selectedLogoId, setSelectedLogoId] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
   const [finishCategory, setFinishCategory] = useState<"solid" | "texture">("solid");
-  const [mobileStep, setMobileStep] = useState<"shape" | "color" | "design">("shape");
+  const [mobileStep, setMobileStep] = useState<"quantity" | "shape" | "color" | "design" | "preview" | "checkout">("quantity");
+  const [quoteRequested, setQuoteRequested] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("fiveFour");
+  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -332,7 +421,7 @@ export default function MatCustomizer() {
     return () => {
       window.removeEventListener("resize", updatePreviewWidth);
     };
-  }, []);
+  }, [mobileStep]);
 
   const matDimensions = MAT_DIMENSIONS[shape];
   const stageWidth = previewWidth;
@@ -346,7 +435,7 @@ export default function MatCustomizer() {
   const matX = (stageWidth - matWidth) / 2;
   const engravingFonts = { elegante: "Georgia", moderna: "Arial", manuscrita: "cursive" };
   const engravingColor = finish.type === "solid" && /^#[0-9a-f]{6}$/i.test(finish.value)
-    ? "#" + [1, 3, 5].map((i) => Math.max(0, Math.round(parseInt(finish.value.slice(i, i + 2), 16) * 0.65)).toString(16).padStart(2, "0")).join("")
+    ? "#" + [1, 3, 5].map((i) => Math.max(0, Math.round(parseInt(finish.value.slice(i, i + 2), 16) * 0.4)).toString(16).padStart(2, "0")).join("")
     : "#554b46";
   const matY = Math.round(stageHeight * 0.06);
   const engravingGeometry = (item: EngravingItem) => {
@@ -454,6 +543,8 @@ export default function MatCustomizer() {
       Math.max(1, Math.floor(Number(value) || 1)),
     );
     setQuantity(cleanValue);
+    setQuoteRequested(false);
+    setPromotionMode(cleanValue >= 5 ? "fiveFour" : "msi5");
   };
 
   const handleLogoUpload = (files: FileList | null) => {
@@ -468,20 +559,45 @@ export default function MatCustomizer() {
     Array.from(files).forEach((file) => {
       const reader = new FileReader();
 
-      reader.onload = () => {
+      reader.onload = async () => {
+        const original = String(reader.result);
+        let src = original;
+
+        const traceUrl = process.env.NEXT_PUBLIC_LOGO_TRACE_API_URL;
+        if (file.type !== "image/svg+xml") {
+          if (!traceUrl) {
+            setUploadMessage("El procesador de logos todavía no está conectado. Puedes continuar tu compra y enviarnos el logo por WhatsApp.");
+            return;
+          }
+          try {
+            setUploadMessage("Trazando tu logo…");
+            const response = await fetch(traceUrl, {
+              method: "POST",
+              headers: { "Content-Type": file.type || "application/octet-stream" },
+              body: file,
+            });
+            if (!response.ok) throw new Error(`Lambda respondió ${response.status}`);
+            const traced = await response.json() as { previewPng?: string };
+            if (!traced.previewPng || !traced.previewPng.startsWith("iVBOR")) throw new Error("No se recibió un PNG válido");
+            src = "data:image/png;base64," + traced.previewPng;
+          } catch (error) {
+            console.warn("No se pudo obtener el trazado desde AWS:", error);
+            setUploadMessage("No pudimos procesar tu logo ahora. No lo añadimos para evitar que aparezca como un cuadro sólido. Puedes continuar tu compra y enviarnos el archivo por WhatsApp.");
+            return;
+          }
+        }
         const newLogo: LogoItem = {
           id: crypto.randomUUID(),
-          src: String(reader.result),
+          src,
           x: matX + matWidth * 0.375,
           y: matY + matHeight * 0.4,
           widthPercent: 25,
           rotation: 0,
         };
-
         setLogos((prev) => [...prev, newLogo]);
         setSelectedLogoId(newLogo.id);
+        if (file.type === "image/svg+xml" || src !== original) setUploadMessage(file.type === "image/svg+xml" ? "Logo SVG cargado" : "Logo trazado automáticamente");
       };
-
       reader.readAsDataURL(file);
     });
   };
@@ -584,33 +700,76 @@ export default function MatCustomizer() {
 
   const removeSelectedLogo = () => {
     if (!selectedLogoId) return;
-    setLogos((prev) => prev.filter((logo) => logo.id !== selectedLogoId));
-    setSelectedLogoId(null);
+    const remaining = logos.filter((logo) => logo.id !== selectedLogoId);
+    setLogos(remaining);
+    // Si quedan logos, mantener seleccionado uno para mostrar tamaño y rotación.
+    setSelectedLogoId(remaining.length ? remaining[remaining.length - 1].id : null);
   };
 
   return (
     <section aria-label="Personalizador de tapetes" className="bg-white px-3 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-3 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_520px]">
-          <nav aria-label="Pasos del personalizador" className="order-2 grid grid-cols-3 gap-1 rounded-2xl bg-brand-sand p-1.5 lg:hidden">
-            {([
-              ["shape", "Forma"],
-              ["color", "Color"],
-              ["design", "Diseño"],
-            ] as const).map(([step, label]) => (
-              <button key={step} type="button"
-                aria-current={mobileStep === step ? "step" : undefined}
-                onClick={() => { setMobileStep(step); if (step === "color") { setFinishPickerOpen(true); setFinishCategory(finish.type); } }}
-                className={`min-h-11 rounded-xl px-1 py-2 text-xs font-semibold transition ${mobileStep === step ? "bg-white text-brand-ink shadow-sm" : "text-gray-600"}`}>
-                {label}
-              </button>
-            ))}
+          <nav aria-label="Pasos del personalizador" className="order-1 rounded-2xl bg-brand-sand p-3 lg:hidden">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-brand-ink">Paso {["quantity","shape","color","design","preview","checkout"].indexOf(mobileStep) + 1} de 6</p>
+              <p className="text-xs font-semibold text-brand-ink">Tu tapete, a tu manera</p>
+            </div>
+            <div className="grid grid-cols-6 gap-1" aria-hidden="true">
+              {(["quantity","shape","color","design","preview","checkout"] as const).map((step,index) => (
+                <span key={step} className={`h-1.5 rounded-full ${["quantity","shape","color","design","preview","checkout"].indexOf(mobileStep) >= index ? "bg-brand-wine" : "bg-gray-300"}`} />
+              ))}
+            </div>
+            <p className="mt-3 text-sm font-semibold text-brand-ink">
+              {{quantity:"¿Cuántos tapetes necesitas?",shape:"Elige la forma",color:"Elige el color",design:"Hazlo tuyo: nombre o logo",preview:"Así quedó tu tapete",checkout:"Revisa y paga"}[mobileStep]}
+            </p>
+            {mobileStep === "preview" && <button type="button" onClick={downloadPNG} className="mt-3 min-h-11 w-full rounded-xl border border-brand-wine bg-white px-3 text-sm font-semibold text-brand-wine">Descargar mi diseño PNG</button>}
+            {mobileStep === "preview" && <button type="button" onClick={() => { setMobileStep("checkout"); document.getElementById("mat-checkout")?.scrollIntoView({behavior:"smooth",block:"start"}); }}
+              className="mm-button mt-3 w-full py-3 text-sm font-semibold">Ir a cantidad y pago ↓</button>}
+            {mobileStep !== "quantity" && <button type="button" onClick={() => {
+              const previous: Record<string, "quantity" | "shape" | "color" | "design" | "preview"> = {shape:"quantity",color:"shape",design:"color",preview:"design",checkout:"preview"};
+              setMobileStep(previous[mobileStep]);
+            }} className="mt-2 min-h-10 text-sm font-semibold text-brand-wine">← Atrás</button>}
           </nav>
+          <div className={`order-2 rounded-2xl border border-brand-line bg-white p-5 shadow-editorial lg:hidden ${mobileStep === "quantity" ? "" : "hidden"}`}>
+            <h2 className="text-lg font-semibold text-brand-ink">Primero, ¿cuántos tapetes te gustaría personalizar?</h2>
+            <p className="mt-2 text-sm text-gray-600">Elige una cantidad para conocer el precio y tu promoción.</p>
+            <div className="mt-5 flex items-center justify-center gap-4">
+              <button type="button" onClick={() => updateMatQuantity(safeQuantity - 1)}
+                disabled={safeQuantity <= 1} aria-label="Quitar un tapete"
+                className="h-12 w-12 rounded-xl border border-gray-300 text-2xl disabled:opacity-40">−</button>
+              <input type="number" min={1} max={99} value={safeQuantity}
+                onChange={e => updateMatQuantity(Number(e.target.value))}
+                aria-label="Cantidad de tapetes"
+                className="h-12 w-20 rounded-xl border border-gray-300 text-center text-xl font-bold" />
+              <button type="button" onClick={() => updateMatQuantity(safeQuantity + 1)}
+                disabled={safeQuantity >= 99} aria-label="Agregar un tapete"
+                className="h-12 w-12 rounded-xl border border-gray-300 text-2xl disabled:opacity-40">+</button>
+            </div>
+            {!quoteRequested ? (
+              <button type="button" onClick={() => setQuoteRequested(true)}
+                className="mm-button mt-5 w-full py-3">Ver mi cotización →</button>
+            ) : (
+              <div className="mt-5" aria-live="polite">
+                <div className="rounded-xl bg-brand-sand p-4">
+                  <p className="text-xs text-gray-700">Tu cotización estimada · sin envío</p>
+                  <p className="mt-1 text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
+                  <p className="mt-2 text-sm font-semibold text-brand-ink">
+                    {promotionMode === "fiveFour" ? "Promoción 5×4 aplicada automáticamente" : "5% de descuento + opción de meses sin intereses"}
+                  </p>
+                  {savings > 0 && <p className="mt-1 text-sm text-green-700">Ahorras {formatMoney(savings)}</p>}
+                  <p className="mt-2 text-xs text-gray-600">Las promociones pueden cambiarse antes de pagar. Los meses sin intereses dependen de la tarjeta.</p>
+                </div>
+                <button type="button" onClick={() => setMobileStep("shape")}
+                  className="mm-button mt-4 w-full py-3">Comenzar a personalizar →</button>
+              </div>
+            )}
+          </div>
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
             <div className="contents lg:block lg:rounded-[2rem] lg:border-0 lg:p-0 lg:shadow-none">
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-6 ${mobileStep === "shape" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                  1. Elige la forma
+                  Elige la forma
                 </h2>
 
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -642,11 +801,12 @@ export default function MatCustomizer() {
                     </button>
                   ))}
                 </div>
+                <button type="button" onClick={() => {setMobileStep("color");setFinishPickerOpen(true);}} className="mm-button mt-5 w-full py-3 lg:hidden">Elegir color →</button>
               </div>
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-5 ${mobileStep === "color" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                  2. Elige color o textura
+                  Elige color o textura
                 </h2>
                 <button
                   type="button"
@@ -722,12 +882,73 @@ export default function MatCustomizer() {
                 <p aria-live="polite" className="mt-2 text-xs text-gray-600">
                   {finish.type === "solid" ? "Color aplicado a la vista previa." : "Textura aplicada a la vista previa."}
                 </p>
+                <button type="button" onClick={() => setMobileStep("design")} className="mm-button mt-5 w-full py-3 lg:hidden">Hazlo tuyo →</button>
               </div>
 
               <div className={`order-3 rounded-2xl border border-brand-line bg-white p-4 shadow-editorial sm:rounded-[2rem] sm:p-5 md:p-8 lg:border-0 lg:p-0 lg:shadow-none lg:mb-4 ${mobileStep === "design" ? "" : "hidden lg:block"}`}>
                 <h2 className="mb-2 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                  3. Personaliza tu tapete
+                  Hazlo tuyo: nombre o logo
                 </h2>
+                <div className="lg:hidden">
+                  <p className="mb-3 text-sm text-gray-600">Elige cómo quieres personalizarlo. Puedes usar las dos opciones.</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" aria-pressed={personalizeMode === "text"} onClick={() => setPersonalizeMode("text")}
+                      className={`min-h-12 rounded-xl border px-2 text-sm font-semibold ${personalizeMode === "text" ? "border-brand-wine bg-brand-sand" : "border-gray-200"}`}>Escribir nombre</button>
+                    <button type="button" aria-pressed={personalizeMode === "logo"} onClick={() => setPersonalizeMode("logo")}
+                      className={`min-h-12 rounded-xl border px-2 text-sm font-semibold ${personalizeMode === "logo" ? "border-brand-wine bg-brand-sand" : "border-gray-200"}`}>Subir logo</button>
+                  </div>
+                  {personalizeMode === "text" ? (
+                    <div className="mt-4 space-y-3">
+                      {engravings.map((item, index) => (
+                        <div key={item.id} className="rounded-xl border border-brand-line p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <label htmlFor={`mat-text-${item.id}`} className="text-sm font-semibold">Nombre o frase {engravings.length > 1 ? index + 1 : ""}</label>
+                            {(item.text || engravings.length > 1) && <button type="button" onClick={() => removeText(item.id)} className="min-h-10 text-xs font-semibold text-red-700">Eliminar</button>}
+                          </div>
+                          <input id={`mat-text-${item.id}`} type="text" maxLength={120} value={item.text}
+                            onFocus={() => setSelectedTextId(item.id)} onChange={e => updateText(item.id, {text:e.target.value})}
+                            placeholder="Ej. Ana Victoria" className="mt-1 min-h-12 w-full rounded-xl border border-gray-300 bg-white px-3 text-base" />
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            <label className="text-xs font-semibold">Estilo de letra
+                              <select value={item.font} onChange={e=>updateText(item.id,{font:e.target.value as EngravingItem["font"]})}
+                                className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2 text-sm">
+                                <option value="elegante">Elegante</option><option value="moderna">Moderna</option><option value="manuscrita">Manuscrita</option>
+                              </select>
+                            </label>
+                            <label className="text-xs font-semibold">Ubicación
+                              <select value={["superior","centro","inferior"].includes(item.position) ? item.position : "centro"}
+                                onChange={e=>{const p=TEXT_PRESETS.find(p=>p.value===e.target.value);if(p)updateText(item.id,{position:p.value,x:p.x,y:p.y});}}
+                                className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2 text-sm">
+                                <option value="superior">Arriba</option><option value="centro">Centro</option><option value="inferior">Abajo</option>
+                              </select>
+                            </label>
+                          </div>
+                          <details className="mt-3 text-sm text-gray-600">
+                            <summary className="cursor-pointer py-2 font-medium">Ajustar tamaño (opcional)</summary>
+                            <label className="mt-2 block text-xs">Tamaño de letra
+                              <input type="range" min="0.5" max="6" step="0.1" value={item.sizeCm}
+                                onChange={e=>updateText(item.id,{sizeCm:Number(e.target.value)})} className="mt-2 w-full accent-brand-wine"/>
+                            </label>
+                          </details>
+                        </div>
+                      ))}
+                      <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine text-sm font-semibold text-brand-wine">+ Añadir otro texto</button>
+                      <button type="button" onClick={()=>setPersonalizeMode("logo")} className="min-h-11 w-full text-sm font-medium text-brand-wine">También quiero agregar mi logo →</button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-brand-wine bg-brand-sand/40 p-4 text-center">
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" multiple className="sr-only" onChange={e=>handleLogoUpload(e.target.files)} />
+                        <span className="font-semibold">Seleccionar mi logo</span>
+                        <span className="mt-1 text-xs text-gray-600">PNG, JPG, WEBP o SVG</span>
+                      </label>
+                      {uploadMessage && <p role="status" className="text-sm text-green-700">{uploadMessage}</p>}
+                      {logos.length > 0 && <p className="text-sm font-semibold text-gray-700">{logos.length} {logos.length === 1 ? "archivo cargado" : "archivos cargados"} ✓</p>}
+                      <button type="button" onClick={()=>setPersonalizeMode("text")} className="min-h-11 w-full text-sm font-medium text-brand-wine">También quiero escribir un nombre →</button>
+                    </div>
+                  )}
+                </div>
+                <div className="hidden lg:block">
                 <div className="mb-4 space-y-3">
                   {engravings.map((item,index) => (
                     <div key={item.id} className="space-y-3 rounded-xl border border-brand-line bg-brand-sand/40 p-3 sm:p-4">
@@ -796,7 +1017,7 @@ export default function MatCustomizer() {
                   <button type="button" onClick={addText} className="min-h-11 w-full rounded-xl border border-brand-wine bg-white px-4 py-2 text-sm font-semibold text-brand-wine">
                     + Añadir otro texto
                   </button>
-                  <p className="text-xs leading-5 text-gray-600">Escribe y mira el resultado arriba. Puedes arrastrar cada texto para acomodarlo. La vista previa es ilustrativa.</p>
+                  <p className="text-xs leading-5 text-gray-600">Puedes mover el texto sobre el tapete. La vista previa es ilustrativa.</p>
                 </div>
                 <p className="mb-2 text-xs font-semibold text-gray-600">O sube un logo o diseño</p>
 
@@ -835,11 +1056,13 @@ export default function MatCustomizer() {
                 )}
 
 
+                </div>
+                <button type="button" onClick={() => setMobileStep("preview")} className="mm-button mt-5 w-full py-3 lg:hidden">Ver mi tapete →</button>
               </div>
             </div>
-            <div className="order-4 mb-4 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
+            <div id="mat-checkout" className="order-4 mb-4 scroll-mt-24 rounded-2xl border border-brand-line bg-white p-4 sm:mb-8 sm:rounded-3xl sm:p-5">
               <h2 className="mb-3 text-base font-semibold text-gray-900 sm:mb-4 sm:text-lg">
-                4. Cantidad y cotización
+                Comprar tu tapete
               </h2>
 
               <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
@@ -889,10 +1112,10 @@ export default function MatCustomizer() {
                     <span className="block font-semibold">5% + MSI</span>
                     <span className="mt-1 block text-[11px] font-normal text-gray-600">Meses según tarjeta</span>
                   </button>
-                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} onClick={() => setPromotionMode("fiveFour")}
-                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} disabled={safeQuantity < 5} onClick={() => setPromotionMode("fiveFour")}
+                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
                     <span className="block font-semibold">5×4 · Sin MSI</span>
-                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Lleva 5, paga 4</span>
+                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 tapetes</span>
                   </button>
                 </div>
               </div>
@@ -950,7 +1173,7 @@ export default function MatCustomizer() {
             </div>
           </div>
 
-          <div className="order-1 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:sticky lg:top-28 lg:bg-transparent lg:py-0">
+          <div className={`order-2 w-full min-w-0 self-start bg-white py-1 lg:order-2 lg:sticky lg:top-28 lg:bg-transparent lg:py-0 ${["design","preview","checkout"].includes(mobileStep) ? "" : "hidden lg:block"}`}>
             <div className="w-full rounded-2xl border border-brand-line bg-white p-2 shadow-editorial sm:rounded-[2rem] sm:p-4">
               <div className="mb-1 flex items-center justify-between gap-3 sm:mb-4">
                 <div>
@@ -1040,6 +1263,7 @@ export default function MatCustomizer() {
                           key={logo.id}
                           logo={logo}
                           matWidth={matWidth}
+                          tintColor={finish.type === "solid" ? engravingColor : null}
                           selected={logo.id === selectedLogoId}
                           onSelect={() => setSelectedLogoId(logo.id)}
                           onChange={updateLogo}
@@ -1051,39 +1275,28 @@ export default function MatCustomizer() {
               </div>
 
               {selectedLogo && (
-                <div className="mt-3 rounded-xl border border-gray-200 bg-brand-sand p-3 sm:mt-4 sm:p-4">
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-900">Ajusta tu logo</h3>
-                      <p className="text-xs text-gray-500">Los cambios se ven arriba, en tu mat.</p>
-                    </div>
-                    <button type="button" onClick={removeSelectedLogo} className="shrink-0 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600">
-                      Eliminar
-                    </button>
+                <div className="mt-2 rounded-xl border border-brand-line bg-white p-3 sm:mt-3" aria-label="Ajustar logo seleccionado">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-brand-ink">Ajusta tu logo</span>
+                    <button type="button" onClick={removeSelectedLogo} className="min-h-10 px-2 text-xs font-semibold text-red-700">Eliminar</button>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="mb-1 flex justify-between gap-2 text-xs font-medium text-gray-700">
-                        <span>Tamaño</span><span>{selectedLogo.widthPercent}%</span>
-                      </span>
-                      <input type="range" min="5" max="100" value={selectedLogo.widthPercent}
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2 sm:items-center">
+                    <label className="block min-w-0">
+                      <span className="flex justify-between text-xs font-medium text-gray-700"><span>Tamaño</span><span>{selectedLogo.widthPercent}%</span></span>
+                      <input type="range" min="5" max="100" step="1" value={selectedLogo.widthPercent}
                         aria-label="Tamaño del logo"
-                        onChange={(e) => updateLogo({ ...selectedLogo, widthPercent: Number(e.target.value) })}
-                        className="h-8 w-full accent-brand-wine" />
+                        onChange={e=>updateLogo({...selectedLogo,widthPercent:Number(e.target.value)})}
+                        className="mt-1 min-h-10 w-full accent-brand-wine"/>
                     </label>
-                    <label className="block">
-                      <span className="mb-1 flex justify-between gap-2 text-xs font-medium text-gray-700">
-                        <span>Rotación</span><span>{Math.round(selectedLogo.rotation)}°</span>
-                      </span>
-                      <input type="range" min="-180" max="180" value={selectedLogo.rotation}
-                        aria-label="Rotación del logo"
-                        onChange={(e) => updateLogo({ ...selectedLogo, rotation: Number(e.target.value) })}
-                        className="h-8 w-full accent-brand-wine" />
-                    </label>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-gray-700">Girar · {selectedLogo.rotation}°</span>
+                      <div className="flex items-center gap-2">
+                        <button type="button" aria-label="Girar 45 grados a la izquierda" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+315)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↶</button>
+                        <button type="button" aria-label="Girar 45 grados a la derecha" onClick={()=>updateLogo({...selectedLogo,rotation:(selectedLogo.rotation+45)%360})} className="min-h-11 min-w-11 rounded-xl border border-brand-line bg-white text-lg">↷</button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-gray-500">
-                    También puedes tocar y arrastrar el logo sobre el mat.
-                  </p>
+                  <p className="mt-1 text-xs text-gray-500">Arrastra el logo sobre el tapete para colocarlo.</p>
                 </div>
               )}
 
