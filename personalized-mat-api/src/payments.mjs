@@ -23,7 +23,9 @@ export function buildCheckoutParameters(body, origin) {
   const quote = validateQuote(body);
   const unitAmount = quote.promotion === "msi5"
     ? Math.round(quote.unitPriceCents * 95 / 100)
-    : quote.unitPriceCents;
+    : quote.promotion === "volume20"
+      ? Math.round(quote.unitPriceCents * 80 / 100)
+      : quote.unitPriceCents;
   // Stripe's line item total must equal the server quote, including odd quantities.
   const itemQuantity = quote.promotion === "fiveFour" ? quote.quantity - quote.freeUnits : quote.quantity;
   if (itemQuantity * unitAmount !== quote.totalCents) {
@@ -40,9 +42,11 @@ export function buildCheckoutParameters(body, origin) {
           unit_amount: unitAmount,
           product_data: {
             name: "Mat profesional personalizado — Melocotón Move",
-            description: quote.promotion === "fiveFour"
-              ? "Promoción 5×4. Diseño a confirmar después de la compra. Envío por cotizar."
-              : "5% de descuento. Diseño a confirmar después de la compra. Envío por cotizar.",
+            description: quote.promotion === "volume20"
+              ? "20% de descuento desde 5 tapetes. Diseño a confirmar después de la compra. Envío por cotizar."
+              : quote.promotion === "fiveFour"
+                ? "Promoción anterior 5×4. Diseño a confirmar después de la compra. Envío por cotizar."
+                : "5% de descuento. Diseño a confirmar después de la compra. Envío por cotizar.",
           },
         },
         quantity: itemQuantity,
