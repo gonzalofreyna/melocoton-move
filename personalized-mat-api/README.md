@@ -6,13 +6,13 @@ Esta API **no** modifica `checkout-api` ni el checkout normal de la tienda.
 
 Handler: `src/index.handler` (ES module)
 
-- `POST /quote`: body `{"quantity":5,"promotion":"fiveFour"}`
+- `POST /quote`: body `{"quantity":5,"promotion":"volume20"}`
 - `POST /checkout`: mismo body; crea una sesion de Stripe cuando la API este habilitada.
 - `GET /session?session_id=cs_...`: valida el pago con Stripe en Lambda y devuelve datos limitados para el comprobante de Next.js; requiere configurar esta ruta en API Gateway.
 - `POST /webhook`: recibe eventos firmados de Stripe con cuerpo **raw**, sin alterarlo y sin autenticacion de API Gateway que impida a Stripe enviar eventos. Verifica firma, fuente y total en backend; no guarda pedidos en otra base de datos.
 - `OPTIONS`: preflight CORS para el origen permitido.
 
-En API Gateway HTTP API / Lambda Function URL se deben definir correctamente la ruta y CORS; no dar acceso publico a secretos. La API solo acepta promocion y cantidad. No guarda logos, ni exige diseño.
+En API Gateway HTTP API / Lambda Function URL se deben definir correctamente la ruta y CORS; no dar acceso publico a secretos. La API solo acepta promocion y cantidad. Promociones nuevas: `volume20` (20% sobre **todas** las unidades a partir de 5, sin MSI) y `msi5` (5% + opción MSI). Se conserva `fiveFour` en el backend solo por compatibilidad con pagos históricos y validación de sus webhooks; el frontend ya no lo ofrece. No guarda logos, ni exige diseño.
 
 ## Variables de entorno de la Lambda
 
@@ -61,3 +61,7 @@ npm test
 6. Para producción, **no cambiar el secreto compartido**: ya es Live si lo utiliza el checkout normal. Configurar un webhook Live independiente para Crea tu Mat con su propio `PERSONALIZED_MAT_WEBHOOK_SECRET` y ajustar `PERSONALIZED_MAT_SITE_ORIGIN=https://www.melocotonmove.com`. **No activar el nuevo flujo con el secreto Live hasta verificar el despliegue y la ruta GET /session.**
 
 El runtime de AWS Lambda Node.js incluye AWS SDK v3 utilizado para leer Secrets Manager.
+
+## Despliegue del cambio de promoción
+
+**No basta con publicar el frontend en Amplify**: actualizar también la Lambda de `personalized-mat-api` con el ZIP generado por `bash personalized-mat-api/package-lambda.sh`. Probar `/quote` con cantidad 6 y promoción `volume20` (total `719520` centavos), luego `/checkout` y el retorno pagado. Antes de publicar el frontend, desplegar primero la Lambda para evitar errores por promoción desconocida. La Lambda `logo-trace-api` es independiente y no requiere cambios.
