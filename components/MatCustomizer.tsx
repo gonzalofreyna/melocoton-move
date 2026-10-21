@@ -402,7 +402,7 @@ export default function MatCustomizer() {
   const [quoteRequested, setQuoteRequested] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [promotionMode, setPromotionMode] = useState<"msi5" | "fiveFour">("msi5");
+  const [promotionMode, setPromotionMode] = useState<"msi5" | "volume20">("msi5");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -454,15 +454,14 @@ export default function MatCustomizer() {
   const selectedLogo = logos.find((logo) => logo.id === selectedLogoId);
   const safeQuantity = Math.min(99, Math.max(1, Math.floor(quantity || 1)));
 
-  const paidQuantity = safeQuantity - Math.floor(safeQuantity / 5);
   const subtotalBeforePromo = MAT_PRICE * safeQuantity;
   const estimatedTotal = promotionMode === "msi5"
     ? Math.round(MAT_PRICE * safeQuantity * 0.95 * 100) / 100
-    : MAT_PRICE * paidQuantity;
+    : Math.round(MAT_PRICE * safeQuantity * 0.8 * 100) / 100;
   const savings = subtotalBeforePromo - estimatedTotal;
   const promoLabel = promotionMode === "msi5"
     ? "5% de descuento + opción de MSI (sujeta a disponibilidad de Stripe)"
-    : `5x4: pagas ${paidQuantity} de ${safeQuantity}`;
+    : "20% de descuento al comprar 5 tapetes o más (sin MSI)";
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-MX", {
@@ -544,7 +543,7 @@ export default function MatCustomizer() {
     );
     setQuantity(cleanValue);
     setQuoteRequested(false);
-    setPromotionMode(cleanValue >= 5 ? "fiveFour" : "msi5");
+    setPromotionMode(cleanValue >= 5 ? "volume20" : "msi5");
   };
 
   const handleLogoUpload = (files: FileList | null) => {
@@ -755,7 +754,7 @@ export default function MatCustomizer() {
                   <p className="text-xs text-gray-700">Tu cotización estimada · sin envío</p>
                   <p className="mt-1 text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   <p className="mt-2 text-sm font-semibold text-brand-ink">
-                    {promotionMode === "fiveFour" ? "Promoción 5×4 aplicada automáticamente" : "5% de descuento + opción de meses sin intereses"}
+                    {promotionMode === "volume20" ? "20% de descuento aplicado automáticamente" : "5% de descuento + opción de meses sin intereses"}
                   </p>
                   {savings > 0 && <p className="mt-1 text-sm text-green-700">Ahorras {formatMoney(savings)}</p>}
                   <p className="mt-2 text-xs text-gray-600">Las promociones pueden cambiarse antes de pagar. Los meses sin intereses dependen de la tarjeta.</p>
@@ -1112,9 +1111,9 @@ export default function MatCustomizer() {
                     <span className="block font-semibold">5% + MSI</span>
                     <span className="mt-1 block text-[11px] font-normal text-gray-600">Meses según tarjeta</span>
                   </button>
-                  <button type="button" role="radio" aria-checked={promotionMode === "fiveFour"} disabled={safeQuantity < 5} onClick={() => setPromotionMode("fiveFour")}
-                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm ${promotionMode === "fiveFour" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
-                    <span className="block font-semibold">5×4 · Sin MSI</span>
+                  <button type="button" role="radio" aria-checked={promotionMode === "volume20"} disabled={safeQuantity < 5} onClick={() => setPromotionMode("volume20")}
+                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm ${promotionMode === "volume20" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                    <span className="block font-semibold">20% OFF · Sin MSI</span>
                     <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 tapetes</span>
                   </button>
                 </div>
@@ -1127,12 +1126,12 @@ export default function MatCustomizer() {
                     <p className="text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   </div>
                   <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-brand-ink">
-                    {promotionMode === "msi5" ? "5% + MSI" : "5×4"}
+                    {promotionMode === "msi5" ? "5% + MSI" : "20% OFF"}
                   </span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
                   <span>{safeQuantity} {safeQuantity === 1 ? "mat" : "mats"}</span>
-                  {promotionMode === "fiveFour" && safeQuantity >= 5 && <span>Pagas {paidQuantity}</span>}
+                  {promotionMode === "volume20" && safeQuantity >= 5 && <span>20% de descuento en todos tus tapetes</span>}
                   {savings > 0 && <span className="font-semibold text-green-700">Ahorras {formatMoney(savings)}</span>}
                 </div>
                 <details className="mt-2 border-t border-brand-line pt-2 text-xs text-gray-600">

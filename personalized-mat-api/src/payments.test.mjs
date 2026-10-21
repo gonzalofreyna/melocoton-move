@@ -34,3 +34,17 @@ test("Stripe checkout disabled until explicit deployment configuration", async (
   const result = await createCheckout({ body: JSON.stringify({ quantity: 5, promotion: "fiveFour" }) }, {});
   assert.equal(result.statusCode, 503);
 });
+
+
+test("20% desde 5 tapetes: aplica a todas las unidades y Stripe cobra igual", () => {
+  for (const quantity of [5, 6, 7, 9, 10, 15]) {
+    const p = buildCheckoutParameters({ quantity, promotion: "volume20" }, "https://www.melocotonmove.com");
+    assert.equal(p.line_items.length, 1);
+    assert.equal(p.line_items[0].quantity, quantity);
+    assert.equal(p.line_items[0].price_data.unit_amount, 119920);
+    assert.equal(p.line_items[0].quantity * p.line_items[0].price_data.unit_amount, quantity * 119920);
+    assert.equal(p.metadata.freeUnits, "0");
+    assert.equal(p.payment_method_options.card.installments.enabled, false);
+  }
+  assert.throws(() => buildCheckoutParameters({ quantity: 4, promotion: "volume20" }, "https://www.melocotonmove.com"));
+});
