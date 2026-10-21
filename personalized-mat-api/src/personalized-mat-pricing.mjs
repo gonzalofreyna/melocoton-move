@@ -7,7 +7,8 @@ export const PERSONALIZED_MAT_DELIVERY_BUSINESS_DAYS = 45;
 export const PERSONALIZED_MAT_SHIPPING_POLICY = "quoted_separately";
 export const PERSONALIZED_MAT_PROMOS = Object.freeze({
   MSI_5: "msi5",
-  FIVE_FOUR: "fiveFour",
+  FIVE_FOUR: "fiveFour", // Legacy: validate previous Stripe sessions
+  VOLUME_20: "volume20",
 });
 
 export function quotePersonalizedMats(input, configuredUnitPrice) {
@@ -18,7 +19,7 @@ export function quotePersonalizedMats(input, configuredUnitPrice) {
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
     throw new RangeError("Cantidad inválida: se permiten de 1 a 99 mats.");
   }
-  if (!Object.values(PERSONALIZED_MAT_PROMOS).includes(promotion)) {
+  if (!Object.values(PERSONALIZED_MAT_PROMOS).includes(promotion) || (promotion === PERSONALIZED_MAT_PROMOS.VOLUME_20 && quantity < 5)) {
     throw new RangeError("Modalidad promocional inválida.");
   }
   if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) {
@@ -33,7 +34,9 @@ export function quotePersonalizedMats(input, configuredUnitPrice) {
     : 0;
   const totalCents = promotion === PERSONALIZED_MAT_PROMOS.MSI_5
     ? Math.round(originalCents * 95 / 100)
-    : priceCents * (quantity - freeUnits);
+    : promotion === PERSONALIZED_MAT_PROMOS.VOLUME_20
+      ? Math.round(originalCents * 80 / 100)
+      : priceCents * (quantity - freeUnits);
 
   return Object.freeze({
     currency: "mxn",
