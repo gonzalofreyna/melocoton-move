@@ -31,3 +31,15 @@ test("checkout always fails closed until registration is integrated", async () =
   const r = await handler({ rawPath: "/checkout", requestContext: { http: { method: "POST" } }, body: "{}" });
   assert.equal(r.statusCode, 503);
 });
+
+
+test("20% applies to every unit from five onwards, not just complete packs", () => {
+  for (const quantity of [5, 6, 7, 9, 10, 15]) {
+    const quote = validateQuote({ quantity, promotion: "volume20" });
+    assert.equal(quote.totalCents, quantity * 119920);
+    assert.equal(quote.discountCents, quantity * 29980);
+    assert.equal(quote.freeUnits, 0);
+    assert.equal(quote.installmentsAllowed, false);
+  }
+  assert.throws(() => validateQuote({ quantity: 4, promotion: "volume20" }));
+});
