@@ -78,9 +78,9 @@ export function buildMerchantFeed(products: Product[]) {
       // Never advertise a flat rate or unconditional free shipping here.
       ...(hasValidWeight ? [xmlNode("shipping_weight", `${weight} g`)] : []),
       ...(hasValidDimensions ? [
-        xmlNode("shipping_width", `${dims.w} cm`),
-        xmlNode("shipping_height", `${dims.h} cm`),
-        xmlNode("shipping_length", `${dims.l} cm`),
+        xmlNode("shipping_width", `${dims!.w} cm`),
+        xmlNode("shipping_height", `${dims!.h} cm`),
+        xmlNode("shipping_length", `${dims!.l} cm`),
       ] : []),
       xmlNode("price", price.toFixed(2) + " MXN"),
       ...(hasSale ? [xmlNode("sale_price", offer.toFixed(2) + " MXN")] : []),
