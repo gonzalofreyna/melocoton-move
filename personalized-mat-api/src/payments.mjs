@@ -21,13 +21,9 @@ export function checkoutConfiguration(env = process.env) {
 
 export function buildCheckoutParameters(body, origin) {
   const quote = validateQuote(body);
-  const unitAmount = quote.promotion === "msi5"
-    ? Math.round(quote.unitPriceCents * 95 / 100)
-    : quote.promotion === "volume20"
-      ? Math.round(quote.unitPriceCents * 80 / 100)
-      : quote.unitPriceCents;
+  const unitAmount = quote.discountedUnitCents;
   // Stripe's line item total must equal the server quote, including odd quantities.
-  const itemQuantity = quote.promotion === "fiveFour" ? quote.quantity - quote.freeUnits : quote.quantity;
+  const itemQuantity = quote.quantity;
   if (itemQuantity * unitAmount !== quote.totalCents) {
     throw new Error("El total calculado no coincide.");
   }
@@ -42,27 +38,12 @@ export function buildCheckoutParameters(body, origin) {
           unit_amount: unitAmount,
           product_data: {
             name: "Mat profesional personalizado — Melocotón Move",
-            description: quote.promotion === "volume20"
-              ? "20% de descuento desde 5 tapetes. Diseño a confirmar después de la compra. Envío por cotizar."
-              : quote.promotion === "fiveFour"
-                ? "Promoción anterior 5×4. Diseño a confirmar después de la compra. Envío por cotizar."
-                : "5% de descuento. Diseño a confirmar después de la compra. Envío por cotizar.",
+            description: quote.promotion === "volume20" ? "20% de descuento por pago de contado desde 5 mats. Envío por cotizar." : quote.promotion === "msi15" ? "15% de descuento con opción de 3 MSI desde 5 mats. Envío por cotizar." : "10% de descuento de 1 a 4 mats. Envío por cotizar.",
           },
         },
         quantity: itemQuantity,
       },
-      // Show the actual mats delivered in Stripe: paid units plus free units.
-      ...(quote.freeUnits > 0 ? [{
-        price_data: {
-          currency: "mxn",
-          unit_amount: 0,
-          product_data: {
-            name: "Mat profesional personalizado — cortesía 5×4",
-            description: "Unidades sin costo incluidas en tu promoción.",
-          },
-        },
-        quantity: quote.freeUnits,
-      }] : []),
+
     ],
     customer_creation: "always",
     billing_address_collection: "required",
@@ -75,6 +56,7 @@ export function buildCheckoutParameters(body, origin) {
       quantity: String(quote.quantity),
       freeUnits: String(quote.freeUnits),
       priceCents: String(quote.unitPriceCents),
+      pricingVersion: "v2",
       totalCents: String(quote.totalCents),
       deliveryBusinessDays: "45",
       shippingPolicy: "quoted_separately",
