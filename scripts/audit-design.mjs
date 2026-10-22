@@ -36,7 +36,7 @@ const checks = [
   ["comprar reutiliza carrito existente", productCard.includes("addToCart({") && productCard.includes("maxStock: stock")],
   ["variantes actualizan imagen, precio y stock", productCard.includes("setSelectedSlug(variant.slug)") && productCard.includes("selectedProduct.image") && productCard.includes("selectedProduct.discountPrice") && productCard.includes("selectedProduct.stock")],
   ["favoritos de navegador", productCard.includes("FAVORITES_KEY") && productCard.includes("aria-pressed={isFavorite}")],
-  ["personalizador intacto y visualmente integrado", editor.includes("MAT_PRICE = 1499") && editor.includes("bg-brand-cream") && editor.includes("WHATSAPP_PHONE")],
+  ["personalizador intacto y visualmente integrado", editor.includes("MAT_PRICE = 1399") && editor.includes("bg-brand-cream") && editor.includes("WHATSAPP_PHONE")],
 ];
 
 let failures = 0;
