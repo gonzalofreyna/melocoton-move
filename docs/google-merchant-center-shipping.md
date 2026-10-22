@@ -1,3 +1,9 @@
+# Tarifa comercial propuesta: $59 MXN
+
+En esta rama el feed Merchant declara $59 MXN para artículos estándar, y el checkout-api cobra $59 MXN por envío estándar sin dejar de validar cotización y servicio en Skydropx. El minicart muestra $59 al existir tarifa elegida. Las promociones elegibles mantienen la lógica vigente: envío gratis si todo el carrito cumple los requisitos y alcanza el umbral; envíos especiales quedan fuera del feed.
+
+**NO ACTIVAR EN PRODUCCIÓN** hasta llevar los mismos cambios a las ramas de despliegue de frontend y checkout-api, confirmar variables de entorno (en particular NEXT_PUBLIC_FIXED_SHIPPING_FEE, que puede sobrescribir el valor por defecto), probar que el cliente vea y pague $59 y que los códigos postales estén dentro de la cobertura ofrecida. El precio de $59 aplica por pedido estándar, no por artículo. Google puede requerir configuración adicional para promociones; verificar la cuenta antes de activar los anuncios.
+
 # Fase 7 — Google Merchant Center / Google Shopping
 
 ## Implementado en el feed
@@ -6,14 +12,14 @@
 - Consulta productos frescos desde la API de catálogo.
 - Publica id, título, descripción, URL del producto, imagen principal, galería, precios en MXN, ofertas, stock, marca y categoría.
 - Excluye productos con inventario desconocido, envío especial o reformers y productos con datos esenciales inválidos.
-- NO publica envío de $199, envío gratis incondicional ni una tarifa inventada.
+- Publica envío estándar fijo de $59 MXN en el feed. No anuncia envío gratis incondicional.
 - Emite `g:shipping_label` por elegibilidad de promoción y plazo total de entrega: `promo-elegible-entrega-MIN-MAX-habiles` o `estandar-entrega-MIN-MAX-habiles`.
 - Publica peso (`g:shipping_weight`) y dimensiones (`g:shipping_width`, `g:shipping_height`, `g:shipping_length`) cuando los datos son positivos y completos.
 
 ## Pendiente en Merchant Center — necesario antes de activar
 
 1. Configurar entrega a México, políticas y plazos de gestión/transporte cuya suma coincida con los plazos totales de `shipping_label`. No convertir plazos totales en plazos de transporte sin descontar gestión.
-2. Configurar tarifas de envío por destino y peso/producto con valores basados en cotizaciones reales de Skydropx. Merchant Center no llama automáticamente al cotizador de Skydropx de esta tienda. No declarar costos menores que los cobrados al cliente.
+2. Configurar tarifa estándar de $59 MXN en Merchant Center para México, únicamente donde el checkout la garantice. Merchant Center no consulta Skydropx automáticamente. Validar cobertura de destinos y excepciones.
 3. Para artículos `promo-elegible`, la tienda solo da envío gratis cuando TODOS los artículos del carrito son elegibles, el subtotal alcanza el umbral configurado en checkout (por defecto $499 MXN) y no existe envío especial. No anunciar envío gratis para cualquier compra individual por el solo hecho de llevar esa etiqueta. Confirmar configuración real de variables `FREE_SHIPPING_MIN_TOTAL` y `NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL`.
 4. Si Merchant Center no permite representar fielmente la promoción de carrito mixto, usar tarifas normales para esos artículos y configurar únicamente ofertas promocionales compatibles con la tienda.
 5. Verificar con cotizaciones reales y destinos representativos (varios códigos postales, artículos ligeros/pesados, canastas mixtas, promociones) que Google no anuncie un costo inferior al cobrado en checkout.
