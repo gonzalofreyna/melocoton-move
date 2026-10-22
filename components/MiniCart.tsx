@@ -399,7 +399,6 @@ export default function MiniCart() {
     // 1. Cupón porcentual normal
     if (validCode && cleanCode === validCode) {
       setFreeShippingPromo(false);
-      setFreeShippingRule(false);
       setAppliedShippingPromoCode(null);
 
       const base = subtotal + (hasCustomShipping ? 0 : effectiveShippingCost);
@@ -418,6 +417,7 @@ export default function MiniCart() {
     const previousSelectedRateId = selectedRateId;
     const previousShippingMsg = shippingMsg;
     const previousFreeShippingPromo = freeShippingPromo;
+    const previousFreeShippingRule = freeShippingRule;
     const previousShippingPromoCode = appliedShippingPromoCode;
 
     // 2. Probar si es un código de envío gratis
@@ -437,6 +437,7 @@ export default function MiniCart() {
       setSelectedRateId(previousSelectedRateId);
       setShippingMsg(previousShippingMsg);
       setFreeShippingPromo(previousFreeShippingPromo);
+      setFreeShippingRule(previousFreeShippingRule);
       setAppliedShippingPromoCode(previousShippingPromoCode);
 
       setMsg("Código no válido.");
@@ -448,6 +449,7 @@ export default function MiniCart() {
       setSelectedRateId(previousSelectedRateId);
       setShippingMsg(previousShippingMsg);
       setFreeShippingPromo(previousFreeShippingPromo);
+      setFreeShippingRule(previousFreeShippingRule);
       setAppliedShippingPromoCode(previousShippingPromoCode);
 
       setDiscount(0);
