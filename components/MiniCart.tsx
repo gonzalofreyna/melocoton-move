@@ -208,9 +208,9 @@ export default function MiniCart() {
           {/* Footer */}
           {cart.length > 0 && (
             <div className="border-t border-brand-line bg-white px-4 py-4 sm:px-5 sm:py-5 space-y-4 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]">
-              <div className="rounded-2xl border border-brand-line bg-brand-cream p-4">
-                <p className="text-sm font-semibold text-brand-blue">🚚 Envío gratis en todos los productos</p>
-                <p className="text-xs text-gray-600 mt-1">Ingresa tu dirección de entrega en el pago seguro de Stripe.</p>
+              <div className="rounded-2xl border border-brand-line bg-white px-4 py-3.5">
+                <p className="text-sm font-semibold tracking-wide text-brand-blue">Envío de cortesía</p>
+                <p className="mt-1 text-xs leading-relaxed text-gray-600">Incluido en tu pedido, sin costo adicional.</p>
               </div>
               {/* Totales */}
               <div className="rounded-2xl bg-brand-cream border border-brand-line px-4 py-4 space-y-2 text-sm">
@@ -267,7 +267,6 @@ export default function MiniCart() {
                   </p>
                 )}
 
-                <p className="text-xs mt-2 text-gray-700">Envío gratis también en productos voluminosos.</p>
               </div>
 
               {/* Botón */}
