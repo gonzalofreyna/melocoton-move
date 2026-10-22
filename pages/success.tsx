@@ -322,7 +322,7 @@ export default function SuccessPage({
 
         {personalized && (
           <div className="mt-5 rounded-xl border border-brand-line bg-brand-sand p-4 text-sm leading-6 text-brand-ink">
-            <p><strong>Promoción:</strong> {promotion === "msi5" ? "5% de descuento con opción de MSI" : "5×4 sin MSI"}</p>
+            <p><strong>Promoción:</strong> {promotion === "single10" ? "10% de descuento · sin MSI" : promotion === "msi15" ? "15% de descuento + opción de 3 MSI" : promotion === "volume20" ? "20% de descuento · contado" : promotion === "msi5" ? "5% de descuento con opción de MSI (promoción anterior)" : "5×4 sin MSI (promoción anterior)"}</p>
             <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
             <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el total pagado.</p>
             <p>Si personalizaste tu tapete, utiliza el botón «Enviar diseño por WhatsApp» para compartir las coordenadas y especificaciones. Confirma el envío del mensaje dentro de WhatsApp.</p>
@@ -421,7 +421,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
               currency: data.currency,
               customerEmail: data.customerEmail,
               items: [{
-                description: "Mat profesional personalizado" + (data.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
+                description: "Mat profesional personalizado" + (data.promotion === "single10" ? " · 10%" : data.promotion === "msi15" ? " · 15% + MSI" : data.promotion === "volume20" ? " · 20%" : data.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
                 quantity: data.quantity,
                 amountSubtotal: data.amountTotal,
                 paidAmountCents: data.amountTotal,
@@ -478,7 +478,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
 
     const lineItems = personalized
       ? [{
-          description: "Mat profesional personalizado" + (session.metadata?.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
+          description: "Mat profesional personalizado" + (session.metadata?.promotion === "single10" ? " · 10%" : session.metadata?.promotion === "msi15" ? " · 15% + MSI" : session.metadata?.promotion === "volume20" ? " · 20%" : session.metadata?.promotion === "fiveFour" ? " · 5×4" : " · 5%"),
           quantity: Number(session.metadata?.quantity) || 0,
           amountSubtotal: session.amount_total ?? 0,
           paidAmountCents: session.amount_total ?? 0,
