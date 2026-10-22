@@ -1102,23 +1102,34 @@ export default function MatCustomizer() {
               </div>
 
               <div className="mb-3">
-                <p className="mb-2 text-sm font-semibold text-gray-900">Elige tu promoción</p>
-                {safeQuantity < 5 ? (
-                  <p className="rounded-xl border border-brand-line bg-brand-sand p-3 text-sm">10% OFF · Pago de contado · Sin MSI</p>
-                ) : (
-                  <div role="radiogroup" aria-label="Modalidad de promoción" className="grid grid-cols-2 gap-2">
-                    <button type="button" role="radio" aria-checked={promotionMode === "msi15"} onClick={() => setPromotionMode("msi15")}
-                      className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "msi15" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
-                      <span className="block font-semibold">15% OFF + 3 MSI</span>
-                      <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 mats · según tarjeta</span>
-                    </button>
-                    <button type="button" role="radio" aria-checked={promotionMode === "volume20"} onClick={() => setPromotionMode("volume20")}
-                      className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "volume20" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
-                      <span className="block font-semibold">20% OFF · Contado</span>
-                      <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 mats · sin MSI</span>
-                    </button>
+                <p className="mb-2 text-sm font-semibold text-gray-900">Promociones para tu proyecto</p>
+                {safeQuantity < 5 && (
+                  <div className="mb-3 rounded-xl border border-brand-line bg-brand-sand p-3">
+                    <p className="text-sm font-semibold text-brand-ink">10% de descuento aplicado</p>
+                    <p className="mt-1 text-xs text-gray-600">Tu beneficio al comprar de 1 a 4 mats.</p>
                   </div>
                 )}
+                <p className="mb-2 text-xs text-gray-600">
+                  {safeQuantity < 5
+                    ? `Agrega ${5 - safeQuantity} ${5 - safeQuantity === 1 ? "mat" : "mats"} más para desbloquear beneficios por volumen.`
+                    : "Elige el beneficio que prefieras para tu compra."}
+                </p>
+                <div role="radiogroup" aria-label="Modalidad de promoción" className="grid grid-cols-2 gap-2">
+                  <button type="button" role="radio" aria-checked={safeQuantity >= 5 && promotionMode === "msi15"}
+                    disabled={safeQuantity < 5} onClick={() => setPromotionMode("msi15")}
+                    className={`min-h-20 rounded-xl border p-3 text-left text-xs transition sm:text-sm disabled:cursor-not-allowed ${safeQuantity < 5 ? "border-gray-200 bg-gray-50 text-gray-500" : promotionMode === "msi15" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                    <span className="block font-semibold">15% OFF + 3 MSI</span>
+                    <span className="mt-1 block text-[11px] font-normal">Desde 5 mats · sujeto a elegibilidad</span>
+                    {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible desde 5 mats</span>}
+                  </button>
+                  <button type="button" role="radio" aria-checked={safeQuantity >= 5 && promotionMode === "volume20"}
+                    disabled={safeQuantity < 5} onClick={() => setPromotionMode("volume20")}
+                    className={`min-h-20 rounded-xl border p-3 text-left text-xs transition sm:text-sm disabled:cursor-not-allowed ${safeQuantity < 5 ? "border-gray-200 bg-gray-50 text-gray-500" : promotionMode === "volume20" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                    <span className="block font-semibold">20% OFF · Contado</span>
+                    <span className="mt-1 block text-[11px] font-normal">Desde 5 mats · sin MSI</span>
+                    {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible desde 5 mats</span>}
+                  </button>
+                </div>
               </div>
 
               <div aria-live="polite" className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
