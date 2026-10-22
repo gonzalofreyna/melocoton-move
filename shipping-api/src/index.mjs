@@ -311,7 +311,6 @@ export const handler = async (event) => {
         areaLevel2,
         areaLevel3,
         promoCode,
-        subtotal,
       } = body;
 
       if (!Array.isArray(items) || items.length === 0) {
@@ -398,9 +397,8 @@ export const handler = async (event) => {
         };
       }
 
-      // Preview uses the submitted subtotal; checkout-api recomputes it from
-      // trusted catalog prices before requesting the very same quote.
-      const cartSubtotal = Number(subtotal);
+      // Prices and quantities are obtained from the internal authenticated ecommerce API.
+      const cartSubtotal = shippingData.items.reduce((sum, item) => sum + Number(item.unitPrice) * item.quantity, 0);
       const thresholdReached = Number.isFinite(cartSubtotal) && cartSubtotal >= 1500;
       const metroDestination = await qualifiesForMetroShipping(cleanPostalCode);
       if (thresholdReached || metroDestination) {
