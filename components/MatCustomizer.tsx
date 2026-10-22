@@ -1102,7 +1102,7 @@ export default function MatCustomizer() {
               </div>
 
               <div className="mb-3">
-                <p className="mb-2 text-sm font-semibold text-gray-900">Promociones para tu proyecto</p>
+                <p className="mb-2 text-sm font-semibold text-gray-900">Promociones disponibles</p>
                 {safeQuantity < 5 && (
                   <div className="mb-3 rounded-xl border border-brand-line bg-brand-sand p-3">
                     <p className="text-sm font-semibold text-brand-ink">10% de descuento aplicado</p>
@@ -1121,8 +1121,8 @@ export default function MatCustomizer() {
                     <span className="block font-semibold">15% OFF + 3 MSI</span>
                     <span className="mt-2 block text-base font-bold text-brand-ink">{formatMoney(Math.round(MAT_PRICE * 0.85 * 100) / 100)} <span className="text-[11px] font-normal text-gray-600">/ mat</span></span>
                     <span className="block text-xs text-gray-500 line-through">{formatMoney(MAT_PRICE)}</span>
-                    <span className="mt-1 block text-[11px] font-normal">Desde 5 mats · sujeto a elegibilidad</span>
-                    {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible desde 5 mats</span>}
+                    <span className="mt-1 block text-[11px] font-normal">MSI sujetos a elegibilidad</span>
+                    {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible a partir de 5 mats</span>}
                   </button>
                   <button type="button" role="radio" aria-checked={safeQuantity >= 5 && promotionMode === "volume20"}
                     disabled={safeQuantity < 5} onClick={() => setPromotionMode("volume20")}
@@ -1130,8 +1130,8 @@ export default function MatCustomizer() {
                     <span className="block font-semibold">20% OFF · Contado</span>
                     <span className="mt-2 block text-base font-bold text-brand-ink">{formatMoney(Math.round(MAT_PRICE * 0.80 * 100) / 100)} <span className="text-[11px] font-normal text-gray-600">/ mat</span></span>
                     <span className="block text-xs text-gray-500 line-through">{formatMoney(MAT_PRICE)}</span>
-                    <span className="mt-1 block text-[11px] font-normal">Desde 5 mats · sin MSI</span>
-                    {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible desde 5 mats</span>}
+                    
+                    {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible a partir de 5 mats</span>}
                   </button>
                 </div>
               </div>
