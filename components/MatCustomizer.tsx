@@ -1119,6 +1119,8 @@ export default function MatCustomizer() {
                     disabled={safeQuantity < 5} onClick={() => setPromotionMode("msi15")}
                     className={`min-h-20 rounded-xl border p-3 text-left text-xs transition sm:text-sm disabled:cursor-not-allowed ${safeQuantity < 5 ? "border-gray-200 bg-gray-50 text-gray-500" : promotionMode === "msi15" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
                     <span className="block font-semibold">15% OFF + 3 MSI</span>
+                    <span className="mt-2 block text-base font-bold text-brand-ink">{formatMoney(Math.round(MAT_PRICE * 0.85 * 100) / 100)} <span className="text-[11px] font-normal text-gray-600">/ mat</span></span>
+                    <span className="block text-xs text-gray-500 line-through">{formatMoney(MAT_PRICE)}</span>
                     <span className="mt-1 block text-[11px] font-normal">Desde 5 mats · sujeto a elegibilidad</span>
                     {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible desde 5 mats</span>}
                   </button>
@@ -1126,6 +1128,8 @@ export default function MatCustomizer() {
                     disabled={safeQuantity < 5} onClick={() => setPromotionMode("volume20")}
                     className={`min-h-20 rounded-xl border p-3 text-left text-xs transition sm:text-sm disabled:cursor-not-allowed ${safeQuantity < 5 ? "border-gray-200 bg-gray-50 text-gray-500" : promotionMode === "volume20" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
                     <span className="block font-semibold">20% OFF · Contado</span>
+                    <span className="mt-2 block text-base font-bold text-brand-ink">{formatMoney(Math.round(MAT_PRICE * 0.80 * 100) / 100)} <span className="text-[11px] font-normal text-gray-600">/ mat</span></span>
+                    <span className="block text-xs text-gray-500 line-through">{formatMoney(MAT_PRICE)}</span>
                     <span className="mt-1 block text-[11px] font-normal">Desde 5 mats · sin MSI</span>
                     {safeQuantity < 5 && <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">Disponible desde 5 mats</span>}
                   </button>
