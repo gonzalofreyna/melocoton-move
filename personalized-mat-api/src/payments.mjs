@@ -38,7 +38,7 @@ export function buildCheckoutParameters(body, origin) {
           unit_amount: unitAmount,
           product_data: {
             name: "Mat profesional personalizado — Melocotón Move",
-            description: quote.promotion === "volume20" ? "20% de descuento por pago de contado desde 5 mats. Envío por cotizar." : quote.promotion === "msi15" ? "15% de descuento con opción de 3 MSI desde 5 mats. Envío por cotizar." : "10% de descuento de 1 a 4 mats. Envío por cotizar.",
+            description: quote.promotion === "volume20" ? "20% de descuento por pago de contado desde 5 mats. Envío gratis incluido." : quote.promotion === "msi15" ? "15% de descuento con opción de 3 MSI desde 5 mats. Envío gratis incluido." : "10% de descuento de 1 a 4 mats. Envío gratis incluido.",
           },
         },
         quantity: itemQuantity,
@@ -47,6 +47,7 @@ export function buildCheckoutParameters(body, origin) {
     ],
     customer_creation: "always",
     billing_address_collection: "required",
+    shipping_address_collection: { allowed_countries: ["MX"] },
     phone_number_collection: { enabled: true },
     success_url: origin + "/success?session_id={CHECKOUT_SESSION_ID}",
     cancel_url: origin + "/crea-tu-mat?cancelled=1",
@@ -59,7 +60,7 @@ export function buildCheckoutParameters(body, origin) {
       pricingVersion: "v2",
       totalCents: String(quote.totalCents),
       deliveryBusinessDays: "45",
-      shippingPolicy: "quoted_separately",
+      shippingPolicy: "free",
       designStatus: "pending_contact",
     },
     payment_intent_data: {
