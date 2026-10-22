@@ -15,7 +15,9 @@ const errors = [];
 const ids = new Set();
 for (const item of items) {
   const id = get(item, "id");
-  const price = get(item, "price");
+  // The nested <g:shipping><g:price> is a shipping charge, not the product price.
+  const productFields = item.replace(/<g:shipping>[\s\S]*?<\/g:shipping>/g, "");
+  const price = get(productFields, "price");
   const image = get(item, "image_link");
   const link = get(item, "link");
   const label = get(item, "shipping_label");
