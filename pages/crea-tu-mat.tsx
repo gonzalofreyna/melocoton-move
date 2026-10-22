@@ -34,7 +34,7 @@ const faqs = [
   },
   {
     question: "¿Cuánto tarda la entrega y cómo se cobra el envío?",
-    answer: "El plazo estimado es de 45 días hábiles. El envío se cotiza y paga por separado; no está incluido en el importe de los mats.",
+    answer: "El plazo estimado es de 45 días hábiles. El envío es gratis y está incluido en el precio de los mats.",
   },
 ];
 export default function CreaTuMatPage() {
