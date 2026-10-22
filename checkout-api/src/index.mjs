@@ -274,10 +274,7 @@ export const handler = async (event) => {
         }
 
         // Código manual de envío gratis
-        if (quoteData.type === "free_shipping_rule") {
-          shippingCost = 0;
-          shippingLabel = quoteData.reason === "metro" ? "Envío gratis · Valle de México" : "Envío gratis · compra desde $1,500";
-        } else if (quoteData.type === "free_shipping_promo") {
+      } else if (quoteData.type === "free_shipping_promo") {
           shippingCost = 0;
 
           shippingPromoApplied = true;
@@ -305,7 +302,7 @@ export const handler = async (event) => {
            * checkout vuelve a cotizar y Melocotón
            * absorbe la tarifa más económica.
            */
-          if (qualifiesForFreeShipping) {
+          if (qualifiesForFreeShipping || quoteData.type === "free_shipping_rule") {
             const cheapestRate = rates[0];
 
             selectedShippingProvider = cheapestRate.provider || "";
@@ -317,7 +314,7 @@ export const handler = async (event) => {
             actualShippingCost = Number(cheapestRate.total) || 0;
             shippingCost = 0;
 
-            shippingLabel = "Envío gratis";
+            shippingLabel = quoteData.reason === "metro" ? "Envío gratis · Valle de México" : "Envío gratis";
           } else {
             const requestedProvider = String(
               shipping?.selectedProvider || "",
