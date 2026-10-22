@@ -29,7 +29,7 @@ for (const item of items) {
   }
   if (!["in_stock", "out_of_stock"].includes(availability)) errors.push(`${id}: stock inválido`);
   if (!/^(estandar|promo-elegible)-entrega-\d+-\d+-habiles$/.test(label || "")) errors.push(`${id}: shipping_label inválido`);
-  if (/<g:shipping>/.test(item)) errors.push(`${id}: envío declarado sin tarifa real validada`);
+  if (!/<g:shipping><g:country>MX<\/g:country><g:price>59\.00 MXN<\/g:price><\/g:shipping>/.test(item)) errors.push(`${id}: tarifa de envío distinta a $59 MXN`);
   if (get(item, "sale_price") && Number.parseFloat(get(item,"sale_price")) >= Number.parseFloat(price)) errors.push(`${id}: oferta no menor que precio`);
 }
 console.log(`Merchant feed: ${items.length} artículos; ${errors.length} errores`);
