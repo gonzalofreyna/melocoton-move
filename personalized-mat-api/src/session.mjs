@@ -36,6 +36,7 @@ export async function getCheckoutSession(event, env = process.env, dependencies 
       promotion: paid.promotion,
       sessionId: session.id,
       stripeReceiptUrl: receiptUrl,
+      shippingPolicy: session.metadata?.shippingPolicy === "free" ? "free" : "quoted_separately",
     });
   } catch (error) {
     if (error?.type === "StripeInvalidRequestError" && error?.statusCode === 404) {

@@ -682,7 +682,7 @@ export default function MatCustomizer() {
         `Total estimado: ${formatMoney(estimatedTotal)}`,
         "",
         "Entrega estimada: 45 días hábiles.",
-        "Envío: se cotiza y cobra por separado; no está incluido en el total estimado.",
+        "Envío gratis incluido en el precio del producto.",
         "",
         "Ya descargué la imagen de mi diseño y la adjunto aquí.",
       ].join("\n");
@@ -749,7 +749,7 @@ export default function MatCustomizer() {
             ) : (
               <div className="mt-5" aria-live="polite">
                 <div className="rounded-xl bg-brand-sand p-4">
-                  <p className="text-xs text-gray-700">Tu cotización estimada · sin envío</p>
+                  <p className="text-xs text-gray-700">Tu cotización estimada · envío gratis</p>
                   <p className="mt-1 text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   <p className="mt-2 text-sm font-semibold text-brand-ink">
                     {safeQuantity < 5 ? "10% de descuento aplicado" : promotionMode === "volume20" ? "20% de descuento por pago de contado" : "15% de descuento + opción de 3 MSI"}
@@ -1155,7 +1155,7 @@ export default function MatCustomizer() {
 
               <div className="mt-4 rounded-xl border border-brand-line bg-white px-4 py-3 text-left text-sm leading-6 text-brand-ink" aria-label="Condiciones de entrega y envío">
                 <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
-                <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el precio.</p>
+                <p><strong>Envío:</strong> gratis, incluido en el precio.</p>
               </div>
 
               <button

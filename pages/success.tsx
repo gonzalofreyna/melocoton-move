@@ -324,7 +324,7 @@ export default function SuccessPage({
           <div className="mt-5 rounded-xl border border-brand-line bg-brand-sand p-4 text-sm leading-6 text-brand-ink">
             <p><strong>Promoción:</strong> {promotion === "single10" ? "10% de descuento · sin MSI" : promotion === "msi15" ? "15% de descuento + opción de 3 MSI" : promotion === "volume20" ? "20% de descuento · contado" : promotion === "msi5" ? "5% de descuento con opción de MSI (promoción anterior)" : "5×4 sin MSI (promoción anterior)"}</p>
             <p><strong>Entrega estimada:</strong> 45 días hábiles.</p>
-            <p><strong>Envío:</strong> se cotiza por separado y no está incluido en el total pagado.</p>
+            <p><strong>Envío:</strong> {shippingLabel === "Envío gratis" ? "gratis, incluido en el precio de los productos." : "se cotiza por separado, conforme a las condiciones del pedido original."}</p>
             <p>Si personalizaste tu tapete, utiliza el botón «Enviar diseño por WhatsApp» para compartir las coordenadas y especificaciones. Confirma el envío del mensaje dentro de WhatsApp.</p>
           </div>
         )}
@@ -426,7 +426,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
                 amountSubtotal: data.amountTotal,
                 paidAmountCents: data.amountTotal,
               }],
-              shippingLabel: "Se cotiza por separado",
+              shippingLabel: data.shippingPolicy === "free" ? "Envío gratis" : "Se cotiza por separado",
               orderId: sessionId,
             } };
           }
@@ -527,7 +527,7 @@ export const getServerSideProps: GetServerSideProps<SuccessProps> = async (
     let shippingLabel: string | null =
       session.metadata?.shippingLabel?.trim() || null;
 
-    if (personalized) shippingLabel = "Se cotiza por separado";
+    if (personalized) shippingLabel = session.metadata?.shippingPolicy === "free" ? "Envío gratis" : "Se cotiza por separado";
     if (!shippingLabel) {
       if (session.metadata?.hasCustomShipping === "true") {
         shippingLabel = "Incluye artículos con envío a cotizar";
