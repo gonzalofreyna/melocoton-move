@@ -130,7 +130,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const FIXED_SHIPPING_FEE = Number(
-    process.env.NEXT_PUBLIC_FIXED_SHIPPING_FEE ?? 59,
+    process.env.NEXT_PUBLIC_FIXED_SHIPPING_FEE ?? 149,
   );
 
   // Verifica si hay productos con envío especial
