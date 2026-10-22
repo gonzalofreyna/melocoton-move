@@ -81,7 +81,7 @@ export default function MiniCart() {
     !hasCustomShipping && (freeShippingPromo || qualifiesForFreeShipping);
 
   const effectiveShippingCost =
-    hasCustomShipping || shippingIsFree ? 0 : (selectedRate?.total ?? 0);
+    hasCustomShipping || shippingIsFree ? 0 : (selectedRate ? 59 : 0);
 
   const shippingReady =
     hasCustomShipping ||
