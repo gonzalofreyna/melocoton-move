@@ -1139,7 +1139,7 @@ export default function MatCustomizer() {
               <div aria-live="polite" className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs text-gray-600">Total de mats · sin envío</p>
+                    <p className="text-xs text-gray-600">Total de mats</p>
                     <p className="text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   </div>
                   <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-brand-ink">
