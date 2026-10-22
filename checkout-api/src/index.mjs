@@ -274,7 +274,7 @@ export const handler = async (event) => {
         }
 
         // Código manual de envío gratis
-      } else if (quoteData.type === "free_shipping_promo") {
+        if (quoteData.type === "free_shipping_promo") {
           shippingCost = 0;
 
           shippingPromoApplied = true;
