@@ -318,8 +318,10 @@ export default function MiniCart() {
       }
 
       if (data.type === "free_shipping_rule") {
-        setShippingRates([]);
-        setSelectedRateId(null);
+        const rates: ShippingRate[] = Array.isArray(data.rates) ? data.rates : [];
+        if (!rates.length) throw new Error("No hay tarifas disponibles para este destino.");
+        setShippingRates(rates);
+        setSelectedRateId(rates[0].id);
         setFreeShippingPromo(false);
         setFreeShippingRule(true);
         setAppliedShippingPromoCode(null);
