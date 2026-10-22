@@ -391,7 +391,8 @@ export const handler = async (event) => {
               };
             }
 
-            shippingCost = realShippingCost;
+            // Keep carrier quotation for fulfillment, charge a customer-facing flat fee.
+            shippingCost = 59;
             actualShippingCost = realShippingCost;
 
             selectedShippingProvider = selectedRate.provider || "";
