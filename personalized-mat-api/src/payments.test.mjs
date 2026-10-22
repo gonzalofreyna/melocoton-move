@@ -1,50 +1,35 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildCheckoutParameters, checkoutConfiguration, createCheckout } from "./payments.mjs";
-
-test("5x4: Stripe collects four units, metadata preserves five mats", () => {
-  const p = buildCheckoutParameters({ quantity: 5, promotion: "fiveFour" }, "https://www.melocotonmove.com");
-  assert.equal(p.line_items[0].quantity, 4);
-  assert.equal(p.line_items[0].price_data.unit_amount, 149900);
-  assert.equal(p.line_items[1].quantity, 1);
-  assert.equal(p.line_items[1].price_data.unit_amount, 0);
-  assert.equal(p.line_items.reduce((n, li) => n + li.quantity, 0), 5);
-  assert.equal(p.line_items.reduce((n, li) => n + li.quantity * li.price_data.unit_amount, 0), 599600);
-  assert.equal(p.metadata.quantity, "5");
-  assert.equal(p.metadata.promotion, "fiveFour");
-  assert.equal(p.payment_method_options.card.installments.enabled, false);
-  assert.equal(p.payment_method_types, undefined);
-  assert.equal(p.metadata.shippingPolicy, "quoted_separately");
+const checkout=(quantity,promotion)=>buildCheckoutParameters({quantity,promotion},"https://www.melocotonmove.com");
+test("10% from 1 to 4: correct Stripe line and no MSI",()=>{
+ for(const n of [1,2,4]) {
+ const p=checkout(n,"single10");
+ assert.equal(p.line_items[0].quantity,n);
+ assert.equal(p.line_items[0].price_data.unit_amount,125910);
+ assert.equal(p.payment_method_options.card.installments.enabled,false);
+ assert.equal(p.metadata.pricingVersion,"v2");
+ }
 });
-
-test("5%: Stripe total matches backend quote and enables available card MSI", () => {
-  const p = buildCheckoutParameters({ quantity: 5, promotion: "msi5" }, "https://www.melocotonmove.com");
-  assert.equal(p.line_items[0].quantity * p.line_items[0].price_data.unit_amount, 712025);
-  assert.equal(p.payment_method_options.card.installments.enabled, true);
-  assert.equal(p.payment_method_types, undefined);
-  assert.equal(p.line_items.length, 1);
-});
-
-test("Stripe cannot accept client-provided amounts", () => {
-  assert.throws(() => buildCheckoutParameters({ quantity: 5, promotion: "fiveFour", total: 1 }, "https://www.melocotonmove.com"));
-});
-
-test("Stripe checkout disabled until explicit deployment configuration", async () => {
-  assert.equal(checkoutConfiguration({}), null);
-  const result = await createCheckout({ body: JSON.stringify({ quantity: 5, promotion: "fiveFour" }) }, {});
-  assert.equal(result.statusCode, 503);
-});
-
-
-test("20% desde 5 tapetes: aplica a todas las unidades y Stripe cobra igual", () => {
-  for (const quantity of [5, 6, 7, 9, 10, 15]) {
-    const p = buildCheckoutParameters({ quantity, promotion: "volume20" }, "https://www.melocotonmove.com");
-    assert.equal(p.line_items.length, 1);
-    assert.equal(p.line_items[0].quantity, quantity);
-    assert.equal(p.line_items[0].price_data.unit_amount, 119920);
-    assert.equal(p.line_items[0].quantity * p.line_items[0].price_data.unit_amount, quantity * 119920);
-    assert.equal(p.metadata.freeUnits, "0");
-    assert.equal(p.payment_method_options.card.installments.enabled, false);
+test("15% + MSI from 5 and 20% contado: Stripe totals match quote",()=>{
+ for(const n of [5,6,10,99]) {
+  for(const [promo,unit,msi] of [["msi15",118915,true],["volume20",111920,false]]) {
+   const p=checkout(n,promo);
+   assert.equal(p.line_items[0].quantity,n);
+   assert.equal(p.line_items[0].price_data.unit_amount,unit);
+   assert.equal(p.line_items[0].quantity*unit,n*unit);
+   assert.equal(p.payment_method_options.card.installments.enabled,msi);
+   assert.equal(p.metadata.totalCents,String(n*unit));
   }
-  assert.throws(() => buildCheckoutParameters({ quantity: 4, promotion: "volume20" }, "https://www.melocotonmove.com"));
+ }
+});
+test("reject invalid promo and client amounts",()=>{
+ assert.throws(()=>checkout(4,"msi15"));
+ assert.throws(()=>checkout(5,"single10"));
+ assert.throws(()=>buildCheckoutParameters({quantity:5,promotion:"volume20",total:1},"https://www.melocotonmove.com"));
+});
+test("checkout remains disabled without live configuration",async()=>{
+ assert.equal(checkoutConfiguration({}),null);
+ const r=await createCheckout({body:JSON.stringify({quantity:5,promotion:"msi15"})},{});
+ assert.equal(r.statusCode,503);
 });
