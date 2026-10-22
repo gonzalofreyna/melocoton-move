@@ -1,4 +1,4 @@
-import { quotePersonalizedMats, PERSONALIZED_MAT_UNIT_PRICE_MXN } from "./personalized-mat-pricing.mjs";
+import { quotePersonalizedMats, quoteLegacyPersonalizedMats, PERSONALIZED_MAT_UNIT_PRICE_MXN } from "./personalized-mat-pricing.mjs";
 
 const respond = (statusCode, data) => ({
   statusCode,
@@ -14,10 +14,13 @@ export function validatePaidSession(session) {
   if (session?.metadata?.source !== "melocoton_personalized_mat") return null;
   if (session.payment_status !== "paid") return null;
   if (session.mode !== "payment" || !session.id?.startsWith("cs_")) throw new Error("Invalid checkout session");
-  const quote = quotePersonalizedMats({
+  const quoteInput = {
     quantity: Number(session.metadata.quantity),
     promotion: session.metadata.promotion,
-  }, PERSONALIZED_MAT_UNIT_PRICE_MXN);
+  };
+  const quote = session.metadata.pricingVersion === "v2"
+    ? quotePersonalizedMats(quoteInput, PERSONALIZED_MAT_UNIT_PRICE_MXN)
+    : quoteLegacyPersonalizedMats(quoteInput);
   if (
     session.currency !== "mxn" ||
     session.amount_total !== quote.totalCents ||
