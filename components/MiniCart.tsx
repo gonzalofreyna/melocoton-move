@@ -292,7 +292,6 @@ export default function MiniCart() {
           areaLevel2: areaLevel2.trim(),
           areaLevel3: areaLevel3.trim(),
           promoCode: promoCode?.trim() || undefined,
-          subtotal,
           items,
         }),
       });
