@@ -1163,14 +1163,14 @@ export default function MatCustomizer() {
                 onClick={handleBuyNow}
                 disabled={checkoutLoading}
                 aria-busy={checkoutLoading}
-                className="mm-button mt-3 w-full py-4 text-base font-bold disabled:cursor-wait disabled:opacity-60"
+                className="mm-button mt-3 flex min-h-14 w-full items-center justify-center px-4 py-3 text-center text-base font-bold disabled:cursor-wait disabled:opacity-60"
               >
                 {checkoutLoading ? "Preparando tu compra…" : "Comprar ahora"}
               </button>
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
-                className="mm-button-outline mt-2 w-full text-sm font-medium"
+                className="mm-button-outline mt-2 flex min-h-14 w-full items-center justify-center px-4 py-3 text-center text-base font-bold"
               >
                 Consultar por WhatsApp
               </button>
