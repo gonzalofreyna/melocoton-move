@@ -12,7 +12,7 @@ Handler: `src/index.handler` (ES module)
 - `POST /webhook`: recibe eventos firmados de Stripe con cuerpo **raw**, sin alterarlo y sin autenticacion de API Gateway que impida a Stripe enviar eventos. Verifica firma, fuente y total en backend; no guarda pedidos en otra base de datos.
 - `OPTIONS`: preflight CORS para el origen permitido.
 
-En API Gateway HTTP API / Lambda Function URL se deben definir correctamente la ruta y CORS; no dar acceso publico a secretos. La API solo acepta promocion y cantidad. Promociones nuevas: `volume20` (20% sobre **todas** las unidades a partir de 5, sin MSI) y `msi5` (5% + opción MSI). Se conserva `fiveFour` en el backend solo por compatibilidad con pagos históricos y validación de sus webhooks; el frontend ya no lo ofrece. No guarda logos, ni exige diseño.
+En API Gateway HTTP API / Lambda Function URL se deben definir correctamente la ruta y CORS; no dar acceso publico a secretos. La API solo acepta promocion y cantidad. Promociones vigentes: `single10` (10% para 1–4 mats, sin MSI), `msi15` (15% desde 5 mats con opción MSI) y `volume20` (20% desde 5 mats sin MSI). Precio base: $1,399 MXN por mat. Los plazos de MSI realmente disponibles dependen de la configuración de Stripe y de la tarjeta. La API conserva verificación de pagos históricos de promociones `fiveFour`, `msi5` y el anterior `volume20` a $1,499 mediante `pricingVersion`. No guarda logos, ni exige diseño.
 
 ## Variables de entorno de la Lambda
 
