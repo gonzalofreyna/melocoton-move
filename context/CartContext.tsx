@@ -126,7 +126,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const FREE_SHIPPING_MIN_TOTAL = Number(
-    process.env.NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL ?? 499,
+    process.env.NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL ?? 1500,
   );
 
   const FIXED_SHIPPING_FEE = Number(
@@ -141,10 +141,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     cart.length > 0 && cart.every((i) => i.freeShipping === true);
 
   // Calcula si califica para envío gratis
-  const qualifiesForFreeShipping =
-    allItemsFreeShipping &&
-    subtotal >= FREE_SHIPPING_MIN_TOTAL &&
-    !hasCustomShipping;
+  const qualifiesForFreeShipping = subtotal >= FREE_SHIPPING_MIN_TOTAL && !hasCustomShipping;
 
   // Determina el costo de envío y el mensaje
   let shippingCost = 0;
