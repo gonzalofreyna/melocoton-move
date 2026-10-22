@@ -11,34 +11,12 @@ const MX = new Intl.NumberFormat("es-MX", {
   currency: "MXN",
 });
 
-type ShippingRate = {
-  id: string;
-  provider: string;
-  providerDisplayName: string;
-  serviceName: string;
-  serviceCode: string;
-  total: number;
-  amount: number | null;
-  serviceFee: number | null;
-  days: number | null;
-  currency: string;
-  pickup: boolean;
-  officeDelivery: boolean;
-  officeDeliveryOnly: boolean;
-};
-
-const SHIPPING_API_URL = (
-  process.env.NEXT_PUBLIC_SHIPPING_API_URL || ""
-).replace(/\/$/, "");
-
 export default function MiniCart() {
   const {
     cart,
     subtotal,
     isOpen,
     closeCart,
-    qualifiesForFreeShipping,
-    hasCustomShipping,
   } = useCart();
 
   const [loading, setLoading] = useState(false);
@@ -47,122 +25,9 @@ export default function MiniCart() {
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
-  const [postalCode, setPostalCode] = useState("");
-  const [shippingLoading, setShippingLoading] = useState(false);
-  const [freeShippingPromo, setFreeShippingPromo] = useState(false);
-
-  const [areaLevel1, setAreaLevel1] = useState("");
-  const [areaLevel2, setAreaLevel2] = useState("");
-  const [areaLevel3, setAreaLevel3] = useState("");
-
-  const [postalCodeLoading, setPostalCodeLoading] = useState(false);
-  const [postalCodeMsg, setPostalCodeMsg] = useState<string | null>(null);
-  const [colonies, setColonies] = useState<string[]>([]);
-
-  const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
-  const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
-
-  const [appliedShippingPromoCode, setAppliedShippingPromoCode] = useState<
-    string | null
-  >(null);
-
-  const [shippingMsg, setShippingMsg] = useState<string | null>(null);
-
-  const selectedRate =
-    shippingRates.find((rate) => rate.id === selectedRateId) || null;
-
-  const destinationComplete =
-    /^\d{5}$/.test(postalCode.trim()) &&
-    areaLevel1.trim() !== "" &&
-    areaLevel2.trim() !== "" &&
-    areaLevel3.trim() !== "";
-
-  const shippingIsFree = true;
-  const effectiveShippingCost = 0;
-  const shippingReady = true;
-
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const cleanPostalCode = postalCode.trim();
-
-    if (cleanPostalCode.length !== 5) {
-      setAreaLevel1("");
-      setAreaLevel2("");
-      setAreaLevel3("");
-      setColonies([]);
-      setPostalCodeMsg(null);
-      return;
-    }
-
-    if (!/^\d{5}$/.test(cleanPostalCode)) {
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        setPostalCodeLoading(true);
-        setPostalCodeMsg(null);
-
-        const res = await fetch(
-          `${SHIPPING_API_URL}/api/shipping/postal-code/${cleanPostalCode}`,
-          {
-            method: "GET",
-            signal: controller.signal,
-          },
-        );
-
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok || !data?.ok) {
-          throw new Error(
-            data?.message || data?.error || "No encontramos ese código postal.",
-          );
-        }
-
-        const nextColonies = Array.isArray(data.colonies) ? data.colonies : [];
-
-        setAreaLevel1(data.areaLevel1 || "");
-        setAreaLevel2(data.areaLevel2 || "");
-        setColonies(nextColonies);
-
-        if (nextColonies.length === 1) {
-          setAreaLevel3(nextColonies[0]);
-        } else {
-          setAreaLevel3("");
-        }
-      } catch (error: any) {
-        if (error?.name === "AbortError") {
-          return;
-        }
-
-        console.error(error);
-
-        setAreaLevel1("");
-        setAreaLevel2("");
-        setAreaLevel3("");
-        setColonies([]);
-
-        setPostalCodeMsg(
-          error?.message || "No fue posible consultar el código postal.",
-        );
-      } finally {
-        if (!controller.signal.aborted) {
-          setPostalCodeLoading(false);
-        }
-      }
-    }, 400);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      controller.abort();
-    };
-  }, [postalCode]);
-
-  // 🔁 Recalcular descuento si cambia el subtotal o el cupón aplicado
-  // 🔁 Recalcular descuento si cambia el subtotal, el envío o el cupón aplicado
+  // Mantener el descuento sincronizado con el subtotal
   useEffect(() => {
     if (!appliedCoupon) return;
 
@@ -172,46 +37,21 @@ export default function MiniCart() {
     const percent = Number(process.env.NEXT_PUBLIC_COUPON_PERCENT) || 0;
 
     if (appliedCoupon === validCode) {
-      const base = subtotal + (hasCustomShipping ? 0 : effectiveShippingCost);
-
-      const newDiscount = (base * percent) / 100;
+      const newDiscount = (subtotal * percent) / 100;
 
       setDiscount(newDiscount);
     }
-  }, [subtotal, effectiveShippingCost, hasCustomShipping, appliedCoupon]);
+  }, [subtotal, appliedCoupon]);
 
   // 🧹 Limpiar cupón si el carrito queda vacío
   useEffect(() => {
     if (cart.length === 0) {
-      setPostalCode("");
-      setAreaLevel1("");
-      setAreaLevel2("");
-      setAreaLevel3("");
-
-      setShippingRates([]);
-      setSelectedRateId(null);
-      setFreeShippingPromo(false);
-      setAppliedShippingPromoCode(null);
-      setShippingMsg(null);
       setAppliedCoupon(null);
       setDiscount(0);
       setMsg(null);
       setCoupon("");
     }
   }, [cart]);
-
-  const cartShippingKey = cart
-    .map((item) => `${item.slug}:${item.quantity}`)
-    .join("|");
-
-  useEffect(() => {
-    setShippingRates([]);
-    setSelectedRateId(null);
-    setFreeShippingPromo(false);
-    setAppliedShippingPromoCode(null);
-    setShippingMsg(null);
-    setMsg(null);
-  }, [cartShippingKey, postalCode, areaLevel1, areaLevel2, areaLevel3]);
 
   // Cerrar con tecla Escape
   useEffect(() => {
@@ -241,125 +81,6 @@ export default function MiniCart() {
     document.addEventListener("keydown", trap);
     return () => document.removeEventListener("keydown", trap);
   }, [isOpen]);
-
-  const requestShippingQuote = async (promoCode?: string) => {
-    if (hasCustomShipping) {
-      setShippingMsg(
-        "Este pedido contiene productos con envío especial que se cotizan por separado.",
-      );
-
-      return null;
-    }
-
-    if (!SHIPPING_API_URL) {
-      throw new Error("Falta NEXT_PUBLIC_SHIPPING_API_URL.");
-    }
-
-    if (!/^\d{5}$/.test(postalCode.trim())) {
-      throw new Error("Introduce un código postal válido de 5 dígitos.");
-    }
-
-    if (!areaLevel1.trim() || !areaLevel2.trim() || !areaLevel3.trim()) {
-      throw new Error("Completa estado, municipio/alcaldía y colonia.");
-    }
-
-    const items = cart.map((item) => ({
-      slug: item.slug,
-      quantity: item.quantity,
-    }));
-
-    setShippingLoading(true);
-    setShippingMsg(null);
-
-    try {
-      const res = await fetch(`${SHIPPING_API_URL}/api/shipping/quote`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          postalCode: postalCode.trim(),
-          areaLevel1: areaLevel1.trim(),
-          areaLevel2: areaLevel2.trim(),
-          areaLevel3: areaLevel3.trim(),
-          promoCode: promoCode?.trim() || undefined,
-          items,
-        }),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok || !data?.ok) {
-        throw new Error(
-          data?.detail ||
-            data?.error ||
-            data?.message ||
-            "No fue posible cotizar el envío.",
-        );
-      }
-
-      if (data.type === "custom") {
-        setShippingRates([]);
-        setSelectedRateId(null);
-
-        setShippingMsg(data.message || "Este pedido contiene envío especial.");
-
-        return data;
-      }
-
-      if (data.type === "free_shipping_promo") {
-        setShippingRates([]);
-        setSelectedRateId(null);
-
-        setFreeShippingPromo(true);
-
-        setAppliedShippingPromoCode(promoCode?.trim().toUpperCase() || null);
-
-        setShippingMsg("Código de envío gratis aplicado.");
-
-        return data;
-      }
-
-      const rates: ShippingRate[] = Array.isArray(data.rates) ? data.rates : [];
-
-      if (rates.length === 0) {
-        throw new Error("No encontramos opciones de envío para este destino.");
-      }
-
-      setFreeShippingPromo(false);
-      setAppliedShippingPromoCode(null);
-      setShippingRates(rates);
-
-      /*
-       * Si ya aplica envío gratis por la promoción normal,
-       * el cliente no necesita elegir la paquetería.
-       * El servidor elegirá después la opción más económica.
-       */
-      if (qualifiesForFreeShipping) {
-        setSelectedRateId(rates[0].id);
-
-        setShippingMsg("Envío gratis disponible.");
-      } else {
-        setSelectedRateId(null);
-
-        setShippingMsg("Selecciona una opción de envío.");
-      }
-
-      return data;
-    } finally {
-      setShippingLoading(false);
-    }
-  };
-
-  const handleQuoteShipping = async () => {
-    try {
-      await requestShippingQuote();
-    } catch (e: any) {
-      console.error(e);
-
-      setShippingMsg(e?.message || "No fue posible cotizar el envío.");
-    }
-  };
 
   const handleApplyCoupon = async () => {
     const cleanCode = coupon.trim().toUpperCase();
@@ -394,13 +115,6 @@ export default function MiniCart() {
 
   const handleCheckout = async () => {
     try {
-      if (!shippingReady) {
-        setMsg(
-          "Cotiza tu envío y selecciona una opción antes de finalizar la compra.",
-        );
-
-        return;
-      }
       setMsg(null);
       setLoading(true);
 
@@ -419,14 +133,7 @@ export default function MiniCart() {
       }));
 
       // ✅ Llamada al endpoint AWS (usa createCheckout de src/lib/checkoutClient)
-      const data = await createCheckout(items, appliedCoupon ?? undefined, {
-        postalCode: postalCode.trim(),
-        areaLevel1: areaLevel1.trim(),
-        areaLevel2: areaLevel2.trim(),
-        areaLevel3: areaLevel3.trim(),
-
-        // Stripe collects delivery address; shipping quotation not required.
-      });
+      const data = await createCheckout(items, appliedCoupon ?? undefined);
 
       if (!data?.ok || !data?.url) {
         throw new Error(data?.message || "No se recibió URL de Stripe.");
@@ -441,9 +148,7 @@ export default function MiniCart() {
     }
   };
 
-  const totalBeforeDiscount =
-    subtotal + (hasCustomShipping ? 0 : effectiveShippingCost);
-  const total = totalBeforeDiscount - discount;
+  const total = subtotal - discount;
 
   return (
     <>
@@ -568,9 +273,9 @@ export default function MiniCart() {
               {/* Botón */}
               <button
                 onClick={() => { trackCheckoutClick(); void handleCheckout(); }}
-                disabled={loading || shippingLoading || !shippingReady}
+                disabled={loading}
                 className={`w-full py-3.5 mt-2 rounded-2xl font-semibold text-[15px] shadow-sm transition ${
-                  loading || shippingLoading || !shippingReady
+                  loading
                     ? "bg-gray-300 text-white cursor-not-allowed"
                     : "bg-brand-blue text-white hover:bg-brand-beige hover:text-brand-blue"
                 }`}
