@@ -53,7 +53,12 @@ export function buildMerchantFeed(products: Product[]) {
       excluded.invalid++;
       continue;
     }
-    const shippingLabel = `entrega-${minDays}-${maxDays}-habiles`;
+    // A shipping label is not a promise of free shipping.
+        const shippingLabel = `${p.freeShipping === true ? "promo-elegible" : "estandar"}-entrega-${minDays}-${maxDays}-habiles`;
+        const weight = Number(p.weightGrams);
+        const dims = p.dimensionsCm;
+        const hasValidWeight = Number.isFinite(weight) && weight > 0;
+        const hasValidDimensions = dims != null && [dims.w, dims.h, dims.l].every((n) => Number.isFinite(n) && n > 0);
     seen.add(id);
     const hasSale = Number.isFinite(offer) && offer > 0 && offer < price;
     const link = new URL("/" + encodeURIComponent(p.slug), SITE).toString();
@@ -69,8 +74,14 @@ export function buildMerchantFeed(products: Product[]) {
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
       xmlNode("shipping_label", shippingLabel),
-      // Reference shipping rate for non-reformer products only; checkout remains Skydropx-based.
-      '<g:shipping><g:country>MX</g:country><g:price>199.00 MXN</g:price></g:shipping>',
+      // Shipping prices are set in Merchant Center after matching Skydropx checkout.
+      // Never advertise a flat rate or unconditional free shipping here.
+      ...(hasValidWeight ? [xmlNode("shipping_weight", `${weight} g`)] : []),
+      ...(hasValidDimensions ? [
+        xmlNode("shipping_width", `${dims.w} cm`),
+        xmlNode("shipping_height", `${dims.h} cm`),
+        xmlNode("shipping_length", `${dims.l} cm`),
+      ] : []),
       xmlNode("price", price.toFixed(2) + " MXN"),
       ...(hasSale ? [xmlNode("sale_price", offer.toFixed(2) + " MXN")] : []),
       xmlNode("brand", p.brand?.trim() || "Melocotón Move"),
