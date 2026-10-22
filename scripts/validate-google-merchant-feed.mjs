@@ -23,12 +23,12 @@ for (const item of items) {
   if (!id || ids.has(id)) errors.push(`ID vacío o duplicado: ${id}`);
   ids.add(id);
   if (!get(item,"title") || !get(item,"description")) errors.push(`${id}: sin título o descripción`);
-  if (!/^\\d+\\.\\d{2} MXN$/.test(price || "")) errors.push(`${id}: precio inválido: ${price}`);
+  if (!/^\d+\.\d{2} MXN$/.test(price || "")) errors.push(`${id}: precio inválido: ${price}`);
   for (const [field, value] of [["image_link", image], ["link", link]]) {
     if (!value || !value.startsWith("https://")) errors.push(`${id}: ${field} inválido`);
   }
   if (!["in_stock", "out_of_stock"].includes(availability)) errors.push(`${id}: stock inválido`);
-  if (!/^(estandar|promo-elegible)-entrega-\\d+-\\d+-habiles$/.test(label || "")) errors.push(`${id}: shipping_label inválido`);
+  if (!/^(estandar|promo-elegible)-entrega-\d+-\d+-habiles$/.test(label || "")) errors.push(`${id}: shipping_label inválido`);
   if (/<g:shipping>/.test(item)) errors.push(`${id}: envío declarado sin tarifa real validada`);
   if (get(item, "sale_price") && Number.parseFloat(get(item,"sale_price")) >= Number.parseFloat(price)) errors.push(`${id}: oferta no menor que precio`);
 }
