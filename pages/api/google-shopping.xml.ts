@@ -16,20 +16,14 @@ const absoluteImage = (value: string) => {
 };
 
 export function buildMerchantFeed(products: Product[]) {
-  const excluded = { missingStock: 0, customShipping: 0, invalid: 0 };
+  const excluded = { missingStock: 0, invalid: 0 };
   const seen = new Set<string>();
-  const isReformer = (p: Product) => /reformer/i.test([p.name, p.slug, p.category].join(" "));
   const entries: string[] = [];
 
   for (const p of products) {
     // Never claim availability where the inventory source does not specify it.
     if (p.stock == null || !Number.isInteger(p.stock) || p.stock < 0) {
       excluded.missingStock++;
-      continue;
-    }
-    // Custom shipping is quoted separately; do not imply a standard checkout delivery.
-    if (p.shippingType === "custom" || isReformer(p)) {
-      excluded.customShipping++;
       continue;
     }
 
@@ -53,8 +47,8 @@ export function buildMerchantFeed(products: Product[]) {
       excluded.invalid++;
       continue;
     }
-    // A shipping label is not a promise of free shipping.
-        const shippingLabel = `${p.freeShipping === true ? "promo-elegible" : "estandar"}-entrega-${minDays}-${maxDays}-habiles`;
+    // Free shipping is universal. The label distinguishes delivery windows only.
+    const shippingLabel = `entrega-${minDays}-${maxDays}-habiles`;
         const weight = Number(p.weightGrams);
         const dims = p.dimensionsCm;
         const hasValidWeight = Number.isFinite(weight) && weight > 0;
@@ -74,8 +68,8 @@ export function buildMerchantFeed(products: Product[]) {
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
       xmlNode("shipping_label", shippingLabel),
-      // Rates are quoted at checkout by Skydropx. Merchant Center rates
-      // must be configured separately using verified destination tariffs.
+      // Shipping is free for every product, configured in Merchant Center.
+      // Delivery windows must still match the applicable Merchant service.
       ...(hasValidWeight ? [xmlNode("shipping_weight", `${weight} g`)] : []),
       ...(hasValidDimensions ? [
         xmlNode("shipping_width", `${dims!.w} cm`),

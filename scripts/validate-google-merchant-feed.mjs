@@ -30,12 +30,12 @@ for (const item of items) {
     if (!value || !value.startsWith("https://")) errors.push(`${id}: ${field} inválido`);
   }
   if (!["in_stock", "out_of_stock"].includes(availability)) errors.push(`${id}: stock inválido`);
-  if (!/^(estandar|promo-elegible)-entrega-\d+-\d+-habiles$/.test(label || "")) errors.push(`${id}: shipping_label inválido`);
-  if (/<g:shipping>/.test(item)) errors.push(`${id}: tarifa fija de envío declarada sin validación`);
+  if (!/^entrega-\d+-\d+-habiles$/.test(label || "")) errors.push(`${id}: shipping_label inválido`);
+  if (/<g:shipping>/.test(item)) errors.push(`${id}: se esperaba configurar el envío gratis desde Merchant Center`);
   if (get(item, "sale_price") && Number.parseFloat(get(item,"sale_price")) >= Number.parseFloat(price)) errors.push(`${id}: oferta no menor que precio`);
 }
 console.log(`Merchant feed: ${items.length} artículos; ${errors.length} errores`);
 if (errors.length) {
   console.error(errors.slice(0, 50).join("\n"));
   process.exitCode = 1;
-} else console.log("Validación XML básica correcta. Falta comparar tarifas reales y configurar Merchant Center.");
+} else console.log("Validación XML básica correcta. Revisar que los plazos por grupo coincidan con Merchant Center.");

@@ -12,16 +12,15 @@ const products = await response.json();
 if (!Array.isArray(products)) throw new Error("API no devolvio un arreglo");
 const groups = new Map();
 const eligible = [];
-const freeShippingByRange = new Map();
 let excludedStock = 0;
 let missing = 0;
 let invalid = 0;
 let custom = 0;
 const examples = [];
 for (const p of products) {
-  // Match the feed's stock and custom-shipping exclusions.
+  // All products, including special delivery, can enter the free shipping feed.
   if (!Number.isInteger(p.stock) || p.stock < 0) { excludedStock++; continue; }
-  if (p.shippingType === "custom") { custom++; continue; }
+  if (p.shippingType === "custom" || /reformer/i.test([p.name,p.slug,p.category].join(" "))) custom++;
   eligible.push(p);
   const e = p.shippingEstimate;
   if (!e || e.minBusinessDays == null || e.maxBusinessDays == null) {
@@ -33,23 +32,17 @@ for (const p of products) {
   }
   const key = `${min}-${max} dias habiles`;
   groups.set(key,(groups.get(key) || 0) + 1);
-  const rule = freeShippingByRange.get(key) || { eligibleForPromotion: 0, requiresQuote: 0 };
-  if (p.freeShipping === true) rule.eligibleForPromotion++;
-  else rule.requiresQuote++;
-  freeShippingByRange.set(key, rule);
+
 }
 console.log("Productos activos en API:",products.length);
 console.log("Stock sin definir excluido:", excludedStock);
-console.log("Envio especial excluido:",custom);
-console.log("Elegibles por stock y envio:", eligible.length);
+console.log("Productos de logística especial incluidos (si cumplen datos):",custom);
+console.log("Productos con stock válido:", eligible.length);
 console.log("Productos sin estimacion:",missing);
 console.log("Estimaciones invalidas:",invalid);
 console.log("Distribucion de plazos totales (min-max):");
 for (const [key,n] of [...groups].sort((a,b)=>Number(a[0].split("-")[0])-Number(b[0].split("-")[0]))) console.log(`  ${key}: ${n}`);
-console.log("Condiciones por plazo (freeShipping=true no significa gratis sin llegar al minimo):");
-for (const [key, rule] of freeShippingByRange) console.log(`  ${key}: promo elegible=${rule.eligibleForPromotion}, cotizacion obligatoria=${rule.requiresQuote}`);
-console.log("Total promo elegible:",eligible.filter(p=>p.freeShipping === true).length);
-console.log("Total requiere cotizacion:",eligible.filter(p=>p.freeShipping !== true).length);
+console.log("Política de envío: gratis universal, sin depender del indicador freeShipping.");
 if (examples.length) console.log("Ejemplos por revisar:",examples.slice(0,15));
 
 // Optional local feed comparison to explain catalog-count differences without changing data.
