@@ -401,22 +401,6 @@ export const handler = async (event) => {
       const cartSubtotal = shippingData.items.reduce((sum, item) => sum + Number(item.unitPrice) * item.quantity, 0);
       const thresholdReached = Number.isFinite(cartSubtotal) && cartSubtotal >= 1500;
       const metroDestination = await qualifiesForMetroShipping(cleanPostalCode);
-      if (thresholdReached || metroDestination) {
-        return {
-          statusCode: 200,
-          headers: H,
-          body: JSON.stringify({
-            ok: true,
-            type: "free_shipping_rule",
-            freeShipping: true,
-            reason: metroDestination ? "metro" : "subtotal",
-            rates: [],
-            shippingAmount: 0,
-            message: metroDestination ? "Envío gratis en el Valle de México." : "Envío gratis en pedidos desde $1,500.",
-          }),
-        };
-      }
-
       if (shippingData.canQuoteAutomatically !== true) {
         return {
           statusCode: 400,
@@ -545,7 +529,10 @@ export const handler = async (event) => {
 
           quotationId,
 
-          freeShipping: shippingData.allStandardItemsFreeShipping,
+          freeShipping: thresholdReached || metroDestination,
+          type: thresholdReached || metroDestination ? "free_shipping_rule" : "rates",
+          reason: metroDestination ? "metro" : thresholdReached ? "subtotal" : null,
+          message: metroDestination ? "Envío gratis en el Valle de México." : thresholdReached ? "Envío gratis en pedidos desde $1,500." : null,
 
           rates: availableRates,
         }),
