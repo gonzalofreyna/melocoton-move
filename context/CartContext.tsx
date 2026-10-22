@@ -125,9 +125,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  const FREE_SHIPPING_MIN_TOTAL = Number(
-    process.env.NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL ?? 1500,
-  );
+  const FREE_SHIPPING_MIN_TOTAL = 1500;
 
   const FIXED_SHIPPING_FEE = Number(
     process.env.NEXT_PUBLIC_FIXED_SHIPPING_FEE ?? 149,
