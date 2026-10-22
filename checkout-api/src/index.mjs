@@ -69,9 +69,7 @@ export const handler = async (event) => {
       );
 
       const stripe = new Stripe(stripeSecretKey);
-      const FREE_SHIPPING_MIN_TOTAL = Number(
-        process.env.FREE_SHIPPING_MIN_TOTAL || 1500,
-      );
+      const FREE_SHIPPING_MIN_TOTAL = 1500;
 
       const SITE_URL = process.env.SITE_URL || "https://www.melocotonmove.com";
       const SHIPPING_API_URL = (process.env.SHIPPING_API_URL || "").replace(
