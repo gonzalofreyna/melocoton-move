@@ -125,59 +125,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cartCount = cart.reduce((t, i) => t + i.quantity, 0);
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  const FREE_SHIPPING_MIN_TOTAL = Number(
-    process.env.NEXT_PUBLIC_FREE_SHIPPING_MIN_TOTAL ?? 499,
-  );
-
-  const FIXED_SHIPPING_FEE = Number(
-    process.env.NEXT_PUBLIC_FIXED_SHIPPING_FEE ?? 149,
-  );
-
-  // Verifica si hay productos con envío especial
+  // Política comercial: envío gratis sin excepciones ni pedido mínimo.
   const hasCustomShipping = cart.some((i) => i.shippingType === "custom");
-
-  // Verifica si todos los productos aplican para free shipping
-  const allItemsFreeShipping =
-    cart.length > 0 && cart.every((i) => i.freeShipping === true);
-
-  // Calcula si califica para envío gratis
-  const qualifiesForFreeShipping =
-    allItemsFreeShipping &&
-    subtotal >= FREE_SHIPPING_MIN_TOTAL &&
-    !hasCustomShipping;
-
-  // Determina el costo de envío y el mensaje
-  let shippingCost = 0;
-  let shippingLabel = "";
-
-  // 🚛 Prioridad 1: Si hay productos con envío a cotizar
-  if (hasCustomShipping) {
-    shippingCost = 0;
-    shippingLabel = "Incluye artículos con envío a cotizar 🚛";
-  }
-  // 🚚 Prioridad 2: Si todos califican para envío gratis
-  else if (qualifiesForFreeShipping) {
-    shippingCost = 0;
-    shippingLabel = "Envío gratis 🚚✨";
-  }
-  // 💸 Prioridad 3: Si el subtotal no alcanza el mínimo
-  else if (subtotal > 0 && subtotal < FREE_SHIPPING_MIN_TOTAL) {
-    const remaining = FREE_SHIPPING_MIN_TOTAL - subtotal;
-    shippingCost = FIXED_SHIPPING_FEE;
-    shippingLabel = `Te faltan $${remaining.toFixed(
-      0,
-    )} para obtener envío gratis 💸`;
-  }
-  // 📦 Prioridad 4: Caso general (subtotal >= mínimo pero sin free shipping)
-  else if (subtotal >= FREE_SHIPPING_MIN_TOTAL) {
-    shippingCost = FIXED_SHIPPING_FEE;
-    shippingLabel = `Costo de envío fijo: $${FIXED_SHIPPING_FEE}`;
-  }
-  // 🧹 Limpia etiquetas si el carrito está vacío
-  if (cart.length === 0) {
-    shippingCost = 0;
-    shippingLabel = "";
-  }
+  const allItemsFreeShipping = cart.length > 0;
+  const qualifiesForFreeShipping = cart.length > 0;
+  const shippingCost = 0;
+  const shippingLabel = cart.length > 0 ? "Envío gratis 🚚✨" : "";
 
   // ⚙️ Acciones
   const openCart = useCallback(() => setIsOpen(true), []);
