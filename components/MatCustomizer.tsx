@@ -46,7 +46,7 @@ const MAT_DIMENSIONS: Record<MatShape, { height: number; width: number }> = {
   capsula: { height: 181, width: 68 },
 };
 const MAT_THICKNESS_MM = 5;
-const MAT_PRICE = 1499;
+const MAT_PRICE = 1399;
 const WHATSAPP_PHONE = "523310125501";
 
 const matShapes: { id: MatShape; label: string }[] = [
@@ -402,7 +402,7 @@ export default function MatCustomizer() {
   const [quoteRequested, setQuoteRequested] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [promotionMode, setPromotionMode] = useState<"msi5" | "volume20">("msi5");
+  const [promotionMode, setPromotionMode] = useState<"single10" | "msi15" | "volume20">("single10");
 
   const [previewWidth, setPreviewWidth] = useState(420);
 
@@ -455,13 +455,11 @@ export default function MatCustomizer() {
   const safeQuantity = Math.min(99, Math.max(1, Math.floor(quantity || 1)));
 
   const subtotalBeforePromo = MAT_PRICE * safeQuantity;
-  const estimatedTotal = promotionMode === "msi5"
-    ? Math.round(MAT_PRICE * safeQuantity * 0.95 * 100) / 100
-    : Math.round(MAT_PRICE * safeQuantity * 0.8 * 100) / 100;
+  const discountRate = safeQuantity < 5 ? 0.10 : promotionMode === "msi15" ? 0.15 : 0.20;
+  const discountedUnitPrice = Math.round(MAT_PRICE * (1 - discountRate) * 100) / 100;
+  const estimatedTotal = Math.round(discountedUnitPrice * safeQuantity * 100) / 100;
   const savings = subtotalBeforePromo - estimatedTotal;
-  const promoLabel = promotionMode === "msi5"
-    ? "5% de descuento + opción de MSI (sujeta a disponibilidad de Stripe)"
-    : "20% de descuento al comprar 5 tapetes o más (sin MSI)";
+  const promoLabel = safeQuantity < 5 ? "10% de descuento · pago de contado (sin MSI)" : promotionMode === "msi15" ? "15% de descuento + 3 MSI (sujeto a elegibilidad de Stripe)" : "20% de descuento · pago de contado (sin MSI)";
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-MX", {
@@ -497,7 +495,7 @@ export default function MatCustomizer() {
       const response = await fetch(checkoutEndpoint.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: safeQuantity, promotion: promotionMode }),
+        body: JSON.stringify({ quantity: safeQuantity, promotion: safeQuantity < 5 ? "single10" : promotionMode }),
       });
       const data = await response.json();
       if (!response.ok || !data?.ok) {
@@ -543,7 +541,7 @@ export default function MatCustomizer() {
     );
     setQuantity(cleanValue);
     setQuoteRequested(false);
-    setPromotionMode(cleanValue >= 5 ? "volume20" : "msi5");
+    setPromotionMode(cleanValue >= 5 ? "msi15" : "single10");
   };
 
   const handleLogoUpload = (files: FileList | null) => {
@@ -678,7 +676,7 @@ export default function MatCustomizer() {
         `Cantidad: ${safeQuantity}`,
         `Precio unitario: ${formatMoney(MAT_PRICE)}`,
         `Promoción elegida: ${promoLabel}`,
-        `Modalidad de pago: ${promotionMode === "msi5" ? "MSI elegibles" : "Sin MSI"}`,
+        `Modalidad de pago: ${promotionMode === "msi15" ? "3 MSI sujetos a elegibilidad" : "Sin MSI"}`,
         `Subtotal sin promoción: ${formatMoney(subtotalBeforePromo)}`,
         `Ahorro estimado: ${formatMoney(savings)}`,
         `Total estimado: ${formatMoney(estimatedTotal)}`,
@@ -754,7 +752,7 @@ export default function MatCustomizer() {
                   <p className="text-xs text-gray-700">Tu cotización estimada · sin envío</p>
                   <p className="mt-1 text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   <p className="mt-2 text-sm font-semibold text-brand-ink">
-                    {promotionMode === "volume20" ? "20% de descuento aplicado automáticamente" : "5% de descuento + opción de meses sin intereses"}
+                    {safeQuantity < 5 ? "10% de descuento aplicado" : promotionMode === "volume20" ? "20% de descuento por pago de contado" : "15% de descuento + opción de 3 MSI"}
                   </p>
                   {savings > 0 && <p className="mt-1 text-sm text-green-700">Ahorras {formatMoney(savings)}</p>}
                   <p className="mt-2 text-xs text-gray-600">Las promociones pueden cambiarse antes de pagar. Los meses sin intereses dependen de la tarjeta.</p>
@@ -1105,18 +1103,22 @@ export default function MatCustomizer() {
 
               <div className="mb-3">
                 <p className="mb-2 text-sm font-semibold text-gray-900">Elige tu promoción</p>
-                <div role="radiogroup" aria-label="Modalidad de promoción" className="grid grid-cols-2 gap-2">
-                  <button type="button" role="radio" aria-checked={promotionMode === "msi5"} onClick={() => setPromotionMode("msi5")}
-                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "msi5" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
-                    <span className="block font-semibold">5% + MSI</span>
-                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Meses según tarjeta</span>
-                  </button>
-                  <button type="button" role="radio" aria-checked={promotionMode === "volume20"} disabled={safeQuantity < 5} onClick={() => setPromotionMode("volume20")}
-                    className={`min-h-16 rounded-xl border p-3 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm ${promotionMode === "volume20" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
-                    <span className="block font-semibold">20% OFF · Sin MSI</span>
-                    <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 tapetes</span>
-                  </button>
-                </div>
+                {safeQuantity < 5 ? (
+                  <p className="rounded-xl border border-brand-line bg-brand-sand p-3 text-sm">10% OFF · Pago de contado · Sin MSI</p>
+                ) : (
+                  <div role="radiogroup" aria-label="Modalidad de promoción" className="grid grid-cols-2 gap-2">
+                    <button type="button" role="radio" aria-checked={promotionMode === "msi15"} onClick={() => setPromotionMode("msi15")}
+                      className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "msi15" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                      <span className="block font-semibold">15% OFF + 3 MSI</span>
+                      <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 mats · según tarjeta</span>
+                    </button>
+                    <button type="button" role="radio" aria-checked={promotionMode === "volume20"} onClick={() => setPromotionMode("volume20")}
+                      className={`min-h-16 rounded-xl border p-3 text-left text-xs transition sm:text-sm ${promotionMode === "volume20" ? "border-brand-wine bg-brand-sand font-semibold ring-1 ring-brand-wine" : "border-gray-200 bg-white"}`}>
+                      <span className="block font-semibold">20% OFF · Contado</span>
+                      <span className="mt-1 block text-[11px] font-normal text-gray-600">Disponible desde 5 mats · sin MSI</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div aria-live="polite" className="rounded-xl bg-brand-sand p-3 sm:rounded-2xl sm:p-4">
@@ -1126,7 +1128,7 @@ export default function MatCustomizer() {
                     <p className="text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
                   </div>
                   <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-brand-ink">
-                    {promotionMode === "msi5" ? "5% + MSI" : "20% OFF"}
+                    {safeQuantity < 5 ? "10% OFF" : promotionMode === "msi15" ? "15% + 3 MSI" : "20% OFF"}
                   </span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
