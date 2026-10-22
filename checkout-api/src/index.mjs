@@ -70,7 +70,7 @@ export const handler = async (event) => {
 
       const stripe = new Stripe(stripeSecretKey);
       const FREE_SHIPPING_MIN_TOTAL = Number(
-        process.env.FREE_SHIPPING_MIN_TOTAL || 499,
+        process.env.FREE_SHIPPING_MIN_TOTAL || 1500,
       );
 
       const SITE_URL = process.env.SITE_URL || "https://www.melocotonmove.com";
@@ -172,10 +172,7 @@ export const handler = async (event) => {
         return ref && ref.shippingType === "custom";
       });
 
-      const qualifiesForFreeShipping =
-        allItemsFreeShipping &&
-        subtotal >= FREE_SHIPPING_MIN_TOTAL &&
-        !hasCustomShipping;
+      const qualifiesForFreeShipping = subtotal >= FREE_SHIPPING_MIN_TOTAL && !hasCustomShipping;
 
       let shippingCost = 0;
       let shippingLabel = "";
@@ -250,7 +247,7 @@ export const handler = async (event) => {
               areaLevel3,
 
               promoCode: shippingPromoCode || undefined,
-
+              subtotal, // Authoritative server-side catalog subtotal
               items,
             }),
           },
@@ -279,7 +276,10 @@ export const handler = async (event) => {
         }
 
         // Código manual de envío gratis
-        if (quoteData.type === "free_shipping_promo") {
+        if (quoteData.type === "free_shipping_rule") {
+          shippingCost = 0;
+          shippingLabel = quoteData.reason === "metro" ? "Envío gratis · Valle de México" : "Envío gratis · compra desde $1,500";
+        } else if (quoteData.type === "free_shipping_promo") {
           shippingCost = 0;
 
           shippingPromoApplied = true;
@@ -457,7 +457,7 @@ export const handler = async (event) => {
 
           shippingCost: String(shippingCost),
           actualShippingCost: String(actualShippingCost),
-          freeShipping: qualifiesForFreeShipping ? "true" : "false",
+          freeShipping: shippingCost === 0 && !hasCustomShipping ? "true" : "false",
 
           shippingPromoApplied: shippingPromoApplied ? "true" : "false",
         },
