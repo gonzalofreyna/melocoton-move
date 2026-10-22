@@ -6,6 +6,7 @@ import {
 } from "./skydropx.mjs";
 
 import { getPostalCodeData } from "./postal-code.mjs";
+import { qualifiesForMetroShipping } from "./metro-shipping.mjs";
 
 async function getTrustedShippingProducts(items) {
   const ecommerceApiUrl = process.env.ECOMMERCE_API_URL;
@@ -310,6 +311,7 @@ export const handler = async (event) => {
         areaLevel2,
         areaLevel3,
         promoCode,
+        subtotal,
       } = body;
 
       if (!Array.isArray(items) || items.length === 0) {
@@ -392,6 +394,27 @@ export const handler = async (event) => {
             rates: [],
             shippingAmount: 0,
             message: "Código de envío gratis aplicado.",
+          }),
+        };
+      }
+
+      // Preview uses the submitted subtotal; checkout-api recomputes it from
+      // trusted catalog prices before requesting the very same quote.
+      const cartSubtotal = Number(subtotal);
+      const thresholdReached = Number.isFinite(cartSubtotal) && cartSubtotal >= 1500;
+      const metroDestination = await qualifiesForMetroShipping(cleanPostalCode);
+      if (thresholdReached || metroDestination) {
+        return {
+          statusCode: 200,
+          headers: H,
+          body: JSON.stringify({
+            ok: true,
+            type: "free_shipping_rule",
+            freeShipping: true,
+            reason: metroDestination ? "metro" : "subtotal",
+            rates: [],
+            shippingAmount: 0,
+            message: metroDestination ? "Envío gratis en el Valle de México." : "Envío gratis en pedidos desde $1,500.",
           }),
         };
       }
