@@ -1147,12 +1147,6 @@ export default function MatCustomizer() {
                   {promotionMode === "volume20" && safeQuantity >= 5 && <span>20% de descuento en todos tus tapetes</span>}
                   {savings > 0 && <span className="font-semibold text-green-700">Ahorras {formatMoney(savings)}</span>}
                 </div>
-                <details className="mt-2 border-t border-brand-line pt-2 text-xs text-gray-600">
-                  <summary className="cursor-pointer font-medium">Ver desglose del precio</summary>
-                  <div className="mt-2 flex justify-between"><span>Subtotal sin descuento</span><span>{formatMoney(subtotalBeforePromo)}</span></div>
-                  <div className="mt-1 flex justify-between"><span>Descuento</span><span>-{formatMoney(savings)}</span></div>
-                  <p className="mt-2">El importe definitivo se confirma al pagar.</p>
-                </details>
               </div>
 
               <div className="mt-4 rounded-xl border border-brand-line bg-white px-4 py-3 text-left text-sm leading-6 text-brand-ink" aria-label="Condiciones de entrega y envío">
