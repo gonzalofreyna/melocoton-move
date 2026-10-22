@@ -74,8 +74,9 @@ export function buildMerchantFeed(products: Product[]) {
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
       xmlNode("shipping_label", shippingLabel),
-      // Shipping prices are set in Merchant Center after matching Skydropx checkout.
-      // Never advertise a flat rate or unconditional free shipping here.
+      // Flat customer-facing shipping for standard items; special freight is excluded.
+      // Free shipping promotions remain conditional on cart eligibility and threshold.
+      '<g:shipping><g:country>MX</g:country><g:price>59.00 MXN</g:price></g:shipping>',
       ...(hasValidWeight ? [xmlNode("shipping_weight", `${weight} g`)] : []),
       ...(hasValidDimensions ? [
         xmlNode("shipping_width", `${dims!.w} cm`),
