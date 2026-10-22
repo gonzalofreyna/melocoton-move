@@ -74,9 +74,8 @@ export function buildMerchantFeed(products: Product[]) {
       xmlNode("availability", p.stock === 0 ? "out_of_stock" : "in_stock"),
       xmlNode("condition", "new"),
       xmlNode("shipping_label", shippingLabel),
-      // Flat customer-facing shipping for standard items; special freight is excluded.
-      // Free shipping promotions remain conditional on cart eligibility and threshold.
-      '<g:shipping><g:country>MX</g:country><g:price>59.00 MXN</g:price></g:shipping>',
+      // Rates are quoted at checkout by Skydropx. Merchant Center rates
+      // must be configured separately using verified destination tariffs.
       ...(hasValidWeight ? [xmlNode("shipping_weight", `${weight} g`)] : []),
       ...(hasValidDimensions ? [
         xmlNode("shipping_width", `${dims!.w} cm`),
