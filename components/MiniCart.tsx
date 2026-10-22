@@ -44,12 +44,14 @@ export default function MiniCart() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [coupon, setCoupon] = useState("");
+  const [couponOpen, setCouponOpen] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
   const [postalCode, setPostalCode] = useState("");
   const [shippingLoading, setShippingLoading] = useState(false);
   const [freeShippingPromo, setFreeShippingPromo] = useState(false);
+  const [freeShippingRule, setFreeShippingRule] = useState(false);
 
   const [areaLevel1, setAreaLevel1] = useState("");
   const [areaLevel2, setAreaLevel2] = useState("");
@@ -78,14 +80,14 @@ export default function MiniCart() {
     areaLevel3.trim() !== "";
 
   const shippingIsFree =
-    !hasCustomShipping && (freeShippingPromo || qualifiesForFreeShipping);
+    !hasCustomShipping && (freeShippingPromo || freeShippingRule || qualifiesForFreeShipping);
 
   const effectiveShippingCost =
     hasCustomShipping || shippingIsFree ? 0 : (selectedRate?.total ?? 0);
 
   const shippingReady =
     hasCustomShipping ||
-    (destinationComplete && (freeShippingPromo || selectedRate !== null));
+    (destinationComplete && (freeShippingPromo || freeShippingRule || selectedRate !== null));
 
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -197,6 +199,7 @@ export default function MiniCart() {
       setShippingRates([]);
       setSelectedRateId(null);
       setFreeShippingPromo(false);
+      setFreeShippingRule(false);
       setAppliedShippingPromoCode(null);
       setShippingMsg(null);
       setAppliedCoupon(null);
@@ -289,6 +292,7 @@ export default function MiniCart() {
           areaLevel2: areaLevel2.trim(),
           areaLevel3: areaLevel3.trim(),
           promoCode: promoCode?.trim() || undefined,
+          subtotal,
           items,
         }),
       });
@@ -313,11 +317,22 @@ export default function MiniCart() {
         return data;
       }
 
+      if (data.type === "free_shipping_rule") {
+        setShippingRates([]);
+        setSelectedRateId(null);
+        setFreeShippingPromo(false);
+        setFreeShippingRule(true);
+        setAppliedShippingPromoCode(null);
+        setShippingMsg(data.message || "Envío gratis disponible.");
+        return data;
+      }
+
       if (data.type === "free_shipping_promo") {
         setShippingRates([]);
         setSelectedRateId(null);
 
         setFreeShippingPromo(true);
+        setFreeShippingRule(false);
 
         setAppliedShippingPromoCode(promoCode?.trim().toUpperCase() || null);
 
@@ -333,6 +348,7 @@ export default function MiniCart() {
       }
 
       setFreeShippingPromo(false);
+      setFreeShippingRule(false);
       setAppliedShippingPromoCode(null);
       setShippingRates(rates);
 
@@ -383,6 +399,7 @@ export default function MiniCart() {
     // 1. Cupón porcentual normal
     if (validCode && cleanCode === validCode) {
       setFreeShippingPromo(false);
+      setFreeShippingRule(false);
       setAppliedShippingPromoCode(null);
 
       const base = subtotal + (hasCustomShipping ? 0 : effectiveShippingCost);
@@ -671,7 +688,7 @@ export default function MiniCart() {
                     />
                   )}
 
-                  {!freeShippingPromo && (
+                  {!freeShippingPromo && !freeShippingRule && (
                     <button
                       type="button"
                       onClick={handleQuoteShipping}
@@ -794,6 +811,18 @@ export default function MiniCart() {
 
               {/* Cupón */}
               <div className="mt-3">
+                <button
+                  type="button"
+                  aria-expanded={couponOpen}
+                  aria-controls="minicart-promo-content"
+                  onClick={() => setCouponOpen((open) => !open)}
+                  className="flex w-full items-center justify-between rounded-xl border border-brand-line bg-white px-3.5 py-3 text-left text-sm font-semibold text-brand-blue"
+                >
+                  <span>Código promocional</span>
+                  <span aria-hidden="true" className="text-xl leading-none">{couponOpen ? "−" : "+"}</span>
+                </button>
+                {couponOpen && (
+                  <div id="minicart-promo-content" className="mt-2">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
@@ -809,6 +838,8 @@ export default function MiniCart() {
                     Aplicar
                   </button>
                 </div>
+                  </div>
+                )}
 
                 {msg && (
                   <p
