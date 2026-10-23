@@ -63,11 +63,41 @@ export default function SearchModal({
   const [budget, setBudget] = useState("");
   const [mode, setMode] = useState<"search" | "assistant">("assistant");
   const [selected, setSelected] = useState<string[]>([]);
+  const [aiPicks, setAiPicks] = useState<{ slug: string; reason: string }[]>([]);
+  const [aiMessage, setAiMessage] = useState("");
+  const [aiError, setAiError] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiActive, setAiActive] = useState(false);
+  const askAI = async () => {
+    if (aiLoading || query.trim().length < 3) return;
+    setAiLoading(true);
+    setAiError("");
+    setAiActive(false);
+    try {
+      const response = await fetch("/api/shopping-assistant", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: query, budget: budget || null }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No pudimos obtener recomendaciones.");
+      setAiPicks(Array.isArray(result.products) ? result.products : []);
+      setAiMessage(typeof result.message === "string" ? result.message : "");
+      setAiActive(true);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "No pudimos conectar con el asistente.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
   const maxBudget = Number(budget);
   const hasBudget = budget.trim() !== "" && Number.isFinite(maxBudget) && maxBudget > 0;
   const searching = query.trim().length > 0;
 
   const recommended = useMemo(() => {
+    if (aiActive && mode === "assistant") {
+      return aiPicks.map((pick) => products.find((p) => p.slug === pick.slug))
+        .filter((p): p is Product => Boolean(p && isAvailable(p) && validPrice(p) !== null));
+    }
     return products
       .filter((p) => isAvailable(p) && validPrice(p) !== null)
       .map((p) => ({ product: p, score: scoreProduct(p, query, goal) }))
@@ -78,7 +108,7 @@ export default function SearchModal({
       .sort((a, b) => b.score - a.score || (a.product.name.localeCompare(b.product.name, "es")))
       .slice(0, 12)
       .map(({ product }) => product);
-  }, [products, query, goal, mode, searching, hasBudget, maxBudget]);
+  }, [products, query, goal, mode, searching, hasBudget, maxBudget, aiActive, aiPicks]);
 
   useEffect(() => {
     setSelected((current) => current.filter((slug) => recommended.some((p) => p.slug === slug)));
@@ -141,7 +171,7 @@ export default function SearchModal({
             <button type="button" aria-pressed={mode === "search"} onClick={() => setMode("search")} className={`rounded-full px-4 py-2 text-sm ${mode === "search" ? "bg-brand-ink text-white" : "border border-brand-line text-brand-ink"}`}><Search size={15} className="mr-2 inline" />Buscar</button>
           </div>
           <label htmlFor="shopping-assistant-query" className="sr-only">¿Qué estás buscando?</label>
-          <input id="shopping-assistant-query" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ej. accesorios para empezar Pilates en casa" className="mm-field w-full rounded-2xl border border-brand-line bg-white px-4 py-3 text-brand-ink placeholder:text-brand-muted" autoFocus />
+          <input id="shopping-assistant-query" value={query} onChange={(e) => { setQuery(e.target.value); setAiActive(false); }} placeholder="Ej. accesorios para empezar Pilates en casa" className="mm-field w-full rounded-2xl border border-brand-line bg-white px-4 py-3 text-brand-ink placeholder:text-brand-muted" autoFocus />
           {mode === "assistant" && (
             <div className="mt-4 space-y-3">
               <p className="text-sm font-medium text-brand-ink">¿Para qué los necesitas?</p>
@@ -153,7 +183,10 @@ export default function SearchModal({
               <label className="block text-sm text-brand-ink">Presupuesto máximo (opcional)
                 <input type="number" min="1" step="1" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="Ej. 1500 MXN" className="mm-field mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2" />
               </label>
-              <p className="text-xs text-brand-muted">Sugerencias basadas en el catálogo, no generadas por IA. Para productos con personalización o variantes, confirma los detalles en su ficha. El presupuesto también se aplica al total del kit.</p>
+              <button type="button" disabled={aiLoading || query.trim().length < 3} onClick={askAI} className="rounded-full bg-brand-ink px-4 py-2 text-sm text-white disabled:opacity-40">{aiLoading ? "Consultando…" : "Pedir recomendación con IA"}</button>
+              {aiError && <p role="alert" className="text-sm text-red-700">{aiError}</p>}
+              {aiActive && <p aria-live="polite" className="rounded-2xl bg-white p-3 text-sm text-brand-ink">{aiMessage || "Estas son las recomendaciones verificadas en nuestro catálogo."}</p>}
+              <p className="text-xs text-brand-muted">Las sugerencias iniciales siguen reglas del catálogo; las solicitudes con IA validan sus productos contra el catálogo. Para productos con personalización o variantes, confirma los detalles en su ficha. El presupuesto también se aplica al total del kit.</p>
             </div>
           )}
           <div className="mb-3 mt-5 flex items-center justify-between">
@@ -166,6 +199,7 @@ export default function SearchModal({
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {recommended.map((p) => {
                 const chosen = selected.includes(p.slug);
+                const aiReason = aiActive ? aiPicks.find((item) => item.slug === p.slug)?.reason : undefined;
                 const inCart = cart.find((item) => item.slug === p.slug)?.quantity || 0;
                 const canAdd = !requiresConfiguration(p) && (p.stock === undefined || inCart < p.stock);
                 return (
@@ -174,6 +208,7 @@ export default function SearchModal({
                     <div className="min-w-0 flex-1">
                       <Link href={`/${p.slug}`} onClick={onClose} className="line-clamp-2 text-sm font-medium text-brand-ink hover:underline">{p.name}</Link>
                       <p className="mt-1 text-sm font-semibold text-brand-ink">{priceText(validPrice(p) as number)}</p>
+                      {aiReason && <p className="mt-1 text-xs text-brand-muted">{aiReason}</p>}
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <button type="button" onClick={() => addProduct(p)} disabled={!canAdd} className="rounded-full bg-brand-ink px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40"><ShoppingBag size={13} className="mr-1 inline" />{requiresConfiguration(p) ? "Configurar en ficha" : canAdd ? "Agregar" : "Sin stock"}</button>
                         {mode === "assistant" && !requiresConfiguration(p) && <label className="flex cursor-pointer items-center gap-1 text-xs text-brand-ink"><input type="checkbox" checked={chosen} onChange={() => setSelected((prev) => chosen ? prev.filter((slug) => slug !== p.slug) : [...prev, p.slug])} /> Incluir en kit</label>}
