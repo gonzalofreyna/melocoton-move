@@ -21,6 +21,8 @@ const normalize = (value: string) =>
   value.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 const isAvailable = (p: Product) => p.stock === undefined || p.stock > 0;
+// Los artículos que requieren configuración individual se compran desde su flujo dedicado.
+const requiresConfiguration = (p: Product) => /personalizad|a tu medida|con tu logo/i.test([p.name, p.category, ...(p.tags || [])].join(" "));
 const validPrice = (p: Product) => {
   const value = p.discountPrice ?? p.fullPrice;
   return Number.isFinite(value) && value > 0 ? value : null;
@@ -84,10 +86,11 @@ export default function SearchModal({
 
   const kit = useMemo(() => recommended.filter((p) => selected.includes(p.slug)), [recommended, selected]);
   const kitTotal = kit.reduce((sum, p) => sum + (validPrice(p) || 0), 0);
+  const kitOverBudget = hasBudget && kitTotal > maxBudget;
 
   const addProduct = (p: Product) => {
     const price = validPrice(p);
-    if (price === null || !isAvailable(p)) return;
+    if (price === null || !isAvailable(p) || requiresConfiguration(p)) return;
     addToCart({
       slug: p.slug,
       sku: p.sku,
@@ -102,6 +105,7 @@ export default function SearchModal({
   };
 
   const addKit = () => {
+    if (kit.length === 0 || kitOverBudget) return;
     for (const p of kit) {
       if (p.stock !== undefined && (cart.find((item) => item.slug === p.slug)?.quantity || 0) >= p.stock) continue;
       addProduct(p);
@@ -146,10 +150,10 @@ export default function SearchModal({
                   <button key={g.id} type="button" aria-pressed={goal === g.id} onClick={() => setGoal(g.id)} className={`rounded-full border px-3 py-2 text-sm transition-colors ${goal === g.id ? "border-brand-ink bg-brand-ink text-white" : "border-brand-line bg-white text-brand-ink hover:bg-brand-sand"}`}>{g.label}</button>
                 ))}
               </div>
-              <label className="block text-sm text-brand-ink">Presupuesto máximo por producto (opcional)
+              <label className="block text-sm text-brand-ink">Presupuesto máximo (opcional)
                 <input type="number" min="1" step="1" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="Ej. 1500 MXN" className="mm-field mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2" />
               </label>
-              <p className="text-xs text-brand-muted">Sugerencias basadas en nombres, categorías y atributos del catálogo. No son respuestas generadas por IA. Confirma variantes, disponibilidad y precio al comprar.</p>
+              <p className="text-xs text-brand-muted">Sugerencias basadas en el catálogo, no generadas por IA. Para productos con personalización o variantes, confirma los detalles en su ficha. El presupuesto también se aplica al total del kit.</p>
             </div>
           )}
           <div className="mb-3 mt-5 flex items-center justify-between">
@@ -163,7 +167,7 @@ export default function SearchModal({
               {recommended.map((p) => {
                 const chosen = selected.includes(p.slug);
                 const inCart = cart.find((item) => item.slug === p.slug)?.quantity || 0;
-                const canAdd = p.stock === undefined || inCart < p.stock;
+                const canAdd = !requiresConfiguration(p) && (p.stock === undefined || inCart < p.stock);
                 return (
                   <article key={p.slug} className="flex gap-3 rounded-2xl border border-brand-line bg-white p-3">
                     <Link href={`/${p.slug}`} onClick={onClose} className="h-24 w-24 flex-none overflow-hidden rounded-xl border border-brand-line"><img src={p.image} alt={p.name} className="h-full w-full object-cover" loading="lazy" /></Link>
@@ -171,8 +175,8 @@ export default function SearchModal({
                       <Link href={`/${p.slug}`} onClick={onClose} className="line-clamp-2 text-sm font-medium text-brand-ink hover:underline">{p.name}</Link>
                       <p className="mt-1 text-sm font-semibold text-brand-ink">{priceText(validPrice(p) as number)}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <button type="button" onClick={() => addProduct(p)} disabled={!canAdd} className="rounded-full bg-brand-ink px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40"><ShoppingBag size={13} className="mr-1 inline" />{canAdd ? "Agregar" : "Sin stock"}</button>
-                        {mode === "assistant" && <label className="flex cursor-pointer items-center gap-1 text-xs text-brand-ink"><input type="checkbox" checked={chosen} onChange={() => setSelected((prev) => chosen ? prev.filter((slug) => slug !== p.slug) : [...prev, p.slug])} /> Incluir en kit</label>}
+                        <button type="button" onClick={() => addProduct(p)} disabled={!canAdd} className="rounded-full bg-brand-ink px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40"><ShoppingBag size={13} className="mr-1 inline" />{requiresConfiguration(p) ? "Configurar en ficha" : canAdd ? "Agregar" : "Sin stock"}</button>
+                        {mode === "assistant" && !requiresConfiguration(p) && <label className="flex cursor-pointer items-center gap-1 text-xs text-brand-ink"><input type="checkbox" checked={chosen} onChange={() => setSelected((prev) => chosen ? prev.filter((slug) => slug !== p.slug) : [...prev, p.slug])} /> Incluir en kit</label>}
                       </div>
                     </div>
                   </article>
@@ -183,8 +187,8 @@ export default function SearchModal({
         </div>
         {mode === "assistant" && selected.length > 0 && (
           <footer className="flex items-center justify-between gap-3 border-t border-brand-line bg-white px-5 py-4">
-            <div><p className="text-sm font-semibold text-brand-ink">Tu kit · {kit.length} productos</p><p className="text-sm text-brand-muted">{priceText(kitTotal)} · envío gratis</p></div>
-            <button type="button" onClick={addKit} disabled={kit.length === 0} className="rounded-full bg-brand-ink px-4 py-2 text-sm font-medium text-white disabled:opacity-40">Agregar kit al carrito</button>
+            <div><p className="text-sm font-semibold text-brand-ink">Tu kit · {kit.length} productos</p><p className="text-sm text-brand-muted">{priceText(kitTotal)} · envío gratis{kitOverBudget ? " · supera tu presupuesto" : ""}</p></div>
+            <button type="button" onClick={addKit} disabled={kit.length === 0 || kitOverBudget} className="rounded-full bg-brand-ink px-4 py-2 text-sm font-medium text-white disabled:opacity-40">Agregar kit al carrito</button>
           </footer>
         )}
       </section>
