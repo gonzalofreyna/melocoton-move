@@ -180,6 +180,7 @@ export default function MiniCart() {
                     image={item.image}
                     price={item.price}
                     quantity={item.quantity}
+                    specialUnitPrice={pricing?.items.find((line) => line.slug === item.slug && line.wholesale)?.unitPrice}
                     shippingExcluded={false}
                   />
 
@@ -211,7 +212,7 @@ export default function MiniCart() {
 
                 {pricing && pricing.discount > 0 && (
                   <div className="flex justify-between text-green-700 font-medium">
-                    <span>Mayoreo ({pricing.config.percent}%)</span>
+                    <span>Precio especial</span>
                     <span>-{MX.format(pricing.discount)}</span>
                   </div>
                 )}
@@ -226,7 +227,7 @@ export default function MiniCart() {
               {pricingError && <p role="alert" className="text-sm text-red-600">{pricingError}</p>}
               {pricing && pricing.config.enabled && (
                 <p className="text-xs text-gray-600">
-                  Mayoreo: {pricing.config.percent}% de descuento desde {pricing.config.minQty} artículos de la misma categoría.
+                  Precio especial al elegir {pricing.config.minQty} o más artículos de la misma categoría.
                 </p>
               )}
 
