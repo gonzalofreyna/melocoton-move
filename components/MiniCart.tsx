@@ -79,13 +79,14 @@ export default function MiniCart() {
 
   // Analytics observes the enabled button click; checkout logic is unchanged.
   const trackCheckoutClick = () => {
+    if (!pricing || pricingLoading || pricingError) return;
     try {
       reportGa4BeginCheckout(
         cart.map((item) => ({
           item_id: item.sku?.trim() || item.slug,
           item_name: item.name,
           item_category: item.category,
-          price: item.price,
+          price: pricing.items.find((p) => p.slug === item.slug)?.unitPrice ?? item.price,
           quantity: item.quantity,
         })),
       );
