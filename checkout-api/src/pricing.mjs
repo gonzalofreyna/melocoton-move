@@ -38,8 +38,8 @@ export function priceCart(items, catalog, config = wholesaleConfig()) {
   const pricedItems = [];
   for (const { product, quantity } of lines.values()) {
     const limit = Math.min(
-      Number.isSafeInteger(Number(product.maxQty)) && Number(product.maxQty) > 0 ? Number(product.maxQty) : 10,
-      Number.isSafeInteger(Number(product.stock)) && Number(product.stock) >= 0 ? Number(product.stock) : Infinity,
+      product.maxQty != null && Number.isSafeInteger(Number(product.maxQty)) && Number(product.maxQty) > 0 ? Number(product.maxQty) : 10,
+      product.stock != null && Number.isSafeInteger(Number(product.stock)) && Number(product.stock) >= 0 ? Number(product.stock) : Infinity,
     );
     if (quantity > limit) throw new Error(`Solo puedes comprar hasta ${limit} unidad(es) de ${product.name}`);
     const regular = Number(product.fullPrice);
