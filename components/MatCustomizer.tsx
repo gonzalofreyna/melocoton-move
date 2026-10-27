@@ -399,7 +399,6 @@ export default function MatCustomizer() {
   const [finishPickerOpen, setFinishPickerOpen] = useState(false);
   const [finishCategory, setFinishCategory] = useState<"solid" | "texture">("solid");
   const [mobileStep, setMobileStep] = useState<"quantity" | "shape" | "color" | "design" | "preview" | "checkout">("quantity");
-  const [quoteRequested, setQuoteRequested] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [promotionMode, setPromotionMode] = useState<"single10" | "msi15" | "volume20">("single10");
@@ -540,7 +539,6 @@ export default function MatCustomizer() {
       Math.max(1, Math.floor(Number(value) || 1)),
     );
     setQuantity(cleanValue);
-    setQuoteRequested(false);
     setPromotionMode(cleanValue >= 5 ? "msi15" : "single10");
   };
 
@@ -730,7 +728,7 @@ export default function MatCustomizer() {
           </nav>
           <div className={`order-2 rounded-2xl border border-brand-line bg-white p-5 shadow-editorial lg:hidden ${mobileStep === "quantity" ? "" : "hidden"}`}>
             <h2 className="text-lg font-semibold text-brand-ink">Primero, ¿cuántos tapetes te gustaría personalizar?</h2>
-            <p className="mt-2 text-sm text-gray-600">Elige una cantidad para conocer el precio y tu promoción.</p>
+            <p className="mt-2 text-sm text-gray-600">Elige la cantidad de tapetes que deseas personalizar.</p>
             <div className="mt-5 flex items-center justify-center gap-4">
               <button type="button" onClick={() => updateMatQuantity(safeQuantity - 1)}
                 disabled={safeQuantity <= 1} aria-label="Quitar un tapete"
@@ -743,24 +741,8 @@ export default function MatCustomizer() {
                 disabled={safeQuantity >= 99} aria-label="Agregar un tapete"
                 className="h-12 w-12 rounded-xl border border-gray-300 text-2xl disabled:opacity-40">+</button>
             </div>
-            {!quoteRequested ? (
-              <button type="button" onClick={() => setQuoteRequested(true)}
-                className="mm-button mt-5 w-full py-3">Ver mi cotización →</button>
-            ) : (
-              <div className="mt-5" aria-live="polite">
-                <div className="rounded-xl bg-brand-sand p-4">
-                  <p className="text-xs text-gray-700">Tu cotización estimada · envío gratis</p>
-                  <p className="mt-1 text-2xl font-bold text-brand-ink">{formatMoney(estimatedTotal)}</p>
-                  <p className="mt-2 text-sm font-semibold text-brand-ink">
-                    {safeQuantity < 5 ? "10% de descuento aplicado" : promotionMode === "volume20" ? "20% de descuento por pago de contado" : "15% de descuento + opción de 3 MSI"}
-                  </p>
-                  {savings > 0 && <p className="mt-1 text-sm text-green-700">Ahorras {formatMoney(savings)}</p>}
-                  <p className="mt-2 text-xs text-gray-600">Las promociones pueden cambiarse antes de pagar. Los meses sin intereses dependen de la tarjeta.</p>
-                </div>
-                <button type="button" onClick={() => setMobileStep("shape")}
-                  className="mm-button mt-4 w-full py-3">Comenzar a personalizar →</button>
-              </div>
-            )}
+            <button type="button" onClick={() => setMobileStep("shape")}
+              className="mm-button mt-5 w-full py-3">Comenzar a personalizar →</button>
           </div>
           <div className="contents lg:order-1 lg:block lg:rounded-[2rem] lg:border lg:border-brand-line lg:bg-white lg:p-8 lg:shadow-editorial">
             <div className="contents lg:block lg:rounded-[2rem] lg:border-0 lg:p-0 lg:shadow-none">
