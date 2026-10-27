@@ -12,6 +12,7 @@ type MiniCartItemProps = {
   image: string;
   price: number;
   quantity: number;
+  specialUnitPrice?: number;
   stock?: number; // ✅ opcional
   shippingExcluded?: boolean;
 };
@@ -22,6 +23,7 @@ export default function MiniCartItem({
   image,
   price,
   quantity,
+  specialUnitPrice,
   stock,
   shippingExcluded,
 }: MiniCartItemProps) {
@@ -36,18 +38,20 @@ export default function MiniCartItem({
 
   // ✅ Máximo seguro (si no hay stock definido, deja crecer libremente)
   const maxQuantity = stock ?? 99;
+  const hasSpecialPrice = typeof specialUnitPrice === "number" && specialUnitPrice >= 0 && specialUnitPrice < price;
+  const effectivePrice = hasSpecialPrice ? specialUnitPrice : price;
 
   return (
     <div className="relative flex flex-col sm:flex-row items-start gap-4 p-4 bg-white rounded-3xl shadow-[0_8px_24px_rgba(15,23,42,0.05)] border border-neutral-200/80">
       {/* Imagen */}
-      <div className="flex-shrink-0 mx-auto sm:mx-0">
+      <div className="flex-shrink-0 mx-auto sm:mx-0 w-20 h-20 rounded-2xl overflow-hidden border border-neutral-200 bg-[#FAF8F4] flex items-center justify-center">
         <img
           src={image}
           alt={name}
           width={80}
           height={80}
           loading="lazy"
-          className="rounded-2xl object-cover w-20 h-20 border border-neutral-200 bg-[#FAF8F4]"
+          className="block w-full h-full object-contain object-center"
         />
       </div>
       {/* Contenido principal */}
@@ -67,7 +71,15 @@ export default function MiniCartItem({
           )}
 
           {/* Precio unitario */}
-          <p className="text-gray-500 text-sm mt-1">{fmtCurrency(price)}</p>
+          {hasSpecialPrice ? (
+            <div className="mt-1 space-y-0.5">
+              <p className="text-xs text-gray-500 line-through">{fmtCurrency(price)}</p>
+              <p className="text-sm font-semibold text-brand-blue">{fmtCurrency(effectivePrice)} <span className="font-normal text-gray-500">/ pieza</span></p>
+              <p className="text-xs text-gray-600">Precio especial</p>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm mt-1">{fmtCurrency(price)}</p>
+          )}
         </div>
 
         {/* Cantidad y total */}
@@ -98,7 +110,7 @@ export default function MiniCartItem({
 
           {/* Total */}
           <p className="font-semibold text-brand-blue text-right text-base sm:text-lg tracking-[-0.01em]">
-            {fmtCurrency(price * quantity)}
+            {fmtCurrency(effectivePrice * quantity)}
           </p>
         </div>
       </div>

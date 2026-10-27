@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { priceCart, wholesaleConfig, PricingValidationError } from "./pricing.mjs";
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
@@ -48,12 +49,11 @@ export const handler = async (event) => {
   const path = event.rawPath;
   const method = event.requestContext.http.method;
 
-  // === POST /checkout ===
-  if (path === "/checkout" && method === "POST") {
+  // Price preview and checkout share the same server-side calculator.
+  if ((path === "/checkout" || path === "/pricing") && method === "POST") {
     try {
       const body = JSON.parse(event.body || "{}");
-      const { items, coupon, couponCode, shipping } = body;
-      const codeInput = (coupon || couponCode || "").toUpperCase();
+      const { items } = body;
 
       if (!Array.isArray(items) || items.length === 0) {
         return {
@@ -63,107 +63,47 @@ export const handler = async (event) => {
         };
       }
 
-      // --- Configuración ---
+      const products = await getCatalog();
+      const priced = priceCart(items, products, wholesaleConfig());
+      if (path === "/pricing") {
+        return {
+          statusCode: 200,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ok: true,
+            subtotal: priced.subtotalCents / 100,
+            discount: priced.discountCents / 100,
+            total: priced.totalCents / 100,
+            config: priced.config,
+            items: priced.items.map((item) => ({
+              slug: item.slug, quantity: item.quantity,
+              unitPrice: item.unitCents / 100, wholesale: item.wholesale,
+            })),
+          }),
+        };
+      }
+
       const stripeSecretKey = await getSecret(
         process.env.SECRET_NAME || "eternancy/STRIPE_SECRET_KEY",
       );
-
       const stripe = new Stripe(stripeSecretKey);
-      const FREE_SHIPPING_MIN_TOTAL = Number(
-        process.env.FREE_SHIPPING_MIN_TOTAL || 499,
-      );
-
       const SITE_URL = process.env.SITE_URL || "https://www.melocotonmove.com";
-      const SHIPPING_API_URL = (process.env.SHIPPING_API_URL || "").replace(
-        /\/$/,
-        "",
-      );
-      const DEFAULT_MAX_QTY = 10;
-
-      // --- Cargar catálogo real ---
-      const products = await getCatalog();
-      const catalogMap = new Map(products.map((p) => [p.slug, p]));
-
-      // --- Construir line_items y subtotal ---
-      const line_items = [];
-      let subtotal = 0;
-
-      let allItemsFreeShipping = true;
-
-      for (const it of items) {
-        const ref = catalogMap.get(String(it.slug));
-        if (!ref) {
-          console.error("❌ Producto no encontrado:", it.slug);
-          return {
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ok: false,
-              message: `Producto inválido o no encontrado: ${it.slug}`,
-            }),
-          };
-        }
-
-        if (ref.freeShipping !== true) {
-          allItemsFreeShipping = false;
-        }
-
-        const maxQty = ref.maxQty ?? DEFAULT_MAX_QTY;
-        const requestedQty = Math.max(1, Math.floor(Number(it.quantity) || 1));
-
-        const stock =
-          typeof ref.stock === "number" && Number.isFinite(ref.stock)
-            ? Math.max(0, Math.floor(ref.stock))
-            : null;
-
-        if (stock !== null && stock <= 0) {
-          return {
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ok: false,
-              message: `Producto agotado: ${ref.name}`,
-            }),
-          };
-        }
-
-        const maxAllowed = stock === null ? maxQty : Math.min(maxQty, stock);
-
-        if (requestedQty > maxAllowed) {
-          return {
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ok: false,
-              message: `Solo puedes comprar hasta ${maxAllowed} unidad(es) de ${ref.name}`,
-            }),
-          };
-        }
-
-        const qty = requestedQty;
-        const price =
-          ref.discountPrice && ref.discountPrice > 0
-            ? ref.discountPrice
-            : ref.fullPrice;
-
-        subtotal += price * qty;
-
-        line_items.push({
-          quantity: qty,
-          price_data: {
-            currency: "mxn",
-            unit_amount: Math.round(price * 100),
-            product_data: {
-              name: ref.name,
-              images: ref.image ? [ref.image] : [],
-              metadata: {
-                slug: String(ref.slug),
-                sku: ref.sku ? String(ref.sku) : "",
-              },
+      const catalogMap = new Map(products.map((product) => [String(product.slug), product]));
+      const line_items = priced.items.map(({ product, quantity, unitCents }) => ({
+        quantity,
+        price_data: {
+          currency: "mxn",
+          unit_amount: unitCents,
+          product_data: {
+            name: product.name,
+            images: product.image ? [product.image] : [],
+            metadata: {
+              slug: String(product.slug),
+              sku: product.sku ? String(product.sku) : "",
             },
           },
-        });
-      }
+        },
+      }));
 
       // Envío gratuito universal. La dirección es recopilada por Stripe Checkout.
       // Los productos de envío especial se gestionan logísticamente después del pago.
@@ -179,15 +119,6 @@ export const handler = async (event) => {
       const selectedShippingService = "";
       const selectedShippingServiceCode = "";
       const shippingPromoApplied = false;
-
-      // --- Cupón ---
-      const codeOK =
-        codeInput &&
-        codeInput === (process.env.COUPON_CODE || "").toUpperCase();
-      const discounts =
-        codeOK && process.env.STRIPE_COUPON_ID
-          ? [{ coupon: process.env.STRIPE_COUPON_ID }]
-          : undefined;
 
       // --- Crear sesión Stripe ---
       const session = await stripe.checkout.sessions.create({
@@ -215,9 +146,9 @@ export const handler = async (event) => {
           freeShipping: qualifiesForFreeShipping ? "true" : "false",
 
           shippingPromoApplied: shippingPromoApplied ? "true" : "false",
+          wholesaleDiscountCents: String(priced.discountCents),
         },
-        payment_method_options: { card: { installments: { enabled: true } } },
-        discounts,
+        payment_method_options: { card: { installments: { enabled: process.env.STRIPE_MSI_ENABLED === "true" } } },
       });
 
       console.log("✅ Sesión Stripe creada:", session.id);
@@ -230,14 +161,15 @@ export const handler = async (event) => {
           id: session.id,
           url: session.url,
           shippingLabel,
+          wholesaleDiscount: priced.discountCents / 100,
         }),
       };
     } catch (err) {
       console.error("❌ Checkout error:", err);
       return {
-        statusCode: 500,
+        statusCode: err instanceof PricingValidationError || err instanceof SyntaxError ? 400 : 500,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ok: false, message: err.message }),
+        body: JSON.stringify({ ok: false, message: err instanceof SyntaxError ? "Solicitud JSON inválida" : err.message }),
       };
     }
   }
