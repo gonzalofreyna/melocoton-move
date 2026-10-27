@@ -37,7 +37,7 @@ test("agrupa slugs repetidos y valida inventario", () => {
   const result = cart([{ slug: "calceta-basic-negra", quantity: 2 }, { slug: "calceta-basic-negra", quantity: 3 }]);
   assert.equal(result.items.length, 1);
   assert.equal(result.items[0].quantity, 5);
-  assert.throws(() => cart([{ slug: "tapete", quantity: 21 }]), /hasta 20/);
+  assert.throws(() => cart([{ slug: "tapete", quantity: 21 }]), /hasta 10/);
 });
 
 test("mayoreo apagado por defecto sin variable explícita", () => {
