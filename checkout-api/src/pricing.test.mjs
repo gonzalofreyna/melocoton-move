@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { priceCart } from "./pricing.mjs";
+import { priceCart, wholesaleConfig, PricingValidationError } from "./pricing.mjs";
 
 const catalog = [
   { slug: "calceta-basic-negra", name: "Basic", category: "Calcetas", fullPrice: 200, stock: 20 },
@@ -38,4 +38,29 @@ test("agrupa slugs repetidos y valida inventario", () => {
   assert.equal(result.items.length, 1);
   assert.equal(result.items[0].quantity, 5);
   assert.throws(() => cart([{ slug: "tapete", quantity: 21 }]), /hasta 20/);
+});
+
+test("mayoreo apagado por defecto sin variable explícita", () => {
+  const old = process.env.WHOLESALE_ENABLED;
+  delete process.env.WHOLESALE_ENABLED;
+  try { assert.equal(wholesaleConfig().enabled, false); }
+  finally { if (old === undefined) delete process.env.WHOLESALE_ENABLED; else process.env.WHOLESALE_ENABLED = old; }
+});
+test("sin mayoreo mantiene importes del checkout anterior para productos válidos", () => {
+  const result = cart([
+    { slug: "calceta-basic-negra", quantity: 2 },
+    { slug: "calceta-curly-rosa", quantity: 3 },
+    { slug: "tapete", quantity: 1 },
+  ], { enabled: false, minQty: 5, percent: 15 });
+  assert.equal(result.subtotalCents, 194000);
+  assert.equal(result.totalCents, 194000);
+  assert.equal(result.discountCents, 0);
+});
+test("errores de inventario, cantidad y producto son errores de cliente", () => {
+  for (const items of [
+    [{ slug: "inexistente", quantity: 1 }],
+    [{ slug: "tapete", quantity: 0 }],
+    [{ slug: "tapete", quantity: 21 }],
+  ]) assert.throws(() => cart(items), PricingValidationError);
+  assert.throws(() => priceCart([{ slug: "tapete", quantity: 1 }], [{ ...catalog[2], stock: 0 }]), /Producto agotado/);
 });
