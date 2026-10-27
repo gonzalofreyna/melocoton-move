@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { priceCart, wholesaleConfig } from "./pricing.mjs";
+import { priceCart, wholesaleConfig, PricingValidationError } from "./pricing.mjs";
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
@@ -167,9 +167,9 @@ export const handler = async (event) => {
     } catch (err) {
       console.error("❌ Checkout error:", err);
       return {
-        statusCode: 500,
+        statusCode: err instanceof PricingValidationError || err instanceof SyntaxError ? 400 : 500,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ok: false, message: err.message }),
+        body: JSON.stringify({ ok: false, message: err instanceof SyntaxError ? "Solicitud JSON inválida" : err.message }),
       };
     }
   }
