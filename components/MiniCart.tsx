@@ -212,7 +212,7 @@ export default function MiniCart() {
 
                 {pricing && pricing.discount > 0 && (
                   <div className="flex justify-between text-green-700 font-medium">
-                    <span>Precio especial</span>
+                    <span>Descuento especial</span>
                     <span>-{MX.format(pricing.discount)}</span>
                   </div>
                 )}
