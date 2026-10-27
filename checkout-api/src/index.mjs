@@ -148,7 +148,7 @@ export const handler = async (event) => {
           shippingPromoApplied: shippingPromoApplied ? "true" : "false",
           wholesaleDiscountCents: String(priced.discountCents),
         },
-        payment_method_options: { card: { installments: { enabled: true } } },
+        payment_method_options: { card: { installments: { enabled: process.env.STRIPE_MSI_ENABLED === "true" } } },
       });
 
       console.log("✅ Sesión Stripe creada:", session.id);
