@@ -159,6 +159,12 @@ export default async function handler(
         sessionSubtotalCents - shippingAmountCents,
       );
 
+      const metadataDiscount = Number(session.metadata?.wholesaleDiscountCents ?? 0);
+      const wholesaleDiscountCents =
+        Number.isSafeInteger(metadataDiscount) && metadataDiscount >= 0
+          ? metadataDiscount
+          : 0;
+
       const payload = {
         stripeSessionId: session.id,
         paymentIntentId:
@@ -172,9 +178,10 @@ export default async function handler(
         customerName: customerDetails?.name || null,
         currency: session.currency || "mxn",
 
-        subtotal: productSubtotalCents / 100,
+        // Restore pre-wholesale subtotal for accurate discount reporting.
+        subtotal: (productSubtotalCents + wholesaleDiscountCents) / 100,
         shippingAmount: shippingAmountCents / 100,
-        discountAmount: (session.total_details?.amount_discount ?? 0) / 100,
+        discountAmount: ((session.total_details?.amount_discount ?? 0) + wholesaleDiscountCents) / 100,
         total: (session.amount_total ?? 0) / 100,
         shippingName: shippingDetails?.name || customerDetails?.name || null,
 
