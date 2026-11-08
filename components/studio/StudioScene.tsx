@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { Product } from '../../lib/fetchProducts';
-import { accessoryKind, type StudioItem } from '../../lib/studio/catalog';
+import { accessoryKind, displaySize, type StudioItem } from '../../lib/studio/catalog';
 
 type Props = { items: StudioItem[]; products: Product[]; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number };
 function dispose(root: THREE.Object3D) {
@@ -91,8 +91,20 @@ export default function StudioScene(props: Props) {
     props.items.forEach(item => {
       const product = props.products.find(p => p.slug === item.slug); if (!product) return;
       const group = new THREE.Group(); group.position.set(item.x, 0, item.z); group.rotation.y = item.rotation;
-      const material = new THREE.MeshStandardMaterial({ color: /^#[0-9a-f]{3,8}$/i.test(item.color) ? item.color : '#c5b6a6', roughness: .8 });
       const kind = accessoryKind(product);
+      // Accessories rest above the mat surface when positioned over a mat.
+      if (kind !== 'mat') {
+        for (const other of props.items) {
+          const mat = props.products.find(p => p.slug === other.slug);
+          if (!mat || accessoryKind(mat) !== 'mat') continue;
+          const [w, h, l] = displaySize(mat), dx = item.x - other.x, dz = item.z - other.z;
+          const x = dx * Math.cos(other.rotation) - dz * Math.sin(other.rotation);
+          const z = dx * Math.sin(other.rotation) + dz * Math.cos(other.rotation);
+          if (Math.abs(x) <= w / 2 && Math.abs(z) <= l / 2) group.position.y = Math.max(group.position.y, h + .006);
+        }
+      }
+      const material = new THREE.MeshStandardMaterial({ color: /^#[0-9a-f]{3,8}$/i.test(item.color) ? item.color : '#c5b6a6', roughness: .8 });
+      const [width, height, length] = displaySize(product);
       function add(geometry: THREE.BufferGeometry, y: number, x = 0, z = 0) {
         const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z);
         mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.itemId = item.id; group.add(mesh); return mesh;
@@ -104,9 +116,40 @@ export default function StudioScene(props: Props) {
         add(new RoundedBoxGeometry(.07, .045, .04, 3, .008), .026, -.15);
         add(new RoundedBoxGeometry(.07, .045, .04, 3, .008), .026, .15);
       }
+      if (kind === 'mat') add(new RoundedBoxGeometry(width, height, length, 3, Math.min(height / 3, .002)), height / 2 + .003);
+      if (kind === 'dumbbells') {
+        const heavy = /2[.-]5kg/.test(product.slug);
+        for (const x of [-.09, .09]) {
+          const capsule = add(new THREE.CapsuleGeometry(heavy ? .0275 : .0225, heavy ? .125 : .115, 6, 16), .03, x);
+          capsule.rotation.x = Math.PI / 2;
+        }
+      }
+      if (kind === 'ankleWeights') {
+        for (const z of [-.07, .07]) {
+          const strap = add(new RoundedBoxGeometry(.31, .012, .08, 2, .004), .01, 0, z);
+          strap.material = new THREE.MeshStandardMaterial({ color: '#303030', roughness: 1 });
+          for (let n = 0; n < 6; n++) add(new RoundedBoxGeometry(.038, .035, .075, 3, .008), .027, (n - 2.5) * .043, z);
+        }
+      }
+      if (kind === 'bar') {
+        const path = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-.57, 0, 0), new THREE.Vector3(-.38, 0, 0),
+          new THREE.Vector3(-.2, 0, .07), new THREE.Vector3(0, 0, -.07),
+          new THREE.Vector3(.2, 0, .07), new THREE.Vector3(.38, 0, 0), new THREE.Vector3(.57, 0, 0),
+        ]);
+        add(new THREE.TubeGeometry(path, 48, .025, 12, false), .026);
+        for (const x of [-.57, .57]) add(new THREE.SphereGeometry(.025, 16, 12), .026, x);
+      }
+      if (kind === 'triangle') {
+        const path = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0, 0, -.095), new THREE.Vector3(.09, 0, .075), new THREE.Vector3(-.09, 0, .075),
+        ], true, 'centripetal');
+        add(new THREE.TubeGeometry(path, 48, .022, 12, true), .023);
+      }
+      if (kind === 'generic') add(new RoundedBoxGeometry(width, height, length, 3, .015), height / 2);
       if (item.id === props.selectedId) {
-        const outline = new THREE.Mesh(new THREE.RingGeometry(.21, .22, 48), new THREE.MeshBasicMaterial({ color: '#8b5c50', side: THREE.DoubleSide }));
-        outline.rotation.x = -Math.PI / 2; outline.position.y = .004; group.add(outline);
+        const outline = new THREE.Mesh(new THREE.RingGeometry(.5, .515, 48), new THREE.MeshBasicMaterial({ color: '#8b5c50', side: THREE.DoubleSide }));
+        outline.rotation.x = -Math.PI / 2; outline.position.y = .002; outline.scale.set(width + .1, length + .1, 1); group.add(outline);
       }
       state.products.add(group);
     });

@@ -5,13 +5,13 @@ const vm = require('node:vm');
 const source = fs.readFileSync('lib/studio/catalog.ts', 'utf8');
 const context = { exports: {} };
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 } }).outputText, context);
-const { groupAccessories, accessoryKind, canAdd, unitPrice, nextPosition } = context.exports;
+const { groupAccessories, accessoryKind, canAdd, unitPrice, nextPosition, displaySize, positionLimit, clampPosition } = context.exports;
 const base = { name: 'Pelota Mini Ball', slug: 'mini-ball-pilates-rosa', category: 'accesorios', colors: ['#FFC5D3'], fullPrice: 319, stock: 1 };
 const blue = { ...base, slug: 'mini-ball-pilates-azul', colors: ['#B9E3E5'], fullPrice: 329 };
 const block = { ...base, name: 'Bloque', slug: 'bloque-yoga-negro' };
 assert.equal(groupAccessories([base, blue, block, { ...base, category: 'reformers' }]).length, 2);
 assert.equal(accessoryKind(base), 'ball');
-assert.equal(accessoryKind({ ...base, slug: 'otro-accesorio' }), null);
+assert.equal(accessoryKind({ ...base, slug: 'otro-accesorio' }), 'generic');
 const items = [{ id: 'one', slug: base.slug, x: -1, z: -.75 }];
 assert.equal(canAdd(base, items), false);
 assert.equal(canAdd(blue, items), true);
@@ -23,3 +23,19 @@ assert.equal(unitPrice({ ...base, discountPrice: 200 }), 200);
 assert.equal(unitPrice({ ...base, discountPrice: 400 }), 319);
 assert.notEqual(nextPosition(items).x, -1);
 console.log('Studio catalog: grouping, variant stock, prices and placement passed.');
+
+const mat = { ...base, category: 'mat', slug: 'tapete-yoga', dimensionsCm: { w: 13, h: 13, l: 70 } };
+assert.equal(accessoryKind(mat), 'mat');
+assert.equal(displaySize(mat)[2], 1.813);
+for (const [slug, kind] of [['mancuerna-capsula', 'dumbbells'], ['polainas-1kg', 'ankleWeights'], ['barra-z-pilates', 'bar'], ['pesa-triangular-nude', 'triangle']]) assert.equal(accessoryKind({ ...base, slug }), kind);
+const rotated = clampPosition(mat, { x: 5, z: -5, rotation: Math.PI / 2 });
+assert.ok(rotated.x <= positionLimit(mat, rotated.rotation).x);
+assert.ok(rotated.z >= -positionLimit(mat, rotated.rotation).z);
+assert.equal(groupAccessories([mat, base, { ...base, slug: 'nuevo-accesorio' }]).flat().length, 3);
+if (process.env.STUDIO_CATALOG_FIXTURE) {
+  const catalog = JSON.parse(fs.readFileSync(process.env.STUDIO_CATALOG_FIXTURE, 'utf8'));
+  const eligible = catalog.filter(p => ['accesorios', 'mat'].includes(p.category));
+  assert.equal(groupAccessories(catalog).flat().length, eligible.length);
+  assert.equal(eligible.filter(p => accessoryKind(p) === 'generic').length, 0);
+  console.log(`Live catalog: all ${eligible.length} accessory/mat variants covered with specific models.`);
+}
