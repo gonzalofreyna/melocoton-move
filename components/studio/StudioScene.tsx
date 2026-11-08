@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { Product } from '../../lib/fetchProducts';
-import { accessoryKind, displaySize, type StudioItem } from '../../lib/studio/catalog';
+import { accessoryKind, displaySize, STATIONS, type VisualItem } from '../../lib/studio/catalog';
 
-type Props = { items: StudioItem[]; products: Product[]; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number };
+type Props = { items: VisualItem[]; products: Product[]; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number };
 function dispose(root: THREE.Object3D) {
   root.traverse(obj => {
     const mesh = obj as THREE.Mesh;
@@ -32,30 +32,38 @@ export default function StudioScene(props: Props) {
     renderer.domElement.setAttribute('role', 'img');
     const scene = new THREE.Scene(); scene.background = new THREE.Color('#eee8e1');
     const camera = new THREE.PerspectiveCamera(38, 1, .01, 40);
-    camera.position.set(3.4, 3.3, 4.2);
+    camera.position.set(6.8, 6.6, 8.4);
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, .1, 0); controls.minDistance = 1; controls.maxDistance = 8;
+    controls.target.set(0, .1, 0); controls.minDistance = 1; controls.maxDistance = 16;
     controls.maxPolarAngle = Math.PI / 2 - .04; controls.enablePan = false;
     const render = () => renderer.render(scene, camera);
     controls.addEventListener('change', render);
     scene.add(new THREE.HemisphereLight('#ffffff', '#c9bbaa', 2.5));
     const sun = new THREE.DirectionalLight('#fff4e7', 3);
-    sun.position.set(1, 5, 3); sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024); sun.shadow.camera.left = -3; sun.shadow.camera.right = 3;
-    sun.shadow.camera.top = 3; sun.shadow.camera.bottom = -3; sun.shadow.bias = -.001;
+    sun.position.set(2, 8, 5); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.camera.left = -5; sun.shadow.camera.right = 5;
+    sun.shadow.camera.top = 5; sun.shadow.camera.bottom = -5; sun.shadow.bias = -.001;
     scene.add(sun);
     const room = new THREE.Group(); scene.add(room);
     function box(w: number, h: number, d: number, x: number, y: number, z: number, color: string) {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color, roughness: .9 }));
       mesh.position.set(x, y, z); mesh.receiveShadow = true; room.add(mesh); return mesh;
     }
-    box(3.3, .1, 3.3, 0, -.05, 0, '#d4bda4');
-    for (let i = 0; i < 11; i++) box(.006, .001, 3.3, -1.5 + i * .3, .001, 0, '#bca48b');
-    box(3.3, 1.25, .06, 0, .625, -1.65, '#faf6ef');
-    box(.06, 1.25, 3.3, -1.65, .625, 0, '#e7ded1');
-    box(1.7, .8, .025, 0, .75, -1.61, '#b6b8b1');
-    box(1.76, .035, .045, 0, 1.16, -1.59, '#c1a180');
-    box(1.76, .035, .045, 0, .34, -1.59, '#c1a180');
+    box(6.4, .1, 5.6, 0, -.05, 0, '#d4bda4');
+    for (let i = 0; i < 21; i++) box(.006, .001, 5.6, -3 + i * .3, .001, 0, '#bca48b');
+    box(6.4, 1.25, .06, 0, .625, -2.8, '#faf6ef');
+    box(.06, 1.25, 5.6, -3.2, .625, 0, '#e7ded1');
+    box(1.7, .8, .025, 0, .75, -2.76, '#b6b8b1');
+    box(1.76, .035, .045, 0, 1.16, -2.74, '#c1a180');
+    box(1.76, .035, .045, 0, .34, -2.74, '#c1a180');
+    // Empty stations remain visible even before a product is selected.
+    for (const station of STATIONS) {
+      const edge = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, .002, 2.2)),
+        new THREE.LineBasicMaterial({ color: '#ad957b', transparent: true, opacity: .45 }),
+      );
+      edge.position.set(station.x, .004, station.z); room.add(edge);
+    }
     const products = new THREE.Group(); scene.add(products);
     sceneState.current = { scene, camera, controls, products, render };
     const resize = () => {
@@ -107,7 +115,7 @@ export default function StudioScene(props: Props) {
       const [width, height, length] = displaySize(product);
       function add(geometry: THREE.BufferGeometry, y: number, x = 0, z = 0) {
         const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z);
-        mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.itemId = item.id; group.add(mesh); return mesh;
+        mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.itemId = item.sourceId; group.add(mesh); return mesh;
       }
       if (kind === 'block') add(new RoundedBoxGeometry(.225, .075, .145, 3, .012), .038);
       if (kind === 'ball') add(new THREE.SphereGeometry(.1, 32, 20), .1);
@@ -147,7 +155,7 @@ export default function StudioScene(props: Props) {
         add(new THREE.TubeGeometry(path, 48, .022, 12, true), .023);
       }
       if (kind === 'generic') add(new RoundedBoxGeometry(width, height, length, 3, .015), height / 2);
-      if (item.id === props.selectedId) {
+      if (item.sourceId === props.selectedId) {
         const outline = new THREE.Mesh(new THREE.RingGeometry(.5, .515, 48), new THREE.MeshBasicMaterial({ color: '#8b5c50', side: THREE.DoubleSide }));
         outline.rotation.x = -Math.PI / 2; outline.position.y = .002; outline.scale.set(width + .1, length + .1, 1); group.add(outline);
       }
@@ -157,7 +165,7 @@ export default function StudioScene(props: Props) {
   }, [props.items, props.products, props.selectedId]);
   useEffect(() => {
     const state = sceneState.current; if (!state) return;
-    state.camera.position.set(...(props.view === 'top' ? [0, 5.8, .01] : [3.4, 3.3, 4.2]) as [number, number, number]);
+    state.camera.position.set(...(props.view === 'top' ? [0, 11.6, .01] : [6.8, 6.6, 8.4]) as [number, number, number]);
     state.controls.target.set(0, .1, 0); state.controls.update(); state.render();
   }, [props.view, props.reset]);
   return <div className="relative h-[360px] sm:h-[520px] lg:h-[600px] overflow-hidden rounded-2xl" style={{ touchAction: 'none' }}>

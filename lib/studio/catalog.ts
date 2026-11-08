@@ -2,7 +2,7 @@ import type { Product } from '../fetchProducts';
 
 export type AccessoryKind = 'block' | 'ball' | 'ring' | 'mat' | 'dumbbells' | 'ankleWeights' | 'bar' | 'triangle' | 'generic';
 export type StudioItem = { id: string; slug: string; color: string; x: number; z: number; rotation: number };
-export const MAX_ITEMS = 24;
+export const STATION_COUNT = 6;
 export function accessoryKind(product: Product): AccessoryKind | null {
   const category = product.category.trim().toLowerCase();
   if (category === 'mat') return 'mat';
@@ -37,14 +37,6 @@ const names: Record<string, string> = {
   '#d3d3ff': 'Lila', '#ffb5c0': 'Rosa',
 };
 export function colorName(color: string) { return names[color.toLowerCase()] || color || 'Color único'; }
-export function nextPosition(items: StudioItem[]) {
-  for (let n = 0; n < MAX_ITEMS; n++) {
-    const x = (n % 6 - 2.5) * .4, z = (Math.floor(n / 6) - 1.5) * .5;
-    if (!items.some(i => Math.abs(i.x - x) < .18 && Math.abs(i.z - z) < .18)) return { x, z };
-  }
-  return { x: 0, z: 0 };
-}
-
 // Catalog dimensions can describe shipping packages; use explicit display references.
 export function displaySize(product: Product): [number, number, number] {
   switch (accessoryKind(product)) {
@@ -64,12 +56,38 @@ export function displaySize(product: Product): [number, number, number] {
     default: return [.2, .1, .2];
   }
 }
-export function positionLimit(product: Product, rotation = 0) {
-  const [w, , l] = displaySize(product);
-  const c = Math.abs(Math.cos(rotation)), s = Math.abs(Math.sin(rotation));
-  return { x: 1.6 - (w * c + l * s) / 2, z: 1.6 - (w * s + l * c) / 2 };
-}
-export function clampPosition(product: Product, item: StudioItem): StudioItem {
-  const limit = positionLimit(product, item.rotation);
-  return { ...item, x: Math.max(-limit.x, Math.min(limit.x, item.x)), z: Math.max(-limit.z, Math.min(limit.z, item.z)) };
+// Six fixed display stations, independent of quantities in the selection.
+export const STATIONS = Array.from({ length: STATION_COUNT }, (_, index) => ({
+  x: (index % 3 - 1) * 1.8, z: index < 3 ? -1.25 : 1.25,
+}));
+const OFFSETS: Record<AccessoryKind, [number, number]> = {
+  mat: [0, 0], block: [-.53, -.5], ball: [.53, -.5], ring: [-.53, .05],
+  dumbbells: [.53, .02], ankleWeights: [-.53, .5], triangle: [.53, .5],
+  bar: [0, -1.05], generic: [0, .65],
+};
+export type VisualItem = StudioItem & { sourceId: string };
+export function buildVisualItems(items: StudioItem[], products: Product[], selectedId?: string | null): VisualItem[] {
+  const catalog = new Map(products.map(p => [p.slug, p]));
+  const kinds = new Map<AccessoryKind, Map<string, StudioItem>>();
+  for (const item of items) {
+    const product = catalog.get(item.slug), kind = product && accessoryKind(product);
+    if (!kind) continue;
+    const variants = kinds.get(kind) || new Map<string, StudioItem>();
+    const key = `${item.slug}|${item.color}`;
+    if (!variants.has(key) || item.id === selectedId) variants.set(key, item);
+    kinds.set(kind, variants);
+  }
+  const result: VisualItem[] = [];
+  for (const [kind, variants] of kinds) {
+    const all = [...variants.values()];
+    const examples = all.slice(0, STATION_COUNT);
+    const selected = all.find(i => i.id === selectedId);
+    if (selected && !examples.includes(selected)) examples[STATION_COUNT - 1] = selected;
+    STATIONS.forEach((station, index) => {
+      const item = examples[index % examples.length], [dx, dz] = OFFSETS[kind];
+      result.push({ ...item, id: `${kind}-station-${index}`, sourceId: item.id,
+        x: station.x + dx, z: station.z + dz, rotation: 0 });
+    });
+  }
+  return result;
 }
