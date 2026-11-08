@@ -60,12 +60,24 @@ export function displaySize(product: Product): [number, number, number] {
 export const STATIONS = Array.from({ length: STATION_COUNT }, (_, index) => ({
   x: (index % 3 - 1) * 1.8, z: index < 3 ? -1.25 : 1.25,
 }));
-const OFFSETS: Record<AccessoryKind, [number, number]> = {
-  mat: [0, 0], block: [-.53, -.5], ball: [.53, -.5], ring: [-.53, .05],
-  dumbbells: [.53, .02], ankleWeights: [-.53, .5], triangle: [.53, .5],
-  bar: [0, -1.05], generic: [0, .65],
-};
-export type VisualItem = StudioItem & { sourceId: string };
+export type VisualItem = StudioItem & { sourceId: string; y: number; tiltX: number; tiltZ: number };
+// Storage positions are shared by every variant of the same accessory family.
+export function displayPlacement(kind: AccessoryKind, index: number) {
+  const station = STATIONS[index];
+  const shelfX = .65 + index * .39;
+  const defaults = { x: shelfX, y: 0, z: -2.45, tiltX: 0, tiltZ: 0 };
+  switch (kind) {
+    case 'mat': return { ...defaults, ...station };
+    case 'ball': return { ...defaults, x: 1.35 + (index % 3) * .22, y: .25, z: -2.48 + Math.floor(index / 3) * .22 };
+    case 'block': return { ...defaults, y: 1.72 };
+    case 'dumbbells': return { ...defaults, y: .82 };
+    case 'ankleWeights': return { ...defaults, y: 1.27 };
+    case 'triangle': return { ...defaults, y: 2.17 };
+    case 'generic': return { ...defaults, y: 2.62 };
+    case 'ring': return { ...defaults, x: -3.02, y: 1.65, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
+    case 'bar': return { ...defaults, x: -3.01, y: .65, z: -1.9 + index * .23, tiltZ: Math.PI / 2 };
+  }
+}
 export function buildVisualItems(items: StudioItem[], products: Product[], selectedId?: string | null): VisualItem[] {
   const catalog = new Map(products.map(p => [p.slug, p]));
   const kinds = new Map<AccessoryKind, Map<string, StudioItem>>();
@@ -84,9 +96,9 @@ export function buildVisualItems(items: StudioItem[], products: Product[], selec
     const selected = all.find(i => i.id === selectedId);
     if (selected && !examples.includes(selected)) examples[STATION_COUNT - 1] = selected;
     STATIONS.forEach((station, index) => {
-      const item = examples[index % examples.length], [dx, dz] = OFFSETS[kind];
+      const item = examples[index % examples.length];
       result.push({ ...item, id: `${kind}-station-${index}`, sourceId: item.id,
-        x: station.x + dx, z: station.z + dz, rotation: 0 });
+        ...displayPlacement(kind, index), rotation: 0 });
     });
   }
   return result;

@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync('lib/studio/catalog.ts', 'utf8');
 const context = { exports: {} };
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 } }).outputText, context);
-const { groupAccessories, accessoryKind, canAdd, unitPrice, displaySize, buildVisualItems, STATION_COUNT } = context.exports;
+const { groupAccessories, accessoryKind, canAdd, unitPrice, displaySize, buildVisualItems, displayPlacement, STATION_COUNT } = context.exports;
 const base = { name: 'Pelota Mini Ball', slug: 'mini-ball-pilates-rosa', category: 'accesorios', colors: ['#FFC5D3'], fullPrice: 319, stock: 1 };
 const blue = { ...base, slug: 'mini-ball-pilates-azul', colors: ['#B9E3E5'], fullPrice: 329 };
 const block = { ...base, name: 'Bloque', slug: 'bloque-yoga-negro' };
@@ -59,3 +59,18 @@ assert.equal(selectedVisual.length, 6);
 assert.ok(selectedVisual.some(i => i.sourceId === variants[7].id));
 assert.ok(selectedVisual.every(i => variants.some(v => v.id === i.sourceId && v.color === i.color)));
 console.log('Six-station preview: fixed layout, unlimited visual-independent quantities, mixed types and colors passed.');
+
+for (let i = 0; i < 6; i++) {
+  assert.equal(displayPlacement('mat', i).y, 0);
+  assert.ok(displayPlacement('ball', i).y > 0);
+  assert.ok(displayPlacement('ball', i).z >= -2.65 && displayPlacement('ball', i).z <= -2.05);
+  for (const kind of ['block', 'dumbbells', 'ankleWeights', 'triangle', 'generic']) {
+    const p = displayPlacement(kind, i);
+    assert.ok(p.y >= .82 && p.y <= 2.62);
+    assert.ok(p.x >= .245 && p.x <= 2.995);
+    assert.equal(p.z, -2.45);
+  }
+  assert.equal(displayPlacement('ring', i).tiltZ, Math.PI / 2);
+  assert.equal(displayPlacement('bar', i).tiltZ, Math.PI / 2);
+}
+console.log('Storage layout: mats on floor, balls in basket, accessories on shelves and racks passed.');

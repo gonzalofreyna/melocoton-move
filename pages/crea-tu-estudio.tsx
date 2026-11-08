@@ -37,6 +37,8 @@ export default function CreaTuEstudio() {
   const [items, setItems] = useState<StudioItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<'perspective' | 'top'>('perspective');
+  const [floorColor, setFloorColor] = useState('#b99976');
+  const [wallColor, setWallColor] = useState('#eee8dd');
   const [reset, setReset] = useState(0);
   const [message, setMessage] = useState('');
   const selected = items.find(i => i.id === selectedId);
@@ -68,20 +70,25 @@ export default function CreaTuEstudio() {
         <div className="flex flex-wrap justify-between items-end gap-4 mb-7"><div><p className="mm-eyebrow">Melocotón Move · Demo interactiva</p><h1 className="mm-heading text-4xl sm:text-5xl mt-3">Tu espacio, a tu manera.</h1><p className="mm-copy mt-3">Elige tus accesorios y tapetes y prueba sus colores en tu estudio.</p></div><a href="/arma-tu-studio" className="mm-text-link">Ir al cotizador</a></div>
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
           <section aria-label="Diseño de tu estudio" className="lg:sticky lg:top-28 min-w-0">
-            <div className="relative"><StudioScene items={visualItems} products={products} selectedId={selectedId} onSelect={setSelectedId} view={view} reset={reset} />
-              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-2 text-xs">Vista de muestra · 6 lugares fijos</span>
+            <div className="relative"><StudioScene items={visualItems} products={products} selectedId={selectedId} onSelect={setSelectedId} view={view} reset={reset} floorColor={floorColor} wallColor={wallColor} />
+              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-2 text-xs">Estudio de muestra · 6 lugares</span>
               {!items.length && <div className="absolute bottom-5 left-5 right-5 rounded-xl bg-white/90 p-4 text-center text-sm pointer-events-none">Tu estudio empieza aquí. Añade un accesorio del catálogo.</div>}
             </div>
             <div className="flex flex-wrap gap-2 mt-3"><button type="button" className="mm-button-outline !px-4" aria-pressed={view === 'perspective'} onClick={() => { setView('perspective'); setReset(n => n + 1); }}>Perspectiva</button><button type="button" className="mm-button-outline !px-4" aria-pressed={view === 'top'} onClick={() => { setView('top'); setReset(n => n + 1); }}>Desde arriba</button><button type="button" className="mm-button-outline !px-4" onClick={() => setReset(n => n + 1)}>Restablecer vista</button></div>
-            <p className="text-sm mt-3">6 lugares de muestra. Puedes seleccionar 12, 20 o más unidades según disponibilidad; la vista no se llena de más objetos.</p>
-            <p className="text-xs text-brand-muted leading-5 mt-3">Arrastra para girar · Pellizca o usa la rueda para acercar · Toca un accesorio para editarlo.</p>
+            <p className="text-sm mt-3">6 lugares de muestra. Tapetes en el piso, pelotas en su canasto y accesorios en repisas y soportes. Las cantidades del pedido son independientes de la vista.</p>
+            <p className="text-xs text-brand-muted leading-5 mt-3">Arrastra para girar · Pellizca o usa la rueda para acercar · Pasa el cursor o toca un producto para ver su ficha.</p>
+            <div className="grid grid-cols-2 gap-4 rounded-2xl border border-brand-line bg-white p-4 mt-4">
+              <label className="text-sm font-medium">Color del piso<input aria-label="Color del piso" type="color" value={floorColor} onChange={e => setFloorColor(e.target.value)} className="block w-full h-11 mt-2 cursor-pointer rounded-lg" /></label>
+              <label className="text-sm font-medium">Color de las paredes<input aria-label="Color de las paredes" type="color" value={wallColor} onChange={e => setWallColor(e.target.value)} className="block w-full h-11 mt-2 cursor-pointer rounded-lg" /></label>
+              <p className="col-span-2 text-xs text-brand-muted">Los acabados del espacio son de referencia y no se incluyen en el pedido.</p>
+            </div>
             {selected && selectedProduct && <div className="rounded-2xl bg-white border border-brand-line p-5 mt-4">
               <div className="flex justify-between gap-3"><h2 className="font-semibold text-sm">{selectedProduct.name}</h2><button className="text-sm underline min-h-11" onClick={() => remove(selected.id)}>Quitar una unidad</button></div>
               <ColorOptions products={selectedVariants} items={items} excludingId={selected.id} value={`${selected.slug}|${selected.color}`} onChange={(p, color) => { if (canAdd(p, items, selected.id)) updateSelected({ slug: p.slug, color }); }} />
               <p className="text-xs text-brand-muted mt-1">{colorName(selected.color)} · {money(unitPrice(selectedProduct))}</p>
 
             </div>}
-            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 lugares por tipo de producto, independientemente de la cantidad seleccionada. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
+            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 tapetes y hasta 6 ejemplos por tipo de accesorio seleccionado, acomodados en su zona. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
           </section>
           <aside className="space-y-4">
             <div className="flex justify-between items-center"><h2 className="font-display text-2xl">Accesorios y tapetes</h2><span className="text-xs text-brand-muted">Colores del catálogo</span></div>

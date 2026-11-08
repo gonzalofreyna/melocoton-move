@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createRoom } from './room';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { Product } from '../../lib/fetchProducts';
-import { accessoryKind, displaySize, STATIONS, type VisualItem } from '../../lib/studio/catalog';
+import { accessoryKind, displaySize, colorName, unitPrice, type VisualItem } from '../../lib/studio/catalog';
 
-type Props = { items: VisualItem[]; products: Product[]; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number };
+type Props = { items: VisualItem[]; products: Product[]; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number; floorColor: string; wallColor: string };
 function dispose(root: THREE.Object3D) {
   root.traverse(obj => {
     const mesh = obj as THREE.Mesh;
@@ -16,7 +17,9 @@ function dispose(root: THREE.Object3D) {
 export default function StudioScene(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const latest = useRef(props); latest.current = props;
-  const sceneState = useRef<{ scene: THREE.Scene; products: THREE.Group; camera: THREE.PerspectiveCamera; controls: OrbitControls; render: () => void } | null>(null);
+  const sceneState = useRef<{ scene: THREE.Scene; products: THREE.Group; camera: THREE.PerspectiveCamera; controls: OrbitControls; render: () => void; floorMaterial: THREE.MeshStandardMaterial; wallMaterial: THREE.MeshStandardMaterial } | null>(null);
+  const [detail, setDetail] = useState<{ sourceId: string; x: number; y: number; pinned: boolean } | null>(null);
+  const pinned = useRef(false);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     const container = host.current!;
@@ -28,13 +31,13 @@ export default function StudioScene(props: Props) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(renderer.domElement);
-    renderer.domElement.setAttribute('aria-label', 'Vista 3D del estudio. Usa los controles inferiores para colocar los accesorios.');
+    renderer.domElement.setAttribute('aria-label', 'Vista 3D del estudio. Toca un producto para ver su ficha. Los accesorios se acomodan automáticamente.');
     renderer.domElement.setAttribute('role', 'img');
     const scene = new THREE.Scene(); scene.background = new THREE.Color('#eee8e1');
     const camera = new THREE.PerspectiveCamera(38, 1, .01, 40);
-    camera.position.set(6.8, 6.6, 8.4);
+    camera.position.set(6.5, 5.2, 8.6);
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, .1, 0); controls.minDistance = 1; controls.maxDistance = 16;
+    controls.target.set(0, .65, -.3); controls.minDistance = 1; controls.maxDistance = 16;
     controls.maxPolarAngle = Math.PI / 2 - .04; controls.enablePan = false;
     const render = () => renderer.render(scene, camera);
     controls.addEventListener('change', render);
@@ -44,28 +47,11 @@ export default function StudioScene(props: Props) {
     sun.shadow.mapSize.set(1024, 1024); sun.shadow.camera.left = -5; sun.shadow.camera.right = 5;
     sun.shadow.camera.top = 5; sun.shadow.camera.bottom = -5; sun.shadow.bias = -.001;
     scene.add(sun);
-    const room = new THREE.Group(); scene.add(room);
-    function box(w: number, h: number, d: number, x: number, y: number, z: number, color: string) {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color, roughness: .9 }));
-      mesh.position.set(x, y, z); mesh.receiveShadow = true; room.add(mesh); return mesh;
-    }
-    box(6.4, .1, 5.6, 0, -.05, 0, '#d4bda4');
-    for (let i = 0; i < 21; i++) box(.006, .001, 5.6, -3 + i * .3, .001, 0, '#bca48b');
-    box(6.4, 1.25, .06, 0, .625, -2.8, '#faf6ef');
-    box(.06, 1.25, 5.6, -3.2, .625, 0, '#e7ded1');
-    box(1.7, .8, .025, 0, .75, -2.76, '#b6b8b1');
-    box(1.76, .035, .045, 0, 1.16, -2.74, '#c1a180');
-    box(1.76, .035, .045, 0, .34, -2.74, '#c1a180');
-    // Empty stations remain visible even before a product is selected.
-    for (const station of STATIONS) {
-      const edge = new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, .002, 2.2)),
-        new THREE.LineBasicMaterial({ color: '#ad957b', transparent: true, opacity: .45 }),
-      );
-      edge.position.set(station.x, .004, station.z); room.add(edge);
-    }
+    const { room, floorMaterial, wallMaterial, mirror } = createRoom();
+    floorMaterial.color.set(latest.current.floorColor); wallMaterial.color.set(latest.current.wallColor);
+    scene.add(room);
     const products = new THREE.Group(); scene.add(products);
-    sceneState.current = { scene, camera, controls, products, render };
+    sceneState.current = { scene, camera, controls, products, render, floorMaterial, wallMaterial };
     const resize = () => {
       const { width, height } = container.getBoundingClientRect();
       if (!width || !height) return;
@@ -74,22 +60,45 @@ export default function StudioScene(props: Props) {
     const observer = new ResizeObserver(resize); observer.observe(container); controls.update(); resize();
     const ray = new THREE.Raycaster(); let down = { x: 0, y: 0 };
     const pointerDown = (e: PointerEvent) => { down = { x: e.clientX, y: e.clientY }; };
-    const pointerUp = (e: PointerEvent) => {
-      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
+    const hitAt = (e: PointerEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2((e.clientX - rect.left) / rect.width * 2 - 1, -(e.clientY - rect.top) / rect.height * 2 + 1), camera);
-      const hit = ray.intersectObjects(products.children, true).find(h => h.object.userData.itemId);
-      if (hit) latest.current.onSelect(hit.object.userData.itemId);
+      // Include architecture so products cannot be picked through walls or shelves.
+      const hit = ray.intersectObjects(scene.children, true).find(h => (h.object as THREE.Mesh).isMesh);
+      if (!hit?.object.userData.itemId) return null;
+      return { sourceId: hit.object.userData.itemId as string,
+        x: Math.max(8, Math.min(rect.width - 240, e.clientX - rect.left + 12)),
+        y: Math.max(48, Math.min(rect.height - 185, e.clientY - rect.top - 50)) };
     };
+    const pointerMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || e.buttons || pinned.current) return;
+      const hit = hitAt(e); container.style.cursor = hit ? 'pointer' : 'grab';
+      setDetail(hit ? { ...hit, pinned: false } : null);
+    };
+    const pointerLeave = () => { if (!pinned.current) setDetail(null); };
+    const pointerUp = (e: PointerEvent) => {
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
+      const hit = hitAt(e); pinned.current = Boolean(hit);
+      setDetail(hit ? { ...hit, pinned: true } : null);
+      if (hit) latest.current.onSelect(hit.sourceId);
+    };
+    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') { pinned.current = false; setDetail(null); } };
+    window.addEventListener('keydown', escape);
     const lost = (e: Event) => { e.preventDefault(); setFailed(true); };
     renderer.domElement.addEventListener('pointerdown', pointerDown);
     renderer.domElement.addEventListener('pointerup', pointerUp);
+    renderer.domElement.addEventListener('pointermove', pointerMove);
+    renderer.domElement.addEventListener('pointerleave', pointerLeave);
     renderer.domElement.addEventListener('webglcontextlost', lost);
     return () => {
       observer.disconnect(); controls.dispose(); sceneState.current = null;
       renderer.domElement.removeEventListener('pointerdown', pointerDown);
       renderer.domElement.removeEventListener('pointerup', pointerUp);
       renderer.domElement.removeEventListener('webglcontextlost', lost);
+      window.removeEventListener('keydown', escape);
+      renderer.domElement.removeEventListener('pointermove', pointerMove);
+      renderer.domElement.removeEventListener('pointerleave', pointerLeave);
+      mirror.getRenderTarget().dispose();
       dispose(scene); renderer.dispose(); renderer.domElement.remove();
     };
   }, []);
@@ -98,19 +107,8 @@ export default function StudioScene(props: Props) {
     dispose(state.products); state.products.clear();
     props.items.forEach(item => {
       const product = props.products.find(p => p.slug === item.slug); if (!product) return;
-      const group = new THREE.Group(); group.position.set(item.x, 0, item.z); group.rotation.y = item.rotation;
+      const group = new THREE.Group(); group.position.set(item.x, item.y, item.z); group.rotation.set(item.tiltX, item.rotation, item.tiltZ);
       const kind = accessoryKind(product);
-      // Accessories rest above the mat surface when positioned over a mat.
-      if (kind !== 'mat') {
-        for (const other of props.items) {
-          const mat = props.products.find(p => p.slug === other.slug);
-          if (!mat || accessoryKind(mat) !== 'mat') continue;
-          const [w, h, l] = displaySize(mat), dx = item.x - other.x, dz = item.z - other.z;
-          const x = dx * Math.cos(other.rotation) - dz * Math.sin(other.rotation);
-          const z = dx * Math.sin(other.rotation) + dz * Math.cos(other.rotation);
-          if (Math.abs(x) <= w / 2 && Math.abs(z) <= l / 2) group.position.y = Math.max(group.position.y, h + .006);
-        }
-      }
       const material = new THREE.MeshStandardMaterial({ color: /^#[0-9a-f]{3,8}$/i.test(item.color) ? item.color : '#c5b6a6', roughness: .8 });
       const [width, height, length] = displaySize(product);
       function add(geometry: THREE.BufferGeometry, y: number, x = 0, z = 0) {
@@ -165,11 +163,26 @@ export default function StudioScene(props: Props) {
   }, [props.items, props.products, props.selectedId]);
   useEffect(() => {
     const state = sceneState.current; if (!state) return;
-    state.camera.position.set(...(props.view === 'top' ? [0, 11.6, .01] : [6.8, 6.6, 8.4]) as [number, number, number]);
-    state.controls.target.set(0, .1, 0); state.controls.update(); state.render();
+    state.camera.position.set(...(props.view === 'top' ? [0, 11.6, .01] : [6.5, 5.2, 8.6]) as [number, number, number]);
+    state.controls.target.set(0, .65, -.3); state.controls.update(); state.render();
   }, [props.view, props.reset]);
+  useEffect(() => {
+    const state = sceneState.current; if (!state) return;
+    state.floorMaterial.color.set(props.floorColor); state.wallMaterial.color.set(props.wallColor); state.render();
+  }, [props.floorColor, props.wallColor]);
+  useEffect(() => {
+    if (detail && !props.items.some(i => i.sourceId === detail.sourceId)) { pinned.current = false; setDetail(null); }
+  }, [props.items, detail]);
+  const detailItem = detail && props.items.find(i => i.sourceId === detail.sourceId);
+  const detailProduct = detailItem && props.products.find(p => p.slug === detailItem.slug);
   return <div className="relative h-[360px] sm:h-[520px] lg:h-[600px] overflow-hidden rounded-2xl" style={{ touchAction: 'none' }}>
     <div ref={host} className="h-full w-full" />
+    {detail && detailItem && detailProduct && <div role="group" aria-label="Detalle del producto" className={`absolute z-10 w-[230px] rounded-xl border border-brand-line bg-white/95 p-3 shadow-lg ${detail.pinned ? '' : 'pointer-events-none'}`} style={{ left: detail.x, top: detail.y, touchAction: 'auto' }}>
+      <div className="flex gap-2"><img src={detailProduct.image} alt="" className="h-12 w-12 rounded-lg object-contain" /><h3 className="text-xs font-semibold leading-4 flex-1">{detailProduct.name}</h3>{detail.pinned && <button aria-label="Cerrar ficha" className="h-8 w-8 shrink-0" onClick={() => { pinned.current = false; setDetail(null); }}>×</button>}</div>
+      <p className="text-xs mt-2">{colorName(detailItem.color)} · {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(unitPrice(detailProduct))}</p>
+      <p className="text-xs text-brand-muted mt-1 line-clamp-2">{detailProduct.materials?.slice(0, 2).join(' · ') || 'Accesorio para tu estudio'}</p>
+      <p className="text-[10px] text-brand-muted mt-2">{detail.pinned ? 'Edita el color en el panel debajo de la vista.' : 'Toca para seleccionar y cambiar el color.'}</p>
+    </div>}
     {failed && <div role="alert" className="absolute inset-0 grid place-content-center bg-brand-sand p-8 text-center">No fue posible mostrar la vista 3D en este dispositivo. Puedes seguir seleccionando accesorios en el catálogo.</div>}
   </div>;
 }
