@@ -97,8 +97,8 @@ const LANE_ORDER: DisplayZone[] = [
   'ball', 'ring', 'bar',
   'ankleWeights', 'ankleWeights-mat', 'ankleWeights-heavy',
   'dumbbells', 'dumbbells-mat', 'block', 'block-marble', 'triangle',
-  'generic', 'mat-left-center', 'mat-right-upper', 'mat-left-upper',
-  'mat-right-center', 'mat-left-lower', 'mat-right-lower', 'ring-alt', 'bar-alt'
+  'mat-left-center', 'mat-right-upper', 'mat-left-upper',
+  'mat-right-center', 'mat-left-lower', 'mat-right-lower', 'generic', 'ring-alt', 'bar-alt'
 ];
 const LANE_PREFERENCES: Partial<Record<DisplayZone, DisplayZone[]>> = {
   block: ['block', 'block-marble', 'mat-right-upper'],
@@ -109,7 +109,7 @@ const LANE_PREFERENCES: Partial<Record<DisplayZone, DisplayZone[]>> = {
   dumbbells: ['dumbbells', 'mat-left-center'],
   'dumbbells-mat': ['dumbbells-mat', 'mat-left-center'],
   triangle: ['triangle', 'mat-right-upper'],
-  generic: ['generic', 'mat-right-center'],
+  generic: ['generic', 'mat-left-center'],
   ring: ['ring', 'ring-alt'],
   bar: ['bar', 'bar-alt'],
   ball: ['ball', 'mat-right-upper'],
@@ -125,7 +125,8 @@ export function displayPlacement(zone: DisplayZone, index: number) {
     case 'ankleWeights-mat': return { ...defaults, x: station.x + .17, y: .027, z: station.z + .46 };
     case 'ankleWeights-heavy': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .46 };
     case 'mat-left-center': return { ...defaults, x: station.x - .17, y: .027, z: station.z };
-    case 'mat-right-center': case 'generic': return { ...defaults, x: station.x + .17, y: .027, z: station.z };
+    case 'mat-right-center': return { ...defaults, x: station.x + .17, y: .027, z: station.z };
+    case 'generic': return { ...defaults, x: station.x, y: .027, z: station.z + .73 };
     case 'mat-left-upper': return { ...defaults, x: station.x - .17, y: .027, z: station.z - .72 };
     case 'mat-right-upper': return { ...defaults, x: station.x + .17, y: .027, z: station.z - .72 };
     case 'mat-left-lower': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .72 };
@@ -166,7 +167,12 @@ export function buildVisualItems(
     LANE_ORDER.indexOf(a.zone) - LANE_ORDER.indexOf(b.zone) || keyA.localeCompare(keyB));
   for (const [familyKey, family] of ranked) {
     const preference = LANE_PREFERENCES[family.zone] || [family.zone];
-    const lane = [...preference, ...LANE_ORDER].find(candidate => candidate !== 'mat' && !occupiedLanes.has(candidate));
+    const fallback = family.zone === 'ring' ? ['ring', 'ring-alt'] :
+      family.zone === 'bar' ? ['bar', 'bar-alt'] :
+      family.zone === 'ball' ? ['ball', 'mat-right-upper', 'mat-left-upper'] :
+      LANE_ORDER.filter(candidate => candidate !== 'ball' && candidate !== 'ring' &&
+        candidate !== 'bar' && candidate !== 'ring-alt' && candidate !== 'bar-alt');
+    const lane = [...preference, ...fallback].find(candidate => candidate !== 'mat' && !occupiedLanes.has(candidate));
     // Capacity is finite: never render one family on top of another.
     if (!lane) continue;
     occupiedLanes.add(lane);
