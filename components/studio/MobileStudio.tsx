@@ -10,6 +10,8 @@ type Props = {
   products: Product[]; groups: Product[][]; items: StudioItem[]; visualItems: VisualItem[];
   selectedId: string | null; onSelect: (id: string | null) => void;
   add: (product: Product, color: string) => void;
+  summary: [string, { product: Product; color: string; quantity: number }][];
+  setOrderQuantity: (key: string, quantity: number) => void;
   remove: (id: string) => void;
   updateSelected: (change: Partial<StudioItem>) => void;
   previewMode: PreviewMode; setPreviewMode: (mode: PreviewMode) => void;
@@ -52,27 +54,33 @@ function Palette({ options, selected, onChange }: {
   </div>;
 }
 
-function MobileProduct({ variants, items, add }: { variants: Product[]; items: StudioItem[]; add: Props['add'] }) {
-  const [choice, setChoice] = useState<{ slug: string; color: string } | null>(null);
-  const product = variants.find(p => p.slug === choice?.slug) || variants[0];
-  const color = choice?.slug === product.slug ? choice.color : product.colors[0] || '';
-  const available = canAdd(product, items);
-  const options = variants.flatMap(p => (p.colors.length ? p.colors : ['']).map(c => ({ product: p, color: c })));
+function MobileProduct({ variants, items, add, mode }: {
+  variants: Product[]; items: StudioItem[]; add: Props['add']; mode: PreviewMode;
+}) {
+  const options = variants.flatMap(p => (p.colors.length ? p.colors : ['']).map(color => ({ product: p, color })));
+  const selectedKeys = items.filter(i => variants.some(p => p.slug === i.slug)).map(i => i.slug + '|' + i.color);
+  const current = options.find(o => selectedKeys.includes(o.product.slug + '|' + o.color)) || options[0];
   return <div className="border-t border-brand-line px-3 pb-3 pt-3">
     <div className="flex gap-3">
-      <img src={product.image} alt="" className="h-20 w-20 rounded-xl bg-[#faf8f5] object-contain" />
+      <img src={current.product.image} alt="" className="h-20 w-20 rounded-xl bg-[#faf8f5] object-contain" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold leading-5">{product.name}</p>
-        <p className="mt-1 text-sm">{money(unitPrice(product))} / pieza</p>
+        <p className="text-sm font-semibold">{current.product.name}</p>
+        <p className="mt-1 text-sm">{money(unitPrice(current.product))} / pieza</p>
+        <p className="mt-2 text-xs text-brand-muted">Toca un color y observa cómo cambia el modelo 3D.</p>
       </div>
     </div>
-    <p className="mt-3 text-xs font-semibold">Color: {colorName(color)}</p>
-    <Palette options={options} selected={product.slug + '|' + color}
-      onChange={(p, c) => setChoice({ slug: p.slug, color: c })} />
-    <button type="button" disabled={!available} onClick={() => add(product, color)}
-      className="mm-button mt-3 min-h-11 w-full disabled:opacity-40">
-      {available ? 'Añadir a mi estudio' : 'Sin existencia disponible'}
-    </button>
+    <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Colores para previsualizar">
+      {options.map(({ product, color }) => {
+        const key = product.slug + '|' + color;
+        const chosen = selectedKeys.includes(key);
+        return <button key={key} type="button" onClick={() => add(product, color)}
+          aria-label={colorName(color) + (chosen ? ', seleccionado' : '')} aria-pressed={chosen}
+          className={'grid h-11 w-11 place-items-center rounded-full border-2 ' + (chosen ? 'border-brand-wine' : 'border-transparent')}>
+          <span className="h-8 w-8 rounded-full border border-black/10" style={{ backgroundColor: /^#[\\da-f]{3,8}$/i.test(color) ? color : '#c5b6a6' }} />
+        </button>;
+      })}
+    </div>
+    <p className="mt-2 text-xs text-brand-muted">{mode === 'uniform' ? 'Un color a la vez: tocar otro reemplaza el anterior.' : 'Puedes combinar colores; toca uno seleccionado para quitarlo.'} La cantidad se decide al finalizar.</p>
   </div>;
 }
 
@@ -82,6 +90,7 @@ export default function MobileStudio(props: Props) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
+  const [finalizing, setFinalizing] = useState(false);
   const scrollArea = useRef<HTMLDivElement>(null);
   const gestureStart = useRef<number | null>(null);
 
@@ -96,21 +105,10 @@ export default function MobileStudio(props: Props) {
   const activeVariants = props.groups.find(g => g.some(p => p.slug === active?.slug)) || [];
   const visibleGroups = useMemo(() => props.groups.filter(g =>
     g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))), [props.groups, search]);
-  const summary = useMemo(() => {
-    const rows = new Map<string, { product: Product; color: string; quantity: number; id: string }>();
-    for (const item of props.items) {
-      const p = props.products.find(p => p.slug === item.slug);
-      if (!p) continue;
-      const key = item.slug + '|' + item.color;
-      const current = rows.get(key);
-      if (current) current.quantity++;
-      else rows.set(key, { product: p, color: item.color, quantity: 1, id: item.id });
-    }
-    return [...rows.entries()];
-  }, [props.items, props.products]);
+  const summary = props.summary;
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, props.matQuantity * MAT_PRICE);
-  const count = props.items.length + props.matQuantity;
-  const height = sizeHeight[sheet];
+  const count = summary.reduce((sum, [, row]) => sum + row.quantity, props.matQuantity);
+  const height = finalizing ? 'min(90dvh, 840px)' : sizeHeight[sheet];
 
   function selectTab(next: Tab) {
     setTab(next);
@@ -131,7 +129,7 @@ export default function MobileStudio(props: Props) {
   }
   function handleAdd(p: Product, color: string) {
     props.add(p, color);
-    setNotice(p.name + ' · ' + colorName(color) + ' añadido al pedido');
+    setNotice(p.name + ' · ' + colorName(color) + ' actualizado en el diseño');
     setSheet('half');
   }
   function changeSheetByGesture(delta: number) {
@@ -143,7 +141,7 @@ export default function MobileStudio(props: Props) {
     <header className="absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-brand-line bg-white/95 px-3 backdrop-blur-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', height: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
       <a href="/" className="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm" aria-label="Salir del configurador"><span aria-hidden="true">‹</span> Volver</a>
       <span className="text-sm font-semibold">Crea tu estudio</span>
-      <button type="button" onClick={() => selectTab('order')} className="min-h-11 rounded-xl px-2 text-sm" aria-label={'Ver pedido, ' + count + ' piezas'}>Pedido ({count})</button>
+      <button type="button" onClick={() => { setFinalizing(true); setTab('order'); }} className="min-h-11 rounded-xl px-2 text-sm" aria-label="Finalizar diseño">Finalizar</button>
     </header>
     <div className="absolute inset-x-0 z-0 overflow-hidden transition-[bottom] duration-300 ease-out"
       style={{ top: 'calc(56px + env(safe-area-inset-top, 0px))', bottom: height }}>
@@ -172,27 +170,27 @@ export default function MobileStudio(props: Props) {
         </button>
         <div className="flex items-center justify-between px-4 pb-2">
           <div>
-            <p className="text-xs text-brand-muted">Personaliza tu estudio</p>
-            <p className="text-sm font-semibold">{money(total)} <span className="font-normal text-brand-muted">· {count} piezas</span></p>
+            <p className="text-xs text-brand-muted">{finalizing ? 'Paso 2 · Preparar pedido' : 'Paso 1 · Diseña libremente'}</p>
+            <p className="text-sm font-semibold">{finalizing ? 'Revisa tus cantidades' : 'Toca colores para verlos en 3D'}</p>
           </div>
           <div className="flex gap-2">
             <button type="button" className="rounded-lg border border-brand-line px-3 py-2 text-xs"
               onClick={() => setSheet(current => current === 'expanded' ? 'half' : 'expanded')}>{sheet === 'expanded' ? 'Reducir' : 'Ampliar'}</button>
             <button type="button" className="rounded-lg bg-brand-wine px-3 py-2 text-xs text-white"
-              onClick={() => setSheet('compact')}>Ver estudio</button>
+              onClick={() => { if (finalizing) { setFinalizing(false); selectTab('accessories'); } else { setFinalizing(true); setTab('order'); } }}>{finalizing ? 'Volver al diseño' : 'Finalizar diseño'}</button>
           </div>
         </div>
       </div>
-      <nav className="grid shrink-0 grid-cols-4 gap-1 border-y border-brand-line bg-white px-2 py-1" aria-label="Secciones del configurador">
-        {tabs.map(t => <button key={t.id} type="button" onClick={() => selectTab(t.id)}
+      {!finalizing && <nav className="grid shrink-0 grid-cols-3 gap-1 border-y border-brand-line bg-white px-2 py-1" aria-label="Secciones del configurador">
+        {tabs.filter(t => t.id !== 'order').map(t => <button key={t.id} type="button" onClick={() => selectTab(t.id)}
           aria-current={tab === t.id ? 'page' : undefined}
           className={'flex min-h-12 flex-col items-center justify-center rounded-lg px-1 text-[11px] ' + (tab === t.id ? 'bg-brand-sand font-semibold text-brand-wine' : 'text-brand-muted')}>
           <span className="text-lg leading-5" aria-hidden="true">{t.symbol}</span>{t.label}
         </button>)}
-      </nav>
+      </nav>}
       <div ref={scrollArea} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-3"
         style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
-        {tab === 'accessories' && <div className="space-y-3">
+        {!finalizing && tab === 'accessories' && <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Accesorios</h2>
             <span className="text-xs text-brand-muted">Toca para elegir</span>
@@ -236,12 +234,12 @@ export default function MobileStudio(props: Props) {
                     <span className="mt-1 block text-xs text-brand-muted">Desde {money(Math.min(...variants.map(unitPrice)))}</span></span>
                   <span className="px-2 text-lg" aria-hidden="true">{open ? '−' : '+'}</span>
                 </button>
-                {open && <MobileProduct variants={variants} items={props.items} add={handleAdd} />}
+                {open && <MobileProduct variants={variants} items={props.items} add={handleAdd} mode={props.previewMode} />}
               </div>;
             })}
           </div>}
         </div>}
-        {tab === 'mat' && <div className="space-y-3">
+        {!finalizing && tab === 'mat' && <div className="space-y-3">
           <h2 className="text-lg font-semibold">Tu mat personalizado</h2>
           <p className="text-xs text-brand-muted">Forma y color de Crea tu Mat. Los seis lugares muestran la misma configuración.</p>
           <p className="text-sm font-semibold">Forma</p>
@@ -262,7 +260,7 @@ export default function MobileStudio(props: Props) {
             </div>
           </div>
         </div>}
-        {tab === 'space' && <div className="space-y-4">
+        {!finalizing && tab === 'space' && <div className="space-y-4">
           <h2 className="text-lg font-semibold">Personaliza tu espacio</h2>
           <label className="block text-sm">Color del piso
             <input type="color" aria-label="Color del piso" value={props.floorColor} onChange={e => props.setFloorColor(e.target.value)}
@@ -272,8 +270,9 @@ export default function MobileStudio(props: Props) {
               className="mt-2 h-12 w-full rounded-xl" /></label>
           <p className="text-xs text-brand-muted">Los acabados del espacio son ilustrativos y no se incluyen en el pedido.</p>
         </div>}
-        {tab === 'order' && <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Cantidades del pedido</h2>
+        {finalizing && <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Tu estudio está listo</h2>
+          <p className="text-xs text-brand-muted">Estas son cantidades sugeridas según las seis posiciones del diseño. Ajústalas libremente; no cambiarán la vista 3D.</p>
           {count === 0 && <p className="text-sm text-brand-muted">Todavía no has añadido productos.</p>}
           {props.matQuantity > 0 && <div className="border-b border-brand-line pb-3">
             <p className="text-sm font-semibold">Tapete personalizado · {matShapes.find(m => m.id === props.matShape)?.label}</p>
@@ -285,15 +284,15 @@ export default function MobileStudio(props: Props) {
             </div>
           </div>}
           {summary.map(([key, row]) => <div key={key} className="border-b border-brand-line pb-3">
-            <button type="button" onClick={() => { props.onSelect(row.id); selectTab('accessories'); }} className="text-left text-sm font-semibold underline">{row.product.name}</button>
+            <p className="text-left text-sm font-semibold">{row.product.name}</p>
             <p className="text-xs text-brand-muted">{colorName(row.color)} · {money(unitPrice(row.product))} / pieza</p>
             <div className="mt-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button type="button" className="h-11 w-11 rounded-full border border-brand-line" aria-label={'Quitar una pieza de ' + row.product.name}
-                  onClick={() => props.remove(props.items.find(i => i.slug === row.product.slug && i.color === row.color)!.id)}>−</button>
+                  onClick={() => props.setOrderQuantity(key, row.quantity - 1)}>−</button>
                 <span>{row.quantity}</span>
                 <button type="button" className="h-11 w-11 rounded-full border border-brand-line" aria-label={'Añadir una pieza de ' + row.product.name}
-                  disabled={!canAdd(row.product, props.items)} onClick={() => handleAdd(row.product, row.color)}>+</button>
+                  disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => props.setOrderQuantity(key, row.quantity + 1)}>+</button>
               </div>
               <span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span>
             </div>
@@ -301,7 +300,8 @@ export default function MobileStudio(props: Props) {
           <div className="flex items-center justify-between border-t border-brand-line pt-3 text-sm font-semibold">
             <span>Subtotal estimado</span><span>{money(total)}</span>
           </div>
-          <p className="text-xs text-brand-muted">La demo no genera pedidos ni reserva inventario.</p>
+          <p className="text-xs text-brand-muted">El resumen es una cotización preliminar; esta demo aún no envía órdenes ni reserva inventario.</p>
+          <button type="button" className="mm-button min-h-11 w-full" onClick={() => { setFinalizing(false); selectTab('accessories'); }}>Seguir diseñando</button>
         </div>}
       </div>
     </section>
