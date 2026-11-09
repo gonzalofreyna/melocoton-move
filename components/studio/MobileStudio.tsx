@@ -12,10 +12,9 @@ type Props = {
   add: (product: Product, color: string) => void;
   summary: [string, { product: Product; color: string; quantity: number }][];
   setOrderQuantity: (key: string, quantity: number) => void;
-  onBuyAccessories: () => void;
-  onBuyPersonalizedMat: () => void;
-  accessoryCount: number;
-  purchaseError: string;
+  whatsappUrl: string;
+  canRequestQuote: boolean;
+  estimatedTotal: number;
   remove: (id: string) => void;
   updateSelected: (change: Partial<StudioItem>) => void;
   matShape: MatShape; matColor: string; matEnabled: boolean; matQuantity: number;
@@ -109,7 +108,6 @@ export default function MobileStudio(props: Props) {
   const visibleGroups = useMemo(() => props.groups.filter(g =>
     g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))), [props.groups, search]);
   const summary = props.summary;
-  const accessorySubtotal = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0);
   const count = summary.reduce((sum, [, row]) => sum + row.quantity, props.matQuantity);
   const height = finalizing ? 'calc(100dvh - 56px - env(safe-area-inset-top, 0px))' : sizeHeight[sheet];
   function openSummary() {
@@ -152,7 +150,7 @@ export default function MobileStudio(props: Props) {
     <header className="absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-brand-line bg-white/95 px-3 backdrop-blur-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', height: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
       <a href="/" className="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm" aria-label="Salir del configurador"><span aria-hidden="true">‹</span> Volver</a>
       <span className="text-sm font-semibold">Crea tu estudio</span>
-      <button type="button" onClick={openSummary} className="min-h-11 rounded-xl px-2 text-sm" aria-label="Finalizar diseño">Finalizar</button>
+      <button type="button" onClick={openSummary} className="min-h-11 rounded-xl px-2 text-sm" aria-label="Ver cotización">Cotización</button>
     </header>
     <div className="absolute inset-x-0 z-0 overflow-hidden transition-[bottom] duration-300 ease-out"
       style={{ top: 'calc(56px + env(safe-area-inset-top, 0px))', bottom: height }}>
@@ -181,14 +179,14 @@ export default function MobileStudio(props: Props) {
         </button>
         <div className="flex items-center justify-between px-4 pb-2">
           <div>
-            <p className="text-xs text-brand-muted">{finalizing ? 'Paso 2 · Preparar pedido' : 'Paso 1 · Diseña libremente'}</p>
-            <p className="text-sm font-semibold">{finalizing ? 'Revisa tus cantidades' : 'Toca colores para verlos en 3D'}</p>
+            <p className="text-xs text-brand-muted">{finalizing ? 'Paso 2 · Solicita tu cotización' : 'Paso 1 · Diseña libremente'}</p>
+            <p className="text-sm font-semibold">{finalizing ? 'Revisa tu selección' : 'Toca colores para verlos en 3D'}</p>
           </div>
           <div className="flex gap-2">
             <button type="button" className="rounded-lg border border-brand-line px-3 py-2 text-xs"
               onClick={() => setSheet(current => current === 'expanded' ? 'half' : 'expanded')}>{sheet === 'expanded' ? 'Reducir' : 'Ampliar'}</button>
             <button type="button" className="rounded-lg bg-brand-wine px-3 py-2 text-xs text-white"
-              onClick={() => { if (finalizing) { setFinalizing(false); selectTab('accessories'); } else { openSummary(); } }}>{finalizing ? 'Volver al diseño' : 'Finalizar diseño'}</button>
+              onClick={() => { if (finalizing) { setFinalizing(false); selectTab('accessories'); } else { openSummary(); } }}>{finalizing ? 'Volver al diseño' : 'Ver cotización'}</button>
           </div>
         </div>
       </div>
@@ -278,7 +276,7 @@ export default function MobileStudio(props: Props) {
           <p className="text-xs text-brand-muted">Los acabados del espacio son ilustrativos y no se incluyen en el pedido.</p>
         </div>}
         {finalizing && <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Tu estudio está listo</h2>
+          <h2 className="text-lg font-semibold">Solicita tu cotización</h2>
           <p className="text-xs text-brand-muted">Estas son cantidades sugeridas según las tres posiciones del diseño. Ajústalas libremente; no cambiarán la vista 3D.</p>
           {count === 0 && <p className="text-sm text-brand-muted">Todavía no has añadido productos.</p>}
           {props.matQuantity > 0 && <div className="border-b border-brand-line pb-3">
@@ -304,23 +302,18 @@ export default function MobileStudio(props: Props) {
               <span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span>
             </div>
           </div>)}
-          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">El carrito calcula el precio especial vigente de los accesorios antes del pago. {props.matQuantity > 0 ? `Los ${props.matQuantity} tapetes personalizados se configuran y pagan por separado en Crea tu Mat.` : ""}</p>
+          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">Precios de referencia sujetos a confirmación y posibles precios especiales. El envío por WhatsApp no genera una compra ni reserva inventario.</p>
         </div>}
       </div>
       {finalizing && <div className="shrink-0 border-t border-brand-line bg-white px-4 pt-3 shadow-[0_-6px_18px_rgba(48,41,43,0.06)]"
         style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="mb-2 flex items-center justify-between text-sm font-semibold">
-          <span>{props.accessoryCount > 0 ? "Accesorios antes de descuento" : "Tapetes por separado"}</span><span>{money(props.accessoryCount > 0 ? accessorySubtotal : props.matQuantity * MAT_PRICE)}</span>
+          <span>Subtotal estimado</span><span>{money(props.estimatedTotal)}</span>
         </div>
-        {props.purchaseError && <p role="alert" className="mb-2 text-xs text-red-700">{props.purchaseError}</p>}
-        {props.accessoryCount > 0 && <button type="button" className="mm-button min-h-12 w-full" onClick={props.onBuyAccessories}>
-          Comprar accesorios · Ver carrito
-        </button>}
-        {props.matQuantity > 0 && <button type="button" className="mm-button-outline mt-2 min-h-12 w-full" onClick={props.onBuyPersonalizedMat}>
-          Configurar y comprar tapetes por separado
-        </button>}
-        {props.accessoryCount === 0 && props.matQuantity === 0 &&
-          <p className="mb-2 text-xs text-brand-muted">Selecciona un producto para comprar.</p>}
+        {props.canRequestQuote ? <a href={props.whatsappUrl} target="_blank" rel="noopener noreferrer"
+          className="mm-button flex min-h-12 w-full items-center justify-center text-center">
+          Solicitar cotización por WhatsApp
+        </a> : <p className="mb-2 text-xs text-brand-muted">Selecciona un producto para solicitar tu cotización.</p>}
         <button type="button" className="mt-2 min-h-11 w-full rounded-lg border border-brand-line text-sm"
           onClick={() => { setFinalizing(false); selectTab('accessories'); }}>
           Seguir diseñando
