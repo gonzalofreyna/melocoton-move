@@ -12,6 +12,9 @@ type Props = {
   add: (product: Product, color: string) => void;
   summary: [string, { product: Product; color: string; quantity: number }][];
   setOrderQuantity: (key: string, quantity: number) => void;
+  onBuyAccessories: () => void;
+  onBuyPersonalizedMat: () => void;
+  accessoryCount: number;
   remove: (id: string) => void;
   updateSelected: (change: Partial<StudioItem>) => void;
   matShape: MatShape; matColor: string; matEnabled: boolean; matQuantity: number;
@@ -300,15 +303,23 @@ export default function MobileStudio(props: Props) {
               <span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span>
             </div>
           </div>)}
-          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">El resumen es una cotización preliminar; esta demo aún no envía órdenes ni reserva inventario.</p>
+          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">El carrito calculará el precio especial vigente antes del pago. Los tapetes personalizados siguen su proceso de compra independiente.</p>
         </div>}
       </div>
       {finalizing && <div className="shrink-0 border-t border-brand-line bg-white px-4 pt-3 shadow-[0_-6px_18px_rgba(48,41,43,0.06)]"
         style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="mb-2 flex items-center justify-between text-sm font-semibold">
-          <span>Subtotal estimado</span><span>{money(total)}</span>
+          <span>Antes de precio especial</span><span>{money(total)}</span>
         </div>
-        <button type="button" className="mm-button min-h-12 w-full"
+        {props.accessoryCount > 0 && <button type="button" className="mm-button min-h-12 w-full" onClick={props.onBuyAccessories}>
+          Comprar accesorios · Ver carrito
+        </button>}
+        {props.matQuantity > 0 && <button type="button" className="mm-button-outline mt-2 min-h-12 w-full" onClick={props.onBuyPersonalizedMat}>
+          Configurar y comprar tapetes por separado
+        </button>}
+        {props.accessoryCount === 0 && props.matQuantity === 0 &&
+          <p className="mb-2 text-xs text-brand-muted">Selecciona un producto para comprar.</p>}
+        <button type="button" className="mt-2 min-h-11 w-full rounded-lg border border-brand-line text-sm"
           onClick={() => { setFinalizing(false); selectTab('accessories'); }}>
           Seguir diseñando
         </button>
