@@ -144,7 +144,7 @@ export default function MobileStudio(props: Props) {
     setSheet(current => heights[Math.max(0, Math.min(2, heights.indexOf(current) + (delta < 0 ? 1 : -1)))]);
   }
 
-  return <div className="fixed inset-0 z-[60] overflow-hidden bg-[#f5f0e9] text-brand-ink" style={{ height: '100dvh' }}>
+  return <div className="fixed inset-0 z-[1000] overflow-hidden bg-[#f5f0e9] text-brand-ink" style={{ height: '100dvh' }}>
     <header className="absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-brand-line bg-white/95 px-3 backdrop-blur-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', height: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
       <a href="/" className="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm" aria-label="Salir del configurador"><span aria-hidden="true">‹</span> Volver</a>
       <span className="text-sm font-semibold">Crea tu estudio</span>
@@ -196,7 +196,7 @@ export default function MobileStudio(props: Props) {
         </button>)}
       </nav>}
       <div ref={scrollArea} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-3"
-        style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: '80px' }}>
+        style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(144px + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: '144px' }}>
         {!finalizing && tab === 'accessories' && <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Accesorios</h2>
@@ -212,7 +212,7 @@ export default function MobileStudio(props: Props) {
               </div>
               <button type="button" className="min-h-10 text-xs underline" onClick={() => props.remove(active.id)}>Quitar</button>
             </div>
-            <p className="mt-2 text-xs">Cambiar color de esta unidad:</p>
+            <p className="mt-2 text-xs">Cambiar color de los tres ejemplares:</p>
             <Palette options={activeVariants.flatMap(p => (p.colors.length ? p.colors : ['']).map(color => ({ product: p, color })))}
               selected={active.slug + '|' + active.color}
               onChange={(p, color) => {
@@ -231,7 +231,7 @@ export default function MobileStudio(props: Props) {
               const open = expanded === name;
               return <div key={name} className="overflow-hidden rounded-xl border border-brand-line">
                 <button type="button" className="flex min-h-[64px] w-full items-center gap-3 p-2 text-left"
-                  aria-expanded={open} onClick={() => { setExpanded(open ? null : name); setSheet('half'); }}>
+                  aria-expanded={open} onClick={() => { setExpanded(open ? null : name); setSheet(open ? 'half' : 'expanded'); }}>
                   <img src={variants[0].image} alt="" loading="lazy" className="h-12 w-12 rounded-lg bg-brand-sand object-contain" />
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold leading-4">{name}</span>
                     <span className="mt-1 block text-xs text-brand-muted">Desde {money(Math.min(...variants.map(unitPrice)))}</span></span>
