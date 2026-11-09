@@ -97,7 +97,6 @@ export default function CreaTuEstudio() {
     }
     return [...unique.entries()];
   }, [items, products, visualItems, orderQuantities]);
-  const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0) + matQuantity * MAT_PRICE;
   const accessoryCount = summary.reduce((sum, [, row]) => sum + row.quantity, 0);
   const accessorySubtotal = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0);
   function buyAccessories() {
