@@ -76,7 +76,7 @@ function MobileProduct({ variants, items, add, mode }: {
         return <button key={key} type="button" onClick={() => add(product, color)}
           aria-label={colorName(color) + (chosen ? ', seleccionado' : '')} aria-pressed={chosen}
           className={'grid h-11 w-11 place-items-center rounded-full border-2 ' + (chosen ? 'border-brand-wine' : 'border-transparent')}>
-          <span className="h-8 w-8 rounded-full border border-black/10" style={{ backgroundColor: /^#[\\da-f]{3,8}$/i.test(color) ? color : '#c5b6a6' }} />
+          <span className="h-8 w-8 rounded-full border border-black/10" style={{ backgroundColor: /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#c5b6a6' }} />
         </button>;
       })}
     </div>
@@ -195,6 +195,7 @@ export default function MobileStudio(props: Props) {
             <h2 className="text-lg font-semibold">Accesorios</h2>
             <span className="text-xs text-brand-muted">Toca para elegir</span>
           </div>
+          <p className="text-xs text-brand-muted">1. Abre un accesorio. 2. Toca un color. 3. Mira el resultado arriba. No necesitas añadir piezas.</p>
           <div className="grid grid-cols-2 gap-2 rounded-xl bg-brand-sand/40 p-1" aria-label="Vista de colores">
             {([{ id: 'uniform', name: 'Uniforme' }, { id: 'multi', name: 'Multicolor' }] as const).map(m =>
               <button key={m.id} className={'min-h-10 rounded-lg text-sm ' + (props.previewMode === m.id ? 'bg-white font-semibold shadow-sm' : '')}
@@ -213,7 +214,7 @@ export default function MobileStudio(props: Props) {
             <Palette options={activeVariants.flatMap(p => (p.colors.length ? p.colors : ['']).map(color => ({ product: p, color })))}
               selected={active.slug + '|' + active.color}
               onChange={(p, color) => {
-                if (canAdd(p, props.items, active.id)) props.updateSelected({ slug: p.slug, color });
+                props.updateSelected({ slug: p.slug, color });
               }} />
           </div>}
           <input type="search" value={search} onChange={e => setSearch(e.target.value)}
@@ -228,7 +229,7 @@ export default function MobileStudio(props: Props) {
               const open = expanded === name;
               return <div key={name} className="overflow-hidden rounded-xl border border-brand-line">
                 <button type="button" className="flex min-h-[64px] w-full items-center gap-3 p-2 text-left"
-                  aria-expanded={open} onClick={() => { setExpanded(open ? null : name); setSheet('expanded'); }}>
+                  aria-expanded={open} onClick={() => { setExpanded(open ? null : name); setSheet('half'); }}>
                   <img src={variants[0].image} alt="" loading="lazy" className="h-12 w-12 rounded-lg bg-brand-sand object-contain" />
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold leading-4">{name}</span>
                     <span className="mt-1 block text-xs text-brand-muted">Desde {money(Math.min(...variants.map(unitPrice)))}</span></span>
