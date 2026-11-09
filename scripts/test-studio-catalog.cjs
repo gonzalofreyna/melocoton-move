@@ -70,7 +70,8 @@ assert.ok(multiPreview.every(i => manyColors.slice(2).some(p => p.slug === i.slu
 assert.equal(new Set(multiPreview.map(i => `${i.x}:${i.y}:${i.z}`)).size, 6);
 const multiBlocks = buildVisualItems([...makeItems({ ...block, stock: 100 }, 1), ...makeItems({ ...block, name: 'Bloque marmoleado', slug: 'bloque-yoga-marmoleado', stock: 100 }, 1)],
   [{ ...block, stock: 100 }, { ...block, name: 'Bloque marmoleado', slug: 'bloque-yoga-marmoleado', stock: 100 }], null, 'multi');
-assert.equal(new Set(multiBlocks.map(i => `${i.x}:${i.y}:${i.z}`)).size, 6);
+assert.equal(multiBlocks.length, 12);
+assert.equal(new Set(multiBlocks.map(i => `${i.x}:${i.y}:${i.z}`)).size, 12);
 const duplicateColor = [...variants, { ...variants[1], id: 'latest-same-color' }];
 const lastRepeated = buildVisualItems(duplicateColor, manyColors, null, 'uniform');
 assert.ok(lastRepeated.every(i => i.color === variants[1].color));
