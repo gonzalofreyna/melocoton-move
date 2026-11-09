@@ -82,7 +82,8 @@ console.log('Six-station preview: fixed layout, unlimited visual-independent qua
 for (let i = 0; i < 6; i++) {
   assert.equal(displayPlacement('mat', i).y, 0);
   assert.ok(displayPlacement('ball', i).y > 0);
-  assert.ok(displayPlacement('ball', i).z >= -2.65 && displayPlacement('ball', i).z <= -2.05);
+  assert.ok(displayPlacement('ball', i).z >= -.12 && displayPlacement('ball', i).z <= .10);
+  assert.ok(displayPlacement('ball', i).x >= -2.80 && displayPlacement('ball', i).x <= -2.36);
   for (const kind of ['block', 'dumbbells', 'ankleWeights', 'triangle', 'generic']) {
     const p = displayPlacement(kind, i);
     assert.ok(p.y >= .82 && p.y <= 2.62);
@@ -92,7 +93,7 @@ for (let i = 0; i < 6; i++) {
   assert.equal(displayPlacement('ring', i).tiltZ, Math.PI / 2);
   assert.equal(displayPlacement('bar', i).tiltZ, Math.PI / 2);
 }
-console.log('Storage layout: mats on floor, balls in basket, accessories on shelves and racks passed.');
+console.log('Storage layout: mats on floor, balls in left-wall basket below rings, accessories on shelves and racks passed.');
 
 const plainBlock = { ...block, slug: 'bloque-yoga-espuma-negro', name: 'Bloque de Yoga Alta Densidad', stock: 99 };
 const marbleBlock = { ...block, slug: 'bloque-yoga-marmoleado-negro', name: 'Bloque de Yoga Marmoleado', stock: 99 };
