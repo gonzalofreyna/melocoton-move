@@ -23,7 +23,7 @@ function ProductPicker({ variants, items, onAdd }: { variants: Product[]; items:
   const product = variants.find(p => p.slug === choice?.slug) || variants.find(p => canAdd(p, items)) || variants[0];
   const color = choice?.slug === product.slug && product.colors.includes(choice.color) ? choice.color : product.colors[0] || '';
   const available = canAdd(product, items);
-  return <article className="rounded-2xl border border-brand-line p-4 bg-white">
+  return <article className="p-3 bg-white rounded-b-xl">
     <div className="flex gap-4"><img src={product.image} alt={product.name} className="h-20 w-20 rounded-xl object-contain bg-[#faf8f5]" /><div className="flex-1"><h3 className="text-sm font-semibold leading-5">{product.name}</h3><p className="mt-2 text-sm">{money(unitPrice(product))} <span className="text-brand-muted">/ pieza</span></p></div></div>
     <div className="mt-3"><ColorOptions products={variants} items={items} value={`${product.slug}|${color}`} onChange={(p, c) => setChoice({ slug: p.slug, color: c })} /><p className="text-xs text-brand-muted mt-1">{colorName(color)}</p></div>
     <button type="button" disabled={!available} onClick={() => onAdd(product, color)} className="mm-button w-full mt-3 disabled:opacity-40">{available ? 'Añadir al estudio' : 'Sin existencia disponible'}</button>
@@ -34,6 +34,7 @@ export default function CreaTuEstudio() {
   const groups = useMemo(() => groupAccessories(products.filter(p => p.category.trim().toLowerCase() !== 'mat')), [products]);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [openProduct, setOpenProduct] = useState<string | null>(null);
   const visibleGroups = groups.filter(g => (filter === 'all' || g[0].category === filter) && g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
   const [items, setItems] = useState<StudioItem[]>([]);
   const [matShape, setMatShape] = useState<MatShape>('bala');
@@ -100,7 +101,7 @@ export default function CreaTuEstudio() {
               <p className="text-xs text-brand-muted mt-1">{colorName(selected.color)} · {money(unitPrice(selectedProduct))}</p>
 
             </div>}
-            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 tapetes de la forma y color elegidos, y hasta 6 ejemplos por tipo de accesorio seleccionado, acomodados en su zona. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
+            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 tapetes de la forma y color elegidos. Cada zona tiene hasta seis posiciones compartidas sin superponer grupos de accesorios; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
           </section>
           <aside className="space-y-4">
             <div className="flex justify-between items-center"><h2 className="font-display text-2xl">Accesorios y tapetes</h2><span className="text-xs text-brand-muted">Personaliza tu estudio</span></div>
@@ -123,10 +124,27 @@ export default function CreaTuEstudio() {
                 {matEnabled ? <button type="button" className="text-sm underline min-h-11" onClick={() => { setMatEnabled(false); setMatQuantity(0); setSelectedId(id => id === 'studio-mat' ? null : id); }}>Quitar tapetes</button> : <button type="button" className="mm-button !px-4" onClick={() => updateMat({})}>Añadir tapetes</button>}
               </div>
             </section>}
-            {loading && <p role="status">Cargando catálogo…</p>}
-            {error && <div role="alert" className="rounded-xl border border-brand-line p-4">No pudimos cargar los accesorios.<button onClick={() => void refresh()} className="block underline min-h-11">Reintentar</button></div>}
-            {!loading && !error && !visibleGroups.length && filter === 'accesorios' && <p>No hay productos que coincidan con tu búsqueda.</p>}
-            {!loading && !error && filter !== 'mat' && visibleGroups.map(variants => <ProductPicker key={variants[0].name} variants={variants} items={items} onAdd={add} />)}
+            <div className="rounded-2xl border border-brand-line bg-white p-3" aria-label="Catálogo compacto de accesorios">
+              <p className="text-xs text-brand-muted mb-2">Selecciona un producto para abrir sus colores y añadirlo. El resto permanece compacto.</p>
+              {loading && <p role="status">Cargando catálogo…</p>}
+              {error && <div role="alert" className="text-sm">No pudimos cargar los accesorios.<button onClick={() => void refresh()} className="block underline min-h-11">Reintentar</button></div>}
+              {!loading && !error && filter !== 'mat' && visibleGroups.length === 0 && <p className="text-sm py-3">No hay accesorios que coincidan con tu búsqueda.</p>}
+              {!loading && !error && filter !== 'mat' && <div className="max-h-[340px] overflow-y-auto overscroll-contain space-y-1 pr-1" role="list" aria-label="Productos disponibles">
+                {visibleGroups.map(variants => {
+                  const key = variants[0].name;
+                  const expanded = openProduct === key;
+                  return <div key={key} role="listitem" className="rounded-xl border border-brand-line">
+                    <button type="button" aria-expanded={expanded} onClick={() => setOpenProduct(expanded ? null : key)} className="w-full min-h-16 flex items-center text-left gap-3 p-2">
+                      <img src={variants[0].image} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg object-contain bg-[#faf8f5]" />
+                      <span className="flex-1 min-w-0"><span className="block text-sm font-medium leading-5 line-clamp-2">{variants[0].name}</span><span className="text-xs text-brand-muted">{money(Math.min(...variants.map(unitPrice)))} / pieza</span></span>
+                      <span aria-hidden="true" className="text-xl text-brand-muted">{expanded ? '−' : '+'}</span>
+                    </button>
+                    {expanded && <div className="border-t border-brand-line"><ProductPicker variants={variants} items={items} onAdd={add} /></div>}
+                  </div>;
+                })}
+              </div>}
+            </div>
+
             <section className="bg-white border border-brand-line rounded-2xl p-5" aria-label="Tu selección">
               <h2 className="font-display text-2xl">Cantidades del pedido <span className="text-sm font-sans">({items.length + matQuantity})</span></h2>
               {!items.length && !matQuantity && <p className="text-sm text-brand-muted mt-3">Añade tu primera pieza para comenzar.</p>}
