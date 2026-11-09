@@ -109,6 +109,7 @@ export default function MobileStudio(props: Props) {
     g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))), [props.groups, search]);
   const summary = props.summary;
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, props.matQuantity * MAT_PRICE);
+  const accessorySubtotal = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0);
   const count = summary.reduce((sum, [, row]) => sum + row.quantity, props.matQuantity);
   const height = finalizing ? 'calc(100dvh - 56px - env(safe-area-inset-top, 0px))' : sizeHeight[sheet];
   function openSummary() {
@@ -303,13 +304,13 @@ export default function MobileStudio(props: Props) {
               <span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span>
             </div>
           </div>)}
-          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">El carrito calculará el precio especial vigente antes del pago. Los tapetes personalizados siguen su proceso de compra independiente.</p>
+          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">El carrito calcula el precio especial vigente de los accesorios antes del pago. {props.matQuantity > 0 ? `Los ${props.matQuantity} tapetes personalizados se configuran y pagan por separado en Crea tu Mat.` : ""}</p>
         </div>}
       </div>
       {finalizing && <div className="shrink-0 border-t border-brand-line bg-white px-4 pt-3 shadow-[0_-6px_18px_rgba(48,41,43,0.06)]"
         style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="mb-2 flex items-center justify-between text-sm font-semibold">
-          <span>Antes de precio especial</span><span>{money(total)}</span>
+          <span>{props.accessoryCount > 0 ? "Accesorios antes de descuento" : "Tapetes por separado"}</span><span>{money(props.accessoryCount > 0 ? accessorySubtotal : props.matQuantity * MAT_PRICE)}</span>
         </div>
         {props.accessoryCount > 0 && <button type="button" className="mm-button min-h-12 w-full" onClick={props.onBuyAccessories}>
           Comprar accesorios · Ver carrito
