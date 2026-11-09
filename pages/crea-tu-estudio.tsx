@@ -66,7 +66,7 @@ export default function CreaTuEstudio() {
     if (change.shape) setMatShape(change.shape);
     if (change.color) setMatColor(change.color);
     setMatEnabled(true);
-    setMatQuantity(q => Math.max(6, q));
+    setMatQuantity(q => Math.max(3, q));
     setSelectedId('studio-mat');
   };
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -172,11 +172,11 @@ export default function CreaTuEstudio() {
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
           <section aria-label="Diseño de tu estudio" className="lg:sticky lg:top-28 min-w-0">
             <div className="relative"><StudioScene items={visualItems} products={products} mat={matEnabled ? { shape: matShape, color: matColor } : null} selectedId={selectedId} onSelect={setSelectedId} view={view} reset={reset} floorColor={floorColor} wallColor={wallColor} />
-              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-2 text-xs">Estudio de muestra · 6 por modelo</span>
+              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-2 text-xs">Estudio de muestra · 3 por modelo</span>
               {!items.length && !matEnabled && <div className="absolute bottom-5 left-5 right-5 rounded-xl bg-white/90 p-4 text-center text-sm pointer-events-none">Tu estudio empieza aquí. Añade un accesorio del catálogo.</div>}
             </div>
             <div className="flex flex-wrap gap-2 mt-3"><button type="button" className="mm-button-outline !px-4" aria-pressed={view === 'perspective'} onClick={() => { setView('perspective'); setReset(n => n + 1); }}>Perspectiva</button><button type="button" className="mm-button-outline !px-4" aria-pressed={view === 'top'} onClick={() => { setView('top'); setReset(n => n + 1); }}>Desde arriba</button><button type="button" className="mm-button-outline !px-4" onClick={() => setReset(n => n + 1)}>Restablecer vista</button></div>
-            <p className="text-sm mt-3">Cada modelo seleccionado se representa seis veces. Tapetes en el piso, pelotas en su canasto y accesorios en repisas y soportes. Las cantidades del pedido son independientes de la vista.</p>
+            <p className="text-sm mt-3">Cada modelo seleccionado se representa tres veces. Tapetes en el piso, pelotas en su canasto y accesorios en repisas y soportes. Las cantidades del pedido son independientes de la vista.</p>
             <p className="text-xs text-brand-muted leading-5 mt-3">Arrastra para girar · Pellizca o usa la rueda para acercar · Pasa el cursor o toca un producto para ver su ficha.</p>
             <div className="grid grid-cols-2 gap-4 rounded-2xl border border-brand-line bg-white p-4 mt-4">
               <label className="text-sm font-medium">Color del piso<input aria-label="Color del piso" type="color" value={floorColor} onChange={e => setFloorColor(e.target.value)} className="block w-full h-11 mt-2 cursor-pointer rounded-lg" /></label>
@@ -189,7 +189,7 @@ export default function CreaTuEstudio() {
               <p className="text-xs text-brand-muted mt-1">{colorName(selected.color)} · {money(unitPrice(selectedProduct))}</p>
 
             </div>}
-            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 tapetes de la forma y color elegidos. Cada modelo de accesorio tiene seis representaciones propias, independientes de los otros pesos y diseños: en modo uniforme muestra un color y en multicolor reparte sus variantes. Las cantidades del pedido no cambian al alternar vistas; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
+            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 3 tapetes de la forma y color elegidos. Cada modelo de accesorio tiene tres representaciones propias, independientes de los otros pesos y diseños: en modo uniforme muestra un color y en multicolor reparte sus variantes. Las cantidades del pedido no cambian al alternar vistas; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
           </section>
           <aside className="space-y-4">
             <div className="flex justify-between items-center"><h2 className="font-display text-2xl">Accesorios y tapetes</h2><span className="text-xs text-brand-muted">Paso 1 · Diseña</span></div>
@@ -197,7 +197,7 @@ export default function CreaTuEstudio() {
             <div className="flex flex-wrap gap-2" aria-label="Filtrar catálogo">{[['all', 'Todos'], ['accesorios', 'Accesorios'], ['mat', 'Tapetes']].map(([value, label]) => <button key={value} onClick={() => setFilter(value)} aria-pressed={filter === value} className={filter === value ? 'mm-button !px-4' : 'mm-button-outline !px-4'}>{label}</button>)}</div>
             {(filter === 'all' || filter === 'mat') && (!search.trim() || 'tapetes crea tu mat personalizados'.includes(search.toLowerCase().trim())) && <section className="rounded-2xl border border-brand-line p-4 bg-white" aria-label="Configurar tapetes">
               <h3 className="font-semibold text-base">Tapetes · Crea tu Mat</h3>
-              <p className="mt-1 text-xs text-brand-muted">Una sola forma y color para los 6 lugares. Al cambiar una opción se reemplaza el diseño anterior.</p>
+              <p className="mt-1 text-xs text-brand-muted">Una sola forma y color para los 3 lugares. Al cambiar una opción se reemplaza el diseño anterior.</p>
               <p className="text-sm font-medium mt-4 mb-2">Forma</p>
               <div className="grid grid-cols-3 gap-2">
                 {matShapes.map(option => <button type="button" key={option.id} aria-pressed={matEnabled && matShape === option.id} onClick={() => updateMat({ shape: option.id })} className={`min-h-11 rounded-xl border px-2 py-2 text-sm ${matEnabled && matShape === option.id ? 'border-brand-wine bg-brand-sand' : 'border-brand-line'}`}>{option.label}</button>)}
@@ -220,7 +220,7 @@ export default function CreaTuEstudio() {
               </div>
               <p className="text-xs leading-5 text-brand-muted mt-2">{previewMode === 'uniform'
                 ? 'Cada grupo muestra un solo color. Tocar otro reemplaza el anterior, sin sumar unidades.'
-                : 'Los colores elegidos para el diseño se reparten entre los seis lugares disponibles sin añadir más objetos.'}</p>
+                : 'Los colores elegidos para el diseño se reparten entre los tres lugares disponibles sin añadir más objetos.'}</p>
               <p className="text-xs text-brand-muted mt-1">En esta etapa solo estás diseñando. Definirás las cantidades al finalizar.</p>
             </section>
             <div className="rounded-2xl border border-brand-line bg-white p-3" aria-label="Catálogo compacto de accesorios">
@@ -246,7 +246,7 @@ export default function CreaTuEstudio() {
 
             <button type="button" className="mm-button w-full min-h-11" onClick={() => setFinalizing(v => !v)}>{finalizing ? 'Seguir diseñando' : 'Finalizar diseño · Revisar cantidades'}</button>
             {finalizing && <section className="bg-white border border-brand-line rounded-2xl p-5" aria-label="Tu selección">
-              <h2 className="font-display text-2xl">Tu estudio está listo</h2><p className="text-xs text-brand-muted mt-2">Cantidades sugeridas según las seis posiciones del modelo. Editarlas no modifica el diseño.</p>
+              <h2 className="font-display text-2xl">Tu estudio está listo</h2><p className="text-xs text-brand-muted mt-2">Cantidades sugeridas según las tres posiciones del modelo. Editarlas no modifica el diseño.</p>
               {!items.length && !matQuantity && <p className="text-sm text-brand-muted mt-3">Añade tu primera pieza para comenzar.</p>}
               {matQuantity > 0 && <div className="border-b border-brand-line py-3">
                 <button type="button" className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => { setFilter('mat'); setSelectedId('studio-mat'); }}>Tapete personalizado · {matShapes.find(s => s.id === matShape)?.label}</button>
