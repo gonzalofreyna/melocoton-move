@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
+// Three stations face the back-wall mirrors. The LEFT wall is devoted entirely
+// to accessories: rings at the far end, shelves beside them, basket underneath.
 export function createRoom() {
   const room = new THREE.Group();
   const floorMaterial = new THREE.MeshStandardMaterial({ color: '#b99976', roughness: .78 });
@@ -30,53 +32,56 @@ export function createRoom() {
   box(.08, 3.1, 5.6, -3.2, 1.55, 0, wallMaterial);
   box(6.4, .12, .08, 0, .06, -2.73, wood);
   box(.08, .12, 5.6, -3.13, .06, 0, wood);
-  // One reflection render shared by three framed panels keeps the scene light.
-  const mirror = new Reflector(new THREE.PlaneGeometry(3.35, 2.45), { color: '#d2d5d1', textureWidth: 512, textureHeight: 512, clipBias: .003 });
-  mirror.position.set(-1.35, 1.55, -2.74); room.add(mirror);
-  for (const x of [-3.05, -1.92, -.79, .35]) {
-    box(.035, 2.55, .055, x, 1.55, -2.68, wood);
-    box(.012, 2.45, .015, x + .03, 1.55, -2.66, glow);
+
+  // A single reflector is split by wooden dividers into three *aligned*
+  // mirror bays. One reflection pass is much cheaper on mobile than three.
+  const mirror = new Reflector(new THREE.PlaneGeometry(6.05, 2.45), {
+    color: '#d2d5d1', textureWidth: 512, textureHeight: 512, clipBias: .003,
+  });
+  mirror.position.set(0, 1.55, -2.735);
+  room.add(mirror);
+  for (const x of [-3.1, -1.03, 1.03, 3.1]) {
+    box(.055, 2.53, .075, x, 1.55, -2.67, wood);
+    box(.014, 2.39, .016, x + .04, 1.55, -2.61, glow);
   }
-  for (const y of [.29, 2.8]) {
-    box(3.45, .035, .06, -1.35, y, -2.68, wood);
-    box(3.35, .015, .025, -1.35, y + .03, -2.66, glow);
+  for (const y of [.29, 2.81]) box(6.27, .06, .075, 0, y, -2.67, wood);
+
+  // Rings and bars hang on the rear section of the ACCESSORY wall.
+  // The shelf section starts farther toward the front, beside the hooks.
+  for (const y of [.86, 1.43, 2.02, 2.61]) {
+    for (let i = 0; i < 3; i++) {
+      const z = -2.18 + i * .49;
+      rod(new THREE.Vector3(-3.1, y, z), new THREE.Vector3(-2.88, y, z), .013, dark);
+    }
   }
-  rod(new THREE.Vector3(-3, 1.05, -2.4), new THREE.Vector3(.3, 1.05, -2.4), .035, wood);
-  for (const x of [-2.7, -.05]) rod(new THREE.Vector3(x, 1.05, -2.72), new THREE.Vector3(x, 1.05, -2.4), .018, dark);
-  // Warm recessed shelving, with dedicated surfaces for each product family.
-  box(2.65, 2.9, .035, 1.62, 1.5, -2.74, new THREE.MeshStandardMaterial({ color: '#ded4c4', roughness: 1 }));
-  for (const y of [.8, 1.25, 1.7, 2.15, 2.6]) {
-    box(2.75, .04, .5, 1.62, y, -2.48, wood);
-    box(2.55, .012, .015, 1.62, y - .026, -2.25, glow);
+  for (const z of [-2.20, -1.65, -1.10]) {
+    rod(new THREE.Vector3(-3.13, .39, z), new THREE.Vector3(-2.85, .39, z), .018, dark);
+    rod(new THREE.Vector3(-3.13, .57, z), new THREE.Vector3(-2.85, .57, z), .018, dark);
   }
-  // Basket sits below the rings against the left wall, in the aisle
-  // between mat rows; keep the basket and its balls in the same coordinate frame.
-  const basketX = -2.58;
-  const basketZ = 0;
+
+  // Side-facing shelves. Each shelf supports three displayed copies, never
+  // standing in front of a mirror or over the mat closest to the wall.
+  box(.065, 2.2, 2.45, -3.06, 1.75, 1.32,
+    new THREE.MeshStandardMaterial({ color: '#ded4c4', roughness: 1 }));
+  for (const y of [.78, 1.21, 1.64, 2.07, 2.50]) {
+    box(.54, .04, 2.4, -2.82, y, 1.32, wood);
+    box(.018, .013, 2.28, -2.54, y - .027, 1.32, glow);
+  }
+
+  // Low basket directly BELOW the shelves, not under the ring hooks or on a mat.
+  const basketX = -2.79, basketZ = 1.28;
   const basketMaterial = new THREE.MeshStandardMaterial({ color: '#ae9777', roughness: 1 });
-  const basket = new THREE.Mesh(new RoundedBoxGeometry(.98, .04, .62, 3, .02), basketMaterial);
+  const basket = new THREE.Mesh(new RoundedBoxGeometry(.58, .04, 1.76, 3, .02), basketMaterial);
   basket.position.set(basketX, .02, basketZ); room.add(basket);
   for (let level = 0; level < 10; level++) {
     const y = .04 + level * .029;
-    box(.98, .02, .025, basketX, y, basketZ - .3, basketMaterial);
-    box(.98, .02, .025, basketX, y, basketZ + .3, basketMaterial);
-    box(.025, .02, .62, basketX - .48, y, basketZ, basketMaterial);
-    box(.025, .02, .62, basketX + .48, y, basketZ, basketMaterial);
+    box(.58, .02, .025, basketX, y, basketZ - .86, basketMaterial);
+    box(.58, .02, .025, basketX, y, basketZ + .86, basketMaterial);
+    box(.025, .02, 1.76, basketX - .27, y, basketZ, basketMaterial);
+    box(.025, .02, 1.76, basketX + .27, y, basketZ, basketMaterial);
   }
-  for (let i = 0; i < 17; i++) box(.012, .3, .025, basketX - .46 + i * .057, .16, basketZ + .31, wood);
-  // Left-wall racks for rings and weighted bars.
-  for (const y of [.25, 1.1, 1.65]) box(.07, .055, 2.6, -3.1, y, -.7, wood);
-  for (const y of [1.65, 2.2, 2.72]) {
-    for (let i = 0; i < 6; i++) rod(new THREE.Vector3(-3.12, y, -1.85 + i * .43), new THREE.Vector3(-2.95, y, -1.85 + i * .43), .012, dark);
-  }
-  // Side extension for additional ring models on the same wall.
-  for (let i = 0; i < 6; i++) rod(new THREE.Vector3(-3.12, 1.65, .72 + i * .36), new THREE.Vector3(-2.95, 1.65, .72 + i * .36), .012, dark);
-  // Small plant on the top shelf.
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(.13, .1, .22, 20), new THREE.MeshStandardMaterial({ color: '#c3b39f' }));
-  pot.position.set(2.7, 2.73, -2.45); room.add(pot);
-  for (let i = 0; i < 7; i++) {
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), new THREE.MeshStandardMaterial({ color: i % 2 ? '#65745a' : '#7b8769' }));
-    leaf.scale.set(.6, 1.5, .4); leaf.position.set(2.7 + Math.sin(i * 2) * .13, 2.9 + (i % 3) * .05, -2.45 + Math.cos(i * 2) * .1); leaf.rotation.z = Math.sin(i) * .7; room.add(leaf);
+  for (let i = 0; i < 16; i++) {
+    box(.012, .28, .025, basketX + .29, .16, basketZ - .81 + i * .108, wood);
   }
   return { room, floorMaterial, wallMaterial, mirror };
 }
