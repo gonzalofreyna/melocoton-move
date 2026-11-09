@@ -2,6 +2,7 @@ import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { useProducts } from '../context/ProductsContext';
+import { useCart } from '../context/CartContext';
 import type { Product } from '../lib/fetchProducts';
 import { MAT_DIMENSIONS, MAT_PRICE, matShapes, solidColors, solidColorNames, type MatShape } from '../lib/mat-config';
 import { buildVisualItems, canAdd, colorName, groupAccessories, unitPrice, type StudioItem } from '../lib/studio/catalog';
@@ -39,6 +40,7 @@ function ProductPicker({ variants, items, onAdd }: { variants: Product[]; items:
 }
 export default function CreaTuEstudio() {
   const { products, loading, error, refresh } = useProducts();
+  const { cart, addToCart, updateQuantity, openCart } = useCart();
   // Match media after hydration so just one WebGL scene is mounted at a time.
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   useEffect(() => {
@@ -96,6 +98,42 @@ export default function CreaTuEstudio() {
     return [...unique.entries()];
   }, [items, products, visualItems, orderQuantities]);
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0) + matQuantity * MAT_PRICE;
+  const accessoryCount = summary.reduce((sum, [, row]) => sum + row.quantity, 0);
+  function buyAccessories() {
+    // Reuse the existing MiniCart pricing and Stripe checkout, not a second
+    // discount calculation. Cart items are identified by catalog variant slug.
+    const selected = summary.filter(([, row]) => row.quantity > 0);
+    if (!selected.length) {
+      setMessage('Selecciona al menos un accesorio para comprar.');
+      return;
+    }
+    const unavailable = selected.find(([, row]) => {
+      const existing = cart.find(i => i.slug === row.product.slug)?.quantity || 0;
+      return row.product.stock != null && existing + row.quantity > row.product.stock;
+    });
+    if (unavailable) {
+      setMessage('No hay suficiente existencia de ' + unavailable[1].product.name + ' para sumarla al carrito. Ajusta las cantidades.');
+      return;
+    }
+    for (const [, row] of selected) {
+      const p = row.product;
+      const existing = cart.find(i => i.slug === p.slug)?.quantity || 0;
+      addToCart({
+        slug: p.slug, sku: p.sku, category: p.category, name: p.name,
+        image: p.image, price: unitPrice(p),
+        freeShipping: p.freeShipping === true,
+        maxStock: p.stock, shippingType: p.shippingType || 'standard'
+      });
+      updateQuantity(p.slug, existing + row.quantity);
+    }
+    openCart();
+    setMessage('Accesorios añadidos al carrito. El precio especial se calcula automáticamente.');
+  }
+  function buyPersonalizedMat() {
+    // The personalized-mat flow has its own backend and Stripe integration.
+    // It cannot be merged with the catalog checkout without server changes.
+    window.location.assign('/crea-tu-mat');
+  }
   function add(product: Product, color: string) {
     // One color per product model; all three visual copies change together.
     const family = groups.find(g => g.some(p => p.slug === product.slug)) || [product];
@@ -144,6 +182,7 @@ export default function CreaTuEstudio() {
       products={products} groups={groups} items={items} visualItems={visualItems}
       selectedId={selectedId} onSelect={setSelectedId}
       add={add} remove={remove} updateSelected={updateSelected} summary={summary} setOrderQuantity={setOrderQuantity}
+      onBuyAccessories={buyAccessories} onBuyPersonalizedMat={buyPersonalizedMat} accessoryCount={accessoryCount}
       matShape={matShape} matColor={matColor} matEnabled={matEnabled} matQuantity={matQuantity}
       updateMat={updateMat} setMatQuantity={setMobileMatQuantity}
       floorColor={floorColor} setFloorColor={setFloorColor} wallColor={wallColor} setWallColor={setWallColor}
@@ -237,7 +276,11 @@ export default function CreaTuEstudio() {
                 </div>
               </div>}
               <ul className="divide-y divide-brand-line mt-2">{summary.map(([key, row]) => <li key={key} className="py-3"><button className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => setSelectedId(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>{row.product.name}</button><p className="text-xs text-brand-muted mt-1">{colorName(row.color)} · {money(unitPrice(row.product))} / pieza</p><div className="flex items-center justify-between mt-2"><div className="flex items-center gap-3"><button className="h-11 w-11 border border-brand-line rounded-full" aria-label={`Quitar una pieza de ${row.product.name}, ${colorName(row.color)}`} onClick={() => setOrderQuantity(key, row.quantity - 1)}>−</button><span>{row.quantity}</span><button className="h-11 w-11 border border-brand-line rounded-full disabled:opacity-30" aria-label={`Añadir una pieza de ${row.product.name}, ${colorName(row.color)}`} disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => setOrderQuantity(key, row.quantity + 1)}>+</button></div><span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span></div></li>)}</ul>
-              <div className="flex justify-between border-t border-brand-line pt-4 mt-3 font-semibold"><span>Subtotal estimado</span><span>{money(total)}</span></div><p className="text-xs leading-5 text-brand-muted mt-2">Precios del catálogo, antes de promociones por cantidad. Esta demo no genera pedidos ni reserva inventario. La forma, el color y el precio de los tapetes se toman de Crea tu Mat.</p>
+              <div className="flex justify-between border-t border-brand-line pt-4 mt-3 font-semibold"><span>Subtotal antes de precio especial</span><span>{money(total)}</span></div>
+              <p className="text-xs leading-5 text-brand-muted mt-2">El carrito calculará el precio especial vigente antes del pago. Los tapetes personalizados se compran por separado en Crea tu Mat.</p>
+              {accessoryCount > 0 && <button type="button" className="mm-button mt-4 w-full min-h-12" onClick={buyAccessories}>Comprar accesorios · Ver carrito</button>}
+              {matQuantity > 0 && <button type="button" className="mm-button-outline mt-3 w-full min-h-12" onClick={buyPersonalizedMat}>Configurar y comprar tapetes por separado</button>}
+              {!accessoryCount && !matQuantity && <p className="mt-3 text-xs text-brand-muted">Selecciona un producto para continuar a la compra.</p>}
             </section>}
           </aside>
         </div>
