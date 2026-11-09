@@ -306,11 +306,7 @@ export default function MobileStudio(props: Props) {
               <span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span>
             </div>
           </div>)}
-          <div className="flex items-center justify-between border-t border-brand-line pt-3 text-sm font-semibold">
-            <span>Subtotal estimado</span><span>{money(total)}</span>
-          </div>
-          <p className="text-xs text-brand-muted">El resumen es una cotización preliminar; esta demo aún no envía órdenes ni reserva inventario.</p>
-
+          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">El resumen es una cotización preliminar; esta demo aún no envía órdenes ni reserva inventario.</p>
         </div>}
       </div>
       {finalizing && <div className="shrink-0 border-t border-brand-line bg-white px-4 pt-3 shadow-[0_-6px_18px_rgba(48,41,43,0.06)]"
