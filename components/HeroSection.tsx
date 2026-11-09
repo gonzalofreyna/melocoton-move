@@ -228,6 +228,17 @@ export default function HeroSection() {
                         </Link>
                       ))
                     )}
+                    {slide.cta?.enabled && slide.cta?.text &&
+                      slide.cta.href?.split("?")[0].replace(/\/$/, "") === "/crea-tu-mat" && (
+                        <div className="mt-3">
+                          <Link
+                            href="/crea-tu-estudio"
+                            className="inline-flex min-h-11 items-center justify-center border-b border-white/70 pb-1 text-xs font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-70 sm:text-sm"
+                          >
+                            Crea tu propio estudio
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
