@@ -154,6 +154,24 @@ const ringModels = [
 const allRings = buildVisualItems(ringModels.flatMap(p => makeItems(p, 1)), ringModels);
 assert.equal(allRings.length, 24, 'Four ring models each retain six places');
 assert.equal(new Set(allRings.map(i => i.x + ':' + i.y + ':' + i.z)).size, 24);
+// Stress case: all products remain in the 3D preview even after the original
+// room's fixed exhibition positions are full.
+const manyModels = Array.from({ length: 32 }, (_, i) => ({
+  ...base,
+  name: 'Accesorio distinto ' + i,
+  slug: 'modelo-independiente-' + i,
+  stock: 100,
+}));
+const everyModel = buildVisualItems(manyModels.flatMap(p => makeItems(p, 1)), manyModels);
+assert.equal(everyModel.length, manyModels.length * STATION_COUNT);
+assert.equal(new Set(everyModel.map(i => i.id)).size, everyModel.length);
+assert.equal(new Set(everyModel.map(i => [i.x, i.y, i.z].join(':'))).size, everyModel.length);
+assert.ok(everyModel.some(i => i.x > 3.2), 'Extra gallery must display overflow models');
+for (const product of manyModels) {
+  assert.equal(everyModel.filter(i => i.slug === product.slug).length, STATION_COUNT);
+}
+console.log('Overflow exhibition modules: 32 different products x 6 models, all displayed.');
+
 console.log('Independent product lanes: 0.5 kg vs 1.5 kg polainas, blocks, and colors verified.');
 
 console.log('Distinct blocks and 1 kg mat placements: no overlapping groups.');
