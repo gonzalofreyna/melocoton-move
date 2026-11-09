@@ -3,16 +3,17 @@ import type { Product } from '../fetchProducts';
 export type AccessoryKind = 'block' | 'ball' | 'ring' | 'mat' | 'dumbbells' | 'ankleWeights' | 'bar' | 'triangle' | 'generic';
 export type StudioItem = { id: string; slug: string; color: string; x: number; z: number; rotation: number };
 export const STATION_COUNT = 3;
-// Cotización del estudio: el 15% aplica por renglón con 5+ piezas
-// del mismo producto. No se agrupan categorías ni modelos distintos.
-export function studioQuotePrice(unitPrice: number, quantity: number) {
+// Cotización del estudio: a partir de 31 piezas combinadas el 20%
+// sustituye (no se acumula con) el 15% de las líneas con 5+ piezas.
+export function studioQuotePrice(unitPrice: number, quantity: number, orderQuantity = quantity) {
   const qty = Math.max(0, Math.floor(quantity));
   const regularUnit = Math.round(unitPrice * 100) / 100;
-  const discounted = qty >= 5;
-  const finalUnit = discounted ? Math.round(regularUnit * 0.85 * 100) / 100 : regularUnit;
+  const rate = orderQuantity > 30 ? .20 : qty >= 5 ? .15 : 0;
+  const discounted = rate > 0;
+  const finalUnit = Math.round(regularUnit * (1 - rate) * 100) / 100;
   const subtotal = Math.round(regularUnit * qty * 100) / 100;
   const total = Math.round(finalUnit * qty * 100) / 100;
-  return { discounted, regularUnit, finalUnit, subtotal, total, savings: Math.round((subtotal - total) * 100) / 100 };
+  return { discounted, rate, regularUnit, finalUnit, subtotal, total, savings: Math.round((subtotal - total) * 100) / 100 };
 }
 
 export function accessoryKind(product: Product): AccessoryKind | null {
