@@ -13,7 +13,9 @@ const { STATION_COUNT, STATIONS, buildVisualItems, displayPlacement, displayZone
 assert.equal(STATION_COUNT, 3);
 assert.equal(STATIONS.length, 3);
 assert.equal(JSON.stringify(STATIONS.map(s => s.x)), JSON.stringify([-2.05, 0, 2.05]));
-assert.ok(STATIONS.every(s => s.z === .42));
+assert.ok(STATIONS.every(s => s.z === -1.70));
+// 182cm mats: rear edge at -2.61; mirror plane at -2.735 (~12.5cm gap).
+assert.ok(STATIONS.every(s => s.z - .91 >= -2.63 && s.z - .91 <= -2.58));
 const product = (name, slug, color = '#303030') => ({
   name, slug, colors: [color], category: 'accesorios', fullPrice: 319, stock: 100,
 });
