@@ -25,7 +25,11 @@ export function productFamilyKey(product: Product) {
   const identity = (product.name + ' ' + product.slug).toLowerCase();
   const weight = identity.match(/(?:^|[^\d])(\d+(?:[.,-]\d+)?)\s*[-_ ]?\s*(kg|kilos?|kilogramos?|lb|lbs)(?![a-z])/i);
   const weightKey = weight ? weight[1].replace(/[,-]/g, '.') + ' ' + (weight[2].startsWith('k') ? 'kg' : 'lb') : '';
-  return normalized + '|' + weightKey;
+  const finish = accessoryKind(product) === 'block'
+    ? (/marmol|mármol|marble|marmolead/i.test(identity) ? 'marble' : 'solid') : '';
+  const size = identity.match(/(?:^|[^\d])(\d+(?:[.,-]\d+)?)\s*[-_ ]?\s*cm(?![a-z])/i);
+  const sizeKey = size ? size[1].replace(/[,-]/g, '.') + 'cm' : '';
+  return accessoryKind(product) + '|' + normalized + '|' + weightKey + '|' + finish + '|' + sizeKey;
 }
 export function groupAccessories(products: Product[]) {
   const groups = new Map<string, Product[]>();
