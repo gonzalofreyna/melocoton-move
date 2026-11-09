@@ -8,8 +8,18 @@ vm.runInNewContext(ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 }
 }).outputText, context);
 const { STATION_COUNT, STATIONS, buildVisualItems, displayPlacement, displayZone,
-  groupAccessories, accessoryKind, unitPrice, canAdd, overflowPlacement } = context.exports;
+  groupAccessories, accessoryKind, unitPrice, studioQuotePrice, canAdd, overflowPlacement } = context.exports;
 
+// Product-by-product discount: only each line reaching 5 units gets 15%.
+assert.equal(studioQuotePrice(199, 4).finalUnit, 199);
+assert.equal(studioQuotePrice(199, 4).total, 796);
+assert.equal(studioQuotePrice(199, 5).finalUnit, 169.15);
+assert.equal(studioQuotePrice(199, 5).total, 845.75);
+assert.equal(studioQuotePrice(199, 5).savings, 149.25);
+assert.equal(studioQuotePrice(199, 0).total, 0);
+// Five units of a separate product do not change the four-unit line.
+assert.equal(studioQuotePrice(199, 4).discounted, false);
+assert.equal(studioQuotePrice(319, 5).discounted, true);
 assert.equal(STATION_COUNT, 3);
 assert.equal(STATIONS.length, 3);
 assert.equal(JSON.stringify(STATIONS.map(s => s.x)), JSON.stringify([-2.05, 0, 2.05]));
