@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useProducts } from '../context/ProductsContext';
 import type { Product } from '../lib/fetchProducts';
 import { MAT_DIMENSIONS, MAT_PRICE, matShapes, solidColors, solidColorNames, type MatShape } from '../lib/mat-config';
-import { buildVisualItems, canAdd, colorName, groupAccessories, unitPrice, type StudioItem, type PreviewMode } from '../lib/studio/catalog';
+import { buildVisualItems, canAdd, colorName, groupAccessories, unitPrice, type StudioItem } from '../lib/studio/catalog';
 const MobileStudio = dynamic(() => import('../components/studio/MobileStudio'), { ssr: false });
 const StudioScene = dynamic(() => import('../components/studio/StudioScene'), { ssr: false, loading: () => <div className="h-[360px] sm:h-[520px] lg:h-[600px] rounded-2xl bg-brand-sand grid place-items-center">Preparando tu espacio…</div> });
 const money = (value: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
@@ -19,7 +19,7 @@ function ColorOptions({ products, value, items, excludingId, onChange }: { produ
     }))}
   </div>;
 }
-function ProductPicker({ variants, items, onAdd, mode }: { variants: Product[]; items: StudioItem[]; onAdd: (p: Product, color: string) => void; mode: PreviewMode }) {
+function ProductPicker({ variants, items, onAdd }: { variants: Product[]; items: StudioItem[]; onAdd: (p: Product, color: string) => void }) {
   const selected = items.filter(i => variants.some(v => v.slug === i.slug));
   const product = variants.find(v => v.slug === selected[selected.length - 1]?.slug) || variants[0];
   return <article className="p-3 bg-white rounded-b-xl">
@@ -34,7 +34,7 @@ function ProductPicker({ variants, items, onAdd, mode }: { variants: Product[]; 
         </button>;
       }))}
     </div>
-    <p className="mt-2 text-xs text-brand-muted">{mode === 'uniform' ? 'Un color a la vez.' : 'Toca varios colores para combinarlos.'} Las cantidades se deciden al finalizar.</p>
+    <p className="mt-2 text-xs text-brand-muted">Al elegir un color, cambian los tres ejemplares de este producto. Las cantidades se deciden al finalizar.</p>
   </article>;
 }
 export default function CreaTuEstudio() {
@@ -52,7 +52,6 @@ export default function CreaTuEstudio() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [openProduct, setOpenProduct] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>('uniform');
   const [finalizing, setFinalizing] = useState(false);
   const visibleGroups = groups.filter(g => (filter === 'all' || g[0].category === filter) && g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
   // Design selections are never order quantities: one entry per color only.
@@ -78,7 +77,7 @@ export default function CreaTuEstudio() {
   const selected = items.find(i => i.id === selectedId);
   const selectedProduct = products.find(p => p.slug === selected?.slug);
   const selectedVariants = groups.find(g => g.some(p => p.slug === selected?.slug)) || [];
-  const visualItems = useMemo(() => buildVisualItems(items, products, selectedId, previewMode), [items, products, selectedId, previewMode]);
+  const visualItems = useMemo(() => buildVisualItems(items, products, selectedId, 'uniform'), [items, products, selectedId]);
   const summary = useMemo(() => {
     const counts = new Map<string, number>();
     for (const visual of visualItems) {
@@ -98,27 +97,19 @@ export default function CreaTuEstudio() {
   }, [items, products, visualItems, orderQuantities]);
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0) + matQuantity * MAT_PRICE;
   function add(product: Product, color: string) {
-    // Tapping a swatch previews immediately, without adding an order unit.
+    // One color per product model; all three visual copies change together.
     const family = groups.find(g => g.some(p => p.slug === product.slug)) || [product];
     const familySlugs = new Set(family.map(p => p.slug));
     const key = product.slug + '|' + color;
-    const existing = items.find(i => i.slug === product.slug && i.color === color);
-    if (previewMode === 'multi' && existing) {
-      setItems(current => current.filter(i => i.id !== existing.id));
-      if (selectedId === existing.id) setSelectedId(null);
-      setMessage('Color retirado del diseño.');
-      return;
-    }
+    const existing = items.find(i => familySlugs.has(i.slug));
     const id = existing?.id || crypto.randomUUID();
-    setItems(current => {
-      const rest = previewMode === 'uniform'
-        ? current.filter(i => !familySlugs.has(i.slug))
-        : current.filter(i => i.slug !== product.slug || i.color !== color);
-      return [...rest, { id, slug: product.slug, color, x: 0, z: 0, rotation: 0 }];
-    });
+    setItems(current => [
+      ...current.filter(i => !familySlugs.has(i.slug)),
+      { id, slug: product.slug, color, x: 0, z: 0, rotation: 0 }
+    ]);
     setSelectedId(id);
     setOrderQuantities(current => { const next = { ...current }; delete next[key]; return next; });
-    setMessage(product.name + ', ' + colorName(color) + ' aplicado al diseño.');
+    setMessage(product.name + ', ' + colorName(color) + ' aplicado a los tres ejemplares.');
   }
   function setOrderQuantity(key: string, quantity: number) {
     const item = items.find(i => i.slug + '|' + i.color === key);
@@ -129,21 +120,9 @@ export default function CreaTuEstudio() {
   function updateSelected(change: Partial<StudioItem>) {
     const original = items.find(i => i.id === selectedId);
     if (!original) return;
-    const nextProduct = products.find(p => p.slug === (change.slug ?? original.slug));
-    if (nextProduct && change.color !== undefined) {
-      // Editing an accessory in uniform mode must recolor all three copies
-      // of that model. Route through the same action as the catalog swatches.
-      if (previewMode === 'uniform') {
-        add(nextProduct, change.color);
-        return;
-      }
-      // In multicolor mode, edit only the chosen color variant, preserving the
-      // other colors of the same model and its three display stations.
-      setItems(current => {
-        const rest = current.filter(i => i.id !== original.id &&
-          !(i.slug === nextProduct.slug && i.color === change.color));
-        return [...rest, { ...original, ...change }];
-      });
+    const product = products.find(p => p.slug === (change.slug ?? original.slug));
+    if (product && change.color !== undefined) {
+      add(product, change.color);
       return;
     }
     setItems(current => current.map(i => i.id === selectedId ? { ...i, ...change } : i));
@@ -165,7 +144,6 @@ export default function CreaTuEstudio() {
       products={products} groups={groups} items={items} visualItems={visualItems}
       selectedId={selectedId} onSelect={setSelectedId}
       add={add} remove={remove} updateSelected={updateSelected} summary={summary} setOrderQuantity={setOrderQuantity}
-      previewMode={previewMode} setPreviewMode={setPreviewMode}
       matShape={matShape} matColor={matColor} matEnabled={matEnabled} matQuantity={matQuantity}
       updateMat={updateMat} setMatQuantity={setMobileMatQuantity}
       floorColor={floorColor} setFloorColor={setFloorColor} wallColor={wallColor} setWallColor={setWallColor}
@@ -198,7 +176,7 @@ export default function CreaTuEstudio() {
               <p className="text-xs text-brand-muted mt-1">{colorName(selected.color)} · {money(unitPrice(selectedProduct))}</p>
 
             </div>}
-            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 3 tapetes de la forma y color elegidos. Cada modelo de accesorio tiene tres representaciones propias, independientes de los otros pesos y diseños: en modo uniforme muestra un color y en multicolor reparte sus variantes. Las cantidades del pedido no cambian al alternar vistas; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
+            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 3 tapetes de la forma y color elegidos. Cada modelo de accesorio tiene tres representaciones propias, independientes de los otros pesos y diseños: cada modelo muestra un solo color que puedes cambiar con un toque. Las cantidades del pedido no cambian al alternar vistas; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
           </section>
           <aside className="space-y-4">
             <div className="flex justify-between items-center"><h2 className="font-display text-2xl">Accesorios y tapetes</h2><span className="text-xs text-brand-muted">Paso 1 · Diseña</span></div>
@@ -221,17 +199,6 @@ export default function CreaTuEstudio() {
                 {matEnabled ? <button type="button" className="text-sm underline min-h-11" onClick={() => { setMatEnabled(false); setMatQuantity(0); setSelectedId(id => id === 'studio-mat' ? null : id); }}>Quitar tapetes</button> : <button type="button" className="mm-button !px-4" onClick={() => updateMat({})}>Añadir tapetes</button>}
               </div>
             </section>}
-            <section className="rounded-2xl border border-brand-line bg-white p-4" aria-label="Modo de colores de accesorios">
-              <h3 className="text-sm font-semibold">Vista de colores de los accesorios</h3>
-              <div className="grid grid-cols-2 gap-2 mt-3" role="group" aria-label="Elegir modo de visualización">
-                <button type="button" aria-pressed={previewMode === 'uniform'} onClick={() => setPreviewMode('uniform')} className={`min-h-11 rounded-xl border px-3 text-sm ${previewMode === 'uniform' ? 'border-brand-wine bg-brand-sand font-semibold' : 'border-brand-line'}`}>Uniforme</button>
-                <button type="button" aria-pressed={previewMode === 'multi'} onClick={() => setPreviewMode('multi')} className={`min-h-11 rounded-xl border px-3 text-sm ${previewMode === 'multi' ? 'border-brand-wine bg-brand-sand font-semibold' : 'border-brand-line'}`}>Multicolor</button>
-              </div>
-              <p className="text-xs leading-5 text-brand-muted mt-2">{previewMode === 'uniform'
-                ? 'Cada grupo muestra un solo color. Tocar otro reemplaza el anterior, sin sumar unidades.'
-                : 'Los colores elegidos para el diseño se reparten entre los tres lugares disponibles sin añadir más objetos.'}</p>
-              <p className="text-xs text-brand-muted mt-1">En esta etapa solo estás diseñando. Definirás las cantidades al finalizar.</p>
-            </section>
             <div className="rounded-2xl border border-brand-line bg-white p-3" aria-label="Catálogo compacto de accesorios">
               <p className="text-xs text-brand-muted mb-2">Elige un producto y toca sus colores. Verás el cambio inmediatamente en el modelo.</p>
               {loading && <p role="status">Cargando catálogo…</p>}
@@ -247,7 +214,7 @@ export default function CreaTuEstudio() {
                       <span className="flex-1 min-w-0"><span className="block text-sm font-medium leading-5 line-clamp-2">{variants[0].name}</span><span className="text-xs text-brand-muted">{money(Math.min(...variants.map(unitPrice)))} / pieza</span></span>
                       <span aria-hidden="true" className="text-xl text-brand-muted">{expanded ? '−' : '+'}</span>
                     </button>
-                    {expanded && <div className="border-t border-brand-line"><ProductPicker variants={variants} items={items} onAdd={add} mode={previewMode} /></div>}
+                    {expanded && <div className="border-t border-brand-line"><ProductPicker variants={variants} items={items} onAdd={add} /></div>}
                   </div>;
                 })}
               </div>}
