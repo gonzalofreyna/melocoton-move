@@ -49,18 +49,21 @@ export function createRoom() {
     box(2.75, .04, .5, 1.62, y, -2.48, wood);
     box(2.55, .012, .015, 1.62, y - .026, -2.25, glow);
   }
-  // Open woven basket: balls sit visibly above the rim.
+  // Basket sits below the rings against the left wall, in the aisle
+  // between mat rows; keep the basket and its balls in the same coordinate frame.
+  const basketX = -2.58;
+  const basketZ = 0;
   const basketMaterial = new THREE.MeshStandardMaterial({ color: '#ae9777', roughness: 1 });
   const basket = new THREE.Mesh(new RoundedBoxGeometry(.98, .04, .62, 3, .02), basketMaterial);
-  basket.position.set(1.57, .02, -2.35); room.add(basket);
+  basket.position.set(basketX, .02, basketZ); room.add(basket);
   for (let level = 0; level < 10; level++) {
     const y = .04 + level * .029;
-    box(.98, .02, .025, 1.57, y, -2.65, basketMaterial);
-    box(.98, .02, .025, 1.57, y, -2.05, basketMaterial);
-    box(.025, .02, .62, 1.09, y, -2.35, basketMaterial);
-    box(.025, .02, .62, 2.05, y, -2.35, basketMaterial);
+    box(.98, .02, .025, basketX, y, basketZ - .3, basketMaterial);
+    box(.98, .02, .025, basketX, y, basketZ + .3, basketMaterial);
+    box(.025, .02, .62, basketX - .48, y, basketZ, basketMaterial);
+    box(.025, .02, .62, basketX + .48, y, basketZ, basketMaterial);
   }
-  for (let i = 0; i < 17; i++) box(.012, .3, .025, 1.11 + i * .057, .16, -2.04, wood);
+  for (let i = 0; i < 17; i++) box(.012, .3, .025, basketX - .46 + i * .057, .16, basketZ + .31, wood);
   // Left-wall racks for rings and weighted bars.
   for (const y of [.25, 1.1, 1.65]) box(.07, .055, 2.6, -3.1, y, -.7, wood);
   for (let i = 0; i < 6; i++) rod(new THREE.Vector3(-3.12, 1.65, -1.85 + i * .43), new THREE.Vector3(-2.95, 1.65, -1.85 + i * .43), .012, dark);
