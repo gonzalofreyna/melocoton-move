@@ -30,7 +30,7 @@ const tabs: { id: Tab; label: string; symbol: string }[] = [
   { id: 'order', label: 'Pedido', symbol: '▤' },
 ];
 const sizeHeight: Record<SheetSize, string> = {
-  compact: 'calc(116px + env(safe-area-inset-bottom, 0px))',
+  compact: 'calc(174px + env(safe-area-inset-bottom, 0px))',
   half: '52dvh',
   expanded: '84dvh',
 };
