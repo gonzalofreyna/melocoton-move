@@ -5,7 +5,7 @@ import { createRoom } from './room';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { Product } from '../../lib/fetchProducts';
 import { MAT_DIMENSIONS, type MatShape } from '../../lib/mat-config';
-import { accessoryKind, displaySize, colorName, unitPrice, type VisualItem } from '../../lib/studio/catalog';
+import { accessoryKind, displaySize, colorName, unitPrice, OVERFLOW_GALLERY_START_X, OVERFLOW_GALLERY_WIDTH, type VisualItem } from '../../lib/studio/catalog';
 
 type Props = { fill?: boolean; items: VisualItem[]; products: Product[]; mat: { shape: MatShape; color: string } | null; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number; floorColor: string; wallColor: string };
 function dispose(root: THREE.Object3D) {
@@ -146,6 +146,30 @@ export default function StudioScene(props: Props) {
       });
       geometry.dispose(); material.dispose();
     }
+    // Modular exhibition stations for every additional distinct model.
+    // Models are never dropped when the original room is fully occupied.
+    const overflowModels = props.items.filter(item => item.x >= OVERFLOW_GALLERY_START_X - .1);
+    const galleryCount = overflowModels.length
+      ? Math.max(...overflowModels.map(item => Math.floor((item.x - OVERFLOW_GALLERY_START_X + .1) / OVERFLOW_GALLERY_WIDTH))) + 1 : 0;
+    for (let gallery = 0; gallery < galleryCount; gallery++) {
+      const center = OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + 1.45;
+      const platform = new THREE.Mesh(new THREE.BoxGeometry(4.65, .1, 4.9),
+        new THREE.MeshStandardMaterial({ color: '#d6cbbd', roughness: .8 }));
+      platform.position.set(center, -.05, 0); platform.receiveShadow = true;
+      state.products.add(platform);
+      const backdrop = new THREE.Mesh(new THREE.BoxGeometry(4.65, 2.4, .08),
+        new THREE.MeshStandardMaterial({ color: '#e9e1d6', roughness: .95 }));
+      backdrop.position.set(center, 1.2, -2.45); state.products.add(backdrop);
+      for (const rowZ of [-1.1, 1.1]) {
+        for (let col = 0; col < 3; col++) {
+          const pedestal = new THREE.Mesh(new RoundedBoxGeometry(1.38, .38, 1.6, 3, .07),
+            new THREE.MeshStandardMaterial({ color: '#ede7df', roughness: .85 }));
+          pedestal.position.set(OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + col * 1.45, .19, rowZ);
+          pedestal.castShadow = true; pedestal.receiveShadow = true;
+          state.products.add(pedestal);
+        }
+      }
+    }
     props.items.forEach(item => {
       const product = props.products.find(p => p.slug === item.slug); if (!product) return;
       const group = new THREE.Group(); group.position.set(item.x, item.y, item.z); group.rotation.set(item.tiltX, item.rotation, item.tiltZ);
@@ -204,9 +228,23 @@ export default function StudioScene(props: Props) {
   }, [props.items, props.products, props.selectedId, props.mat]);
   useEffect(() => {
     const state = sceneState.current; if (!state) return;
-    state.camera.position.set(...(props.view === 'top' ? [0, 11.6, .01] : [6.5, 5.2, 8.6]) as [number, number, number]);
-    state.controls.target.set(0, .65, -.3); state.controls.update(); state.render();
-  }, [props.view, props.reset]);
+    const farthest = props.items.reduce((max, item) => Math.max(max, item.x + .8), 3.2);
+    const hasGallery = farthest > 3.5;
+    const centerX = hasGallery ? (farthest - 3.2) / 2 : 0;
+    const sceneWidth = farthest + 3.2;
+    const aspect = Math.max(.45, state.camera.aspect);
+    const distance = hasGallery
+      ? Math.max(11, sceneWidth / (2 * Math.tan(38 * Math.PI / 360) * Math.min(aspect, 1.6)) * 1.12)
+      : 11.6;
+    if (props.view === 'top') {
+      state.camera.position.set(centerX, Math.max(11.6, distance), .01);
+    } else {
+      state.camera.position.set(centerX + distance * .52, distance * .39, distance * .68);
+    }
+    state.controls.target.set(centerX, .65, -.3);
+    state.controls.maxDistance = Math.max(16, distance * 2.5);
+    state.controls.update(); state.render();
+  }, [props.items, props.view, props.reset]);
   useEffect(() => {
     const state = sceneState.current; if (!state) return;
     state.floorMaterial.color.set(props.floorColor); state.wallMaterial.color.set(props.wallColor); state.render();
