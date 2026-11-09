@@ -80,7 +80,7 @@ export type DisplayZone = AccessoryKind
   | 'dumbbells-mat' | 'ankleWeights-mat' | 'ankleWeights-heavy'
   | 'block-marble' | 'mat-left-center' | 'mat-right-center'
   | 'mat-left-upper' | 'mat-right-upper' | 'mat-left-lower'
-  | 'mat-right-lower' | 'ring-alt' | 'bar-alt';
+  | 'mat-right-lower' | 'ring-alt' | 'ring-high' | 'ring-side' | 'bar-alt';
 
 export function displayZone(product: Product): DisplayZone | null {
   const kind = accessoryKind(product);
@@ -102,7 +102,7 @@ const LANE_ORDER: DisplayZone[] = [
   'ankleWeights', 'ankleWeights-mat', 'ankleWeights-heavy',
   'dumbbells', 'dumbbells-mat', 'block', 'block-marble', 'triangle',
   'mat-left-center', 'mat-right-upper', 'mat-left-upper',
-  'mat-right-center', 'mat-left-lower', 'mat-right-lower', 'generic', 'ring-alt', 'bar-alt'
+  'mat-right-center', 'mat-left-lower', 'mat-right-lower', 'generic', 'ring-alt', 'ring-high', 'ring-side', 'bar-alt'
 ];
 const LANE_PREFERENCES: Partial<Record<DisplayZone, DisplayZone[]>> = {
   block: ['block', 'block-marble', 'mat-right-upper'],
@@ -114,7 +114,7 @@ const LANE_PREFERENCES: Partial<Record<DisplayZone, DisplayZone[]>> = {
   'dumbbells-mat': ['dumbbells-mat', 'mat-left-center'],
   triangle: ['triangle', 'mat-right-upper'],
   generic: ['generic', 'mat-left-center'],
-  ring: ['ring', 'ring-alt'],
+  ring: ['ring', 'ring-alt', 'ring-high', 'ring-side'],
   bar: ['bar', 'bar-alt'],
   ball: ['ball', 'mat-right-upper'],
 };
@@ -144,6 +144,8 @@ export function displayPlacement(zone: DisplayZone, index: number) {
     case 'triangle': return { ...defaults, y: 2.62 };
     case 'ring': return { ...defaults, x: -3.02, y: 1.65, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
     case 'ring-alt': return { ...defaults, x: -3.02, y: 2.2, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
+    case 'ring-high': return { ...defaults, x: -3.02, y: 2.72, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
+    case 'ring-side': return { ...defaults, x: -3.02, y: 1.65, z: .72 + index * .36, tiltZ: Math.PI / 2 };
     case 'bar': return { ...defaults, x: -3.01, y: .65, z: -1.9 + index * .23, tiltZ: Math.PI / 2 };
     case 'bar-alt': return { ...defaults, x: -3.01, y: .65, z: .4 + index * .23, tiltZ: Math.PI / 2 };
   }
@@ -172,11 +174,11 @@ export function buildVisualItems(
     LANE_ORDER.indexOf(a.zone) - LANE_ORDER.indexOf(b.zone) || keyA.localeCompare(keyB));
   for (const [familyKey, family] of ranked) {
     const preference = LANE_PREFERENCES[family.zone] || [family.zone];
-    const fallback = family.zone === 'ring' ? ['ring', 'ring-alt'] :
+    const fallback = family.zone === 'ring' ? ['ring', 'ring-alt', 'ring-high', 'ring-side'] :
       family.zone === 'bar' ? ['bar', 'bar-alt'] :
       family.zone === 'ball' ? ['ball', 'mat-right-upper', 'mat-left-upper'] :
       LANE_ORDER.filter(candidate => candidate !== 'ball' && candidate !== 'ring' &&
-        candidate !== 'bar' && candidate !== 'ring-alt' && candidate !== 'bar-alt');
+        candidate !== 'bar' && candidate !== 'ring-alt' && candidate !== 'ring-high' && candidate !== 'ring-side' && candidate !== 'bar-alt');
     const lane = [...preference, ...fallback].find(candidate => candidate !== 'mat' && !occupiedLanes.has(candidate));
     // Capacity is finite: never render one family on top of another.
     if (!lane) continue;
