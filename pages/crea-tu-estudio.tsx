@@ -47,7 +47,9 @@ export default function CreaTuEstudio() {
   const [openProduct, setOpenProduct] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('uniform');
   const visibleGroups = groups.filter(g => (filter === 'all' || g[0].category === filter) && g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
+  // Design selections are never order quantities: one entry per color only.
   const [items, setItems] = useState<StudioItem[]>([]);
+  const [orderQuantities, setOrderQuantities] = useState<Record<string, number>>({});
   const [matShape, setMatShape] = useState<MatShape>('bala');
   const [matColor, setMatColor] = useState('#741D32');
   const [matQuantity, setMatQuantity] = useState(0);
@@ -56,7 +58,7 @@ export default function CreaTuEstudio() {
     if (change.shape) setMatShape(change.shape);
     if (change.color) setMatColor(change.color);
     setMatEnabled(true);
-    setMatQuantity(q => Math.max(1, q));
+    setMatQuantity(q => Math.max(6, q));
     setSelectedId('studio-mat');
   };
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -68,24 +70,66 @@ export default function CreaTuEstudio() {
   const selected = items.find(i => i.id === selectedId);
   const selectedProduct = products.find(p => p.slug === selected?.slug);
   const selectedVariants = groups.find(g => g.some(p => p.slug === selected?.slug)) || [];
-  const summary = useMemo(() => {
-    const result = new Map<string, { product: Product; color: string; quantity: number }>();
-    items.forEach(item => {
-      const product = products.find(p => p.slug === item.slug); if (!product) return;
-      const key = `${item.slug}|${item.color}`, row = result.get(key);
-      if (row) row.quantity++; else result.set(key, { product, color: item.color, quantity: 1 });
-    });
-    return [...result.entries()];
-  }, [items, products]);
   const visualItems = useMemo(() => buildVisualItems(items, products, selectedId, previewMode), [items, products, selectedId, previewMode]);
+  const summary = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const visual of visualItems) {
+      const key = visual.slug + '|' + visual.color;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    const unique = new Map<string, { product: Product; color: string; quantity: number }>();
+    for (const item of items) {
+      const product = products.find(p => p.slug === item.slug);
+      if (!product) continue;
+      const key = item.slug + '|' + item.color;
+      const quantity = orderQuantities[key] ?? counts.get(key) ?? 0;
+      if (quantity > 0) unique.set(key, { product, color: item.color, quantity });
+    }
+    return [...unique.entries()];
+  }, [items, products, visualItems, orderQuantities]);
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0) + matQuantity * MAT_PRICE;
   function add(product: Product, color: string) {
-    if (!canAdd(product, items)) return;
-    const id = crypto.randomUUID();
-    setItems(current => canAdd(product, current) ? [...current, { id, slug: product.slug, color, x: 0, z: 0, rotation: 0 }] : current);
-    setSelectedId(id); setMessage(`${product.name}, ${colorName(color)}, añadido.`);
+    // Tapping a swatch previews immediately, without adding an order unit.
+    const family = groups.find(g => g.some(p => p.slug === product.slug)) || [product];
+    const familySlugs = new Set(family.map(p => p.slug));
+    const key = product.slug + '|' + color;
+    const existing = items.find(i => i.slug === product.slug && i.color === color);
+    if (previewMode === 'multi' && existing) {
+      setItems(current => current.filter(i => i.id !== existing.id));
+      if (selectedId === existing.id) setSelectedId(null);
+      setMessage('Color retirado del diseño.');
+      return;
+    }
+    const id = existing?.id || crypto.randomUUID();
+    setItems(current => {
+      const rest = previewMode === 'uniform'
+        ? current.filter(i => !familySlugs.has(i.slug))
+        : current.filter(i => i.slug !== product.slug || i.color !== color);
+      return [...rest, { id, slug: product.slug, color, x: 0, z: 0, rotation: 0 }];
+    });
+    setSelectedId(id);
+    setOrderQuantities(current => { const next = { ...current }; delete next[key]; return next; });
+    setMessage(product.name + ', ' + colorName(color) + ' aplicado al diseño.');
   }
-  function updateSelected(change: Partial<StudioItem>) { setItems(current => current.map(i => i.id === selectedId ? { ...i, ...change } : i)); }
+  function setOrderQuantity(key: string, quantity: number) {
+    const item = items.find(i => i.slug + '|' + i.color === key);
+    const product = products.find(p => p.slug === item?.slug);
+    const capped = Math.max(0, Math.min(Math.floor(quantity), product?.stock == null ? 999 : product.stock));
+    setOrderQuantities(current => ({ ...current, [key]: capped }));
+  }
+  function updateSelected(change: Partial<StudioItem>) {
+    const p = products.find(p => p.slug === change.slug);
+    const original = items.find(i => i.id === selectedId);
+    if (p && change.color !== undefined && original) {
+      const family = groups.find(g => g.some(v => v.slug === original.slug));
+      setItems(current => {
+        const rest = current.filter(i => i.id !== original.id && (previewMode === 'multi' || !family?.some(v => v.slug === i.slug)));
+        return [...rest, { ...original, ...change }];
+      });
+      return;
+    }
+    setItems(current => current.map(i => i.id === selectedId ? { ...i, ...change } : i));
+  }
   function remove(id: string) { setItems(current => current.filter(i => i.id !== id)); if (id === selectedId) setSelectedId(null); }
   const setMobileMatQuantity = (quantity: number) => {
     const next = Math.max(0, Math.floor(quantity));
@@ -102,7 +146,7 @@ export default function CreaTuEstudio() {
     <MobileStudio
       products={products} groups={groups} items={items} visualItems={visualItems}
       selectedId={selectedId} onSelect={setSelectedId}
-      add={add} remove={remove} updateSelected={updateSelected}
+      add={add} remove={remove} updateSelected={updateSelected} summary={summary} setOrderQuantity={setOrderQuantity}
       previewMode={previewMode} setPreviewMode={setPreviewMode}
       matShape={matShape} matColor={matColor} matEnabled={matEnabled} matQuantity={matQuantity}
       updateMat={updateMat} setMatQuantity={setMobileMatQuantity}
