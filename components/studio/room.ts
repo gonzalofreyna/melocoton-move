@@ -46,9 +46,9 @@ export function createRoom() {
   }
   for (const y of [.29, 2.81]) box(6.27, .06, .075, 0, y, -2.67, wood);
 
-  // Rings and bars hang on the rear section of the ACCESSORY wall.
+  // Rings hang on the upper rear section of the ACCESSORY wall,\n  // completely separate from low-mounted Z bars.
   // The shelf section starts farther toward the front, beside the hooks.
-  for (const y of [.86, 1.43, 2.02, 2.61]) {
+  for (const y of [2.72, 2.49, 2.26, 2.03]) {
     for (let i = 0; i < 3; i++) {
       const z = -2.18 + i * .49;
       rod(new THREE.Vector3(-3.1, y, z), new THREE.Vector3(-2.88, y, z), .013, dark);
