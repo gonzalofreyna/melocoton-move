@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync('lib/studio/catalog.ts', 'utf8');
 const context = { exports: {} };
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 } }).outputText, context);
-const { groupAccessories, accessoryKind, canAdd, unitPrice, displaySize, buildVisualItems, displayPlacement, STATION_COUNT } = context.exports;
+const { groupAccessories, accessoryKind, canAdd, unitPrice, displaySize, buildVisualItems, displayPlacement, displayZone, STATION_COUNT } = context.exports;
 const base = { name: 'Pelota Mini Ball', slug: 'mini-ball-pilates-rosa', category: 'accesorios', colors: ['#FFC5D3'], fullPrice: 319, stock: 1 };
 const blue = { ...base, slug: 'mini-ball-pilates-azul', colors: ['#B9E3E5'], fullPrice: 329 };
 const block = { ...base, name: 'Bloque', slug: 'bloque-yoga-negro' };
@@ -74,3 +74,25 @@ for (let i = 0; i < 6; i++) {
   assert.equal(displayPlacement('bar', i).tiltZ, Math.PI / 2);
 }
 console.log('Storage layout: mats on floor, balls in basket, accessories on shelves and racks passed.');
+
+const plainBlock = { ...block, slug: 'bloque-yoga-espuma-negro', name: 'Bloque de Yoga Alta Densidad', stock: 99 };
+const marbleBlock = { ...block, slug: 'bloque-yoga-marmoleado-negro', name: 'Bloque de Yoga Marmoleado', stock: 99 };
+const twoBlocks = buildVisualItems([...makeItems(plainBlock, 1), ...makeItems(marbleBlock, 1)], [plainBlock, marbleBlock]);
+assert.equal(twoBlocks.length, 6);
+assert.equal(new Set(twoBlocks.map(i => `${i.x}:${i.y}:${i.z}`)).size, 6);
+assert.ok(twoBlocks.some(i => i.slug === plainBlock.slug));
+assert.ok(twoBlocks.some(i => i.slug === marbleBlock.slug));
+const oneKgDumbbell = { ...base, name: 'Mancuerna Capsula 1 kg', slug: 'mancuerna-capsula-1kg' };
+const heavierDumbbell = { ...base, name: 'Mancuerna Capsula 2.5 kg', slug: 'mancuerna-capsula-2-5kg' };
+const oneKgAnkle = { ...base, name: 'Polainas 1 kg', slug: 'polainas-1kg' };
+const halfKgAnkle = { ...base, name: 'Polainas 0.5 kg', slug: 'polainas-0-5kg' };
+assert.equal(displayZone(oneKgDumbbell), 'dumbbells-mat');
+assert.equal(displayZone(heavierDumbbell), 'dumbbells');
+assert.equal(displayZone(oneKgAnkle), 'ankleWeights-mat');
+assert.equal(displayZone(halfKgAnkle), 'ankleWeights');
+const floorAccessories = [oneKgDumbbell, heavierDumbbell, oneKgAnkle, halfKgAnkle];
+const layout = buildVisualItems(floorAccessories.flatMap(p => makeItems(p, 1)), floorAccessories);
+assert.equal(layout.length, 24);
+assert.equal(new Set(layout.map(i => `${i.x}:${i.y}:${i.z}`)).size, 24);
+assert.ok(layout.filter(i => i.slug === oneKgDumbbell.slug || i.slug === oneKgAnkle.slug).every(i => i.z > -2.2));
+console.log('Distinct blocks and 1 kg mat placements: no overlapping groups.');
