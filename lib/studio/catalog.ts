@@ -205,7 +205,7 @@ export function buildVisualItems(
     LANE_ORDER.indexOf(a.zone) - LANE_ORDER.indexOf(b.zone) || keyA.localeCompare(keyB));
   for (const [familyKey, family] of ranked) {
     const preference = LANE_PREFERENCES[family.zone] || [family.zone];
-    const fallback = family.zone === 'ring' ? ['ring', 'ring-alt', 'ring-high', 'ring-side'] :
+    const fallback: DisplayZone[] = family.zone === 'ring' ? ['ring', 'ring-alt', 'ring-high', 'ring-side'] :
       family.zone === 'bar' ? ['bar', 'bar-alt'] :
       family.zone === 'ball' ? ['ball', 'mat-right-upper', 'mat-left-upper'] :
       LANE_ORDER.filter(candidate => candidate !== 'ball' && candidate !== 'ring' &&
