@@ -84,7 +84,7 @@ for (let i = 0; i < 6; i++) {
   assert.ok(displayPlacement('ball', i).y > 0);
   assert.ok(displayPlacement('ball', i).z >= -.12 && displayPlacement('ball', i).z <= .10);
   assert.ok(displayPlacement('ball', i).x >= -2.80 && displayPlacement('ball', i).x <= -2.36);
-  for (const kind of ['block', 'dumbbells', 'ankleWeights', 'triangle', 'generic']) {
+  for (const kind of ['block', 'dumbbells', 'ankleWeights', 'triangle', 'block-marble']) {
     const p = displayPlacement(kind, i);
     assert.ok(p.y >= .82 && p.y <= 2.62);
     assert.ok(p.x >= .245 && p.x <= 2.995);
@@ -98,7 +98,7 @@ console.log('Storage layout: mats on floor, balls in left-wall basket below ring
 const plainBlock = { ...block, slug: 'bloque-yoga-espuma-negro', name: 'Bloque de Yoga Alta Densidad', stock: 99 };
 const marbleBlock = { ...block, slug: 'bloque-yoga-marmoleado-negro', name: 'Bloque de Yoga Marmoleado', stock: 99 };
 const twoBlocks = buildVisualItems([...makeItems(plainBlock, 1), ...makeItems(marbleBlock, 1)], [plainBlock, marbleBlock]);
-assert.equal(twoBlocks.length, 6);
+assert.equal(twoBlocks.length, 12);
 assert.equal(new Set(twoBlocks.map(i => `${i.x}:${i.y}:${i.z}`)).size, 6);
 assert.ok(twoBlocks.some(i => i.slug === plainBlock.slug));
 assert.ok(twoBlocks.some(i => i.slug === marbleBlock.slug));
@@ -110,9 +110,35 @@ assert.equal(displayZone(oneKgDumbbell), 'dumbbells-mat');
 assert.equal(displayZone(heavierDumbbell), 'dumbbells');
 assert.equal(displayZone(oneKgAnkle), 'ankleWeights-mat');
 assert.equal(displayZone(halfKgAnkle), 'ankleWeights');
-const floorAccessories = [oneKgDumbbell, heavierDumbbell, oneKgAnkle, halfKgAnkle];
+const oneHalfKgAnkle = { ...base, name: 'Polainas 1.5 kg', slug: 'polainas-1-5kg' };
+assert.equal(displayZone(oneHalfKgAnkle), 'ankleWeights-heavy');
+const floorAccessories = [oneKgDumbbell, heavierDumbbell, oneKgAnkle, halfKgAnkle, oneHalfKgAnkle];
 const layout = buildVisualItems(floorAccessories.flatMap(p => makeItems(p, 1)), floorAccessories);
-assert.equal(layout.length, 24);
-assert.equal(new Set(layout.map(i => `${i.x}:${i.y}:${i.z}`)).size, 24);
+assert.equal(layout.length, 30);
+assert.equal(new Set(layout.map(i => `${i.x}:${i.y}:${i.z}`)).size, 30);
 assert.ok(layout.filter(i => i.slug === oneKgDumbbell.slug || i.slug === oneKgAnkle.slug).every(i => i.z > -2.2));
+
+const separateModels = [
+  plainBlock, marbleBlock,
+  halfKgAnkle, oneKgAnkle, oneHalfKgAnkle,
+  oneKgDumbbell, heavierDumbbell,
+  { ...base, name: 'Pesa triangular 7 lb', slug: 'pesa-triangular-7lb' },
+  { ...base, name: 'Magic ring normal', slug: 'magic-ring-pilates-32cm' },
+  { ...base, name: 'Barra Z 15 lb', slug: 'barra-z-15lb' },
+];
+const separateItems = separateModels.flatMap(p => makeItems(p, 1));
+const layoutAll = buildVisualItems(separateItems, separateModels);
+assert.equal(layoutAll.length, separateModels.length * STATION_COUNT);
+const occupied = new Set(layoutAll.map(i => i.x.toFixed(3) + ':' + i.y.toFixed(3) + ':' + i.z.toFixed(3)));
+assert.equal(occupied.size, layoutAll.length, 'Every independent product needs its own coordinates');
+for (const p of separateModels) {
+  assert.equal(layoutAll.filter(i => i.slug === p.slug).length, STATION_COUNT, p.name + ' keeps six places');
+}
+assert.equal(new Set(layoutAll.filter(i => i.slug === halfKgAnkle.slug || i.slug === oneHalfKgAnkle.slug).map(i => i.y)).size, 2);
+const distinctColorVariant = { ...halfKgAnkle, slug: 'polainas-0-5kg-rosa', colors: ['#F8B0C6'] };
+const twoColors = buildVisualItems([...makeItems(halfKgAnkle, 1), ...makeItems(distinctColorVariant, 1)], [halfKgAnkle, distinctColorVariant], null, 'multi');
+assert.equal(twoColors.length, STATION_COUNT, 'Colors of one model keep one six-slot lane');
+assert.equal(new Set(twoColors.map(i => i.slug)).size, 2, 'Both colors appear without displacing a separate model');
+console.log('Independent product lanes: 0.5 kg vs 1.5 kg polainas, blocks, and colors verified.');
+
 console.log('Distinct blocks and 1 kg mat placements: no overlapping groups.');
