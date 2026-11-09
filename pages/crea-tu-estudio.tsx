@@ -99,6 +99,7 @@ export default function CreaTuEstudio() {
   }, [items, products, visualItems, orderQuantities]);
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0) + matQuantity * MAT_PRICE;
   const accessoryCount = summary.reduce((sum, [, row]) => sum + row.quantity, 0);
+  const accessorySubtotal = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0);
   function buyAccessories() {
     // Reuse the existing MiniCart pricing and Stripe checkout, not a second
     // discount calculation. Cart items are identified by catalog variant slug.
@@ -276,8 +277,8 @@ export default function CreaTuEstudio() {
                 </div>
               </div>}
               <ul className="divide-y divide-brand-line mt-2">{summary.map(([key, row]) => <li key={key} className="py-3"><button className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => setSelectedId(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>{row.product.name}</button><p className="text-xs text-brand-muted mt-1">{colorName(row.color)} · {money(unitPrice(row.product))} / pieza</p><div className="flex items-center justify-between mt-2"><div className="flex items-center gap-3"><button className="h-11 w-11 border border-brand-line rounded-full" aria-label={`Quitar una pieza de ${row.product.name}, ${colorName(row.color)}`} onClick={() => setOrderQuantity(key, row.quantity - 1)}>−</button><span>{row.quantity}</span><button className="h-11 w-11 border border-brand-line rounded-full disabled:opacity-30" aria-label={`Añadir una pieza de ${row.product.name}, ${colorName(row.color)}`} disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => setOrderQuantity(key, row.quantity + 1)}>+</button></div><span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span></div></li>)}</ul>
-              <div className="flex justify-between border-t border-brand-line pt-4 mt-3 font-semibold"><span>Subtotal antes de precio especial</span><span>{money(total)}</span></div>
-              <p className="text-xs leading-5 text-brand-muted mt-2">El carrito calculará el precio especial vigente antes del pago. Los tapetes personalizados se compran por separado en Crea tu Mat.</p>
+              <div className="flex justify-between border-t border-brand-line pt-4 mt-3 font-semibold"><span>{accessoryCount > 0 ? "Accesorios antes de precio especial" : "Tapetes estimados por separado"}</span><span>{money(accessoryCount > 0 ? accessorySubtotal : matQuantity * MAT_PRICE)}</span></div>
+              <p className="text-xs leading-5 text-brand-muted mt-2">El carrito calcula el precio especial vigente de los accesorios antes del pago. {matQuantity > 0 ? `Los ${matQuantity} tapetes personalizados (${money(matQuantity * MAT_PRICE)} de referencia) se configuran y pagan por separado en Crea tu Mat.` : ""}</p>
               {accessoryCount > 0 && <button type="button" className="mm-button mt-4 w-full min-h-12" onClick={buyAccessories}>Comprar accesorios · Ver carrito</button>}
               {matQuantity > 0 && <button type="button" className="mm-button-outline mt-3 w-full min-h-12" onClick={buyPersonalizedMat}>Configurar y comprar tapetes por separado</button>}
               {!accessoryCount && !matQuantity && <p className="mt-3 text-xs text-brand-muted">Selecciona un producto para continuar a la compra.</p>}
