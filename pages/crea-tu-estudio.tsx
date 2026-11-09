@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useProducts } from '../context/ProductsContext';
 import type { Product } from '../lib/fetchProducts';
 import { MAT_DIMENSIONS, MAT_PRICE, matShapes, solidColors, solidColorNames, type MatShape } from '../lib/mat-config';
-import { buildVisualItems, canAdd, colorName, groupAccessories, unitPrice, type StudioItem } from '../lib/studio/catalog';
+import { buildVisualItems, canAdd, colorName, groupAccessories, unitPrice, type StudioItem, type PreviewMode } from '../lib/studio/catalog';
 const StudioScene = dynamic(() => import('../components/studio/StudioScene'), { ssr: false, loading: () => <div className="h-[360px] sm:h-[520px] lg:h-[600px] rounded-2xl bg-brand-sand grid place-items-center">Preparando tu espacio…</div> });
 const money = (value: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
 
@@ -35,6 +35,7 @@ export default function CreaTuEstudio() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [openProduct, setOpenProduct] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('uniform');
   const visibleGroups = groups.filter(g => (filter === 'all' || g[0].category === filter) && g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
   const [items, setItems] = useState<StudioItem[]>([]);
   const [matShape, setMatShape] = useState<MatShape>('bala');
@@ -66,7 +67,7 @@ export default function CreaTuEstudio() {
     });
     return [...result.entries()];
   }, [items, products]);
-  const visualItems = useMemo(() => buildVisualItems(items, products, selectedId), [items, products, selectedId]);
+  const visualItems = useMemo(() => buildVisualItems(items, products, selectedId, previewMode), [items, products, selectedId, previewMode]);
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0) + matQuantity * MAT_PRICE;
   function add(product: Product, color: string) {
     if (!canAdd(product, items)) return;
@@ -101,7 +102,7 @@ export default function CreaTuEstudio() {
               <p className="text-xs text-brand-muted mt-1">{colorName(selected.color)} · {money(unitPrice(selectedProduct))}</p>
 
             </div>}
-            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 tapetes de la forma y color elegidos. Cada zona tiene hasta seis posiciones compartidas sin superponer grupos de accesorios; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
+            <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 tapetes de la forma y color elegidos. Las zonas de accesorios tienen hasta seis posiciones sin superposiciones: en modo uniforme muestran el último color añadido por grupo y en multicolor distribuyen las variantes. Las cantidades del pedido no cambian al alternar vistas; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
           </section>
           <aside className="space-y-4">
             <div className="flex justify-between items-center"><h2 className="font-display text-2xl">Accesorios y tapetes</h2><span className="text-xs text-brand-muted">Personaliza tu estudio</span></div>
@@ -124,6 +125,17 @@ export default function CreaTuEstudio() {
                 {matEnabled ? <button type="button" className="text-sm underline min-h-11" onClick={() => { setMatEnabled(false); setMatQuantity(0); setSelectedId(id => id === 'studio-mat' ? null : id); }}>Quitar tapetes</button> : <button type="button" className="mm-button !px-4" onClick={() => updateMat({})}>Añadir tapetes</button>}
               </div>
             </section>}
+            <section className="rounded-2xl border border-brand-line bg-white p-4" aria-label="Modo de colores de accesorios">
+              <h3 className="text-sm font-semibold">Vista de colores de los accesorios</h3>
+              <div className="grid grid-cols-2 gap-2 mt-3" role="group" aria-label="Elegir modo de visualización">
+                <button type="button" aria-pressed={previewMode === 'uniform'} onClick={() => setPreviewMode('uniform')} className={`min-h-11 rounded-xl border px-3 text-sm ${previewMode === 'uniform' ? 'border-brand-wine bg-brand-sand font-semibold' : 'border-brand-line'}`}>Uniforme</button>
+                <button type="button" aria-pressed={previewMode === 'multi'} onClick={() => setPreviewMode('multi')} className={`min-h-11 rounded-xl border px-3 text-sm ${previewMode === 'multi' ? 'border-brand-wine bg-brand-sand font-semibold' : 'border-brand-line'}`}>Multicolor</button>
+              </div>
+              <p className="text-xs leading-5 text-brand-muted mt-2">{previewMode === 'uniform'
+                ? 'Cada grupo muestra el último color añadido. Añadir otro color reemplaza la vista anterior, pero conserva ambos en tu pedido.'
+                : 'Los colores distintos del pedido se reparten entre los lugares disponibles, máximo seis por grupo visual. No se crean objetos adicionales.'}</p>
+              <p className="text-xs text-brand-muted mt-1">Cambiar de modo nunca modifica cantidades ni colores de tu pedido.</p>
+            </section>
             <div className="rounded-2xl border border-brand-line bg-white p-3" aria-label="Catálogo compacto de accesorios">
               <p className="text-xs text-brand-muted mb-2">Selecciona un producto para abrir sus colores y añadirlo. El resto permanece compacto.</p>
               {loading && <p role="status">Cargando catálogo…</p>}
