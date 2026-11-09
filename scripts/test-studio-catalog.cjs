@@ -52,10 +52,11 @@ assert.ok([0, 1, 2].every(i => displayPlacement('ring', i).z < -.8));
 
 const pink = product('Polainas 0.5 kg', 'polainas-0-5kg-rosa', '#F8B0C6');
 assert.equal(groupAccessories([pol05, pink]).length, 1);
-const colors = buildVisualItems([select(pol05), select(pink)], [pol05, pink], null, 'multi');
+const colors = buildVisualItems([select(pol05), select(pink)], [pol05, pink]);
 assert.equal(colors.length, STATION_COUNT);
-assert.equal(new Set(colors.map(i => i.color)).size, 2);
-assert.equal(buildVisualItems([select(pol05), select(pink)], [pol05, pink], null, 'uniform').length, 3);
+assert.equal(new Set(colors.map(i => i.color)).size, 1);
+assert.ok(colors.every(i => i.color === pink.colors[0]), 'All three copies use the last chosen color');
+assert.equal(buildVisualItems([select(pink), select(pol05)], [pol05, pink]).filter(i => i.color === pol05.colors[0]).length, 3);
 const ordered = buildVisualItems(models.slice().reverse().map(select), models);
 assert.equal(new Set(ordered.map(i => i.x + ':' + i.y + ':' + i.z)).size, layout.length);
 
