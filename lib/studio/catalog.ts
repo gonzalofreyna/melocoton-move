@@ -2,7 +2,7 @@ import type { Product } from '../fetchProducts';
 
 export type AccessoryKind = 'block' | 'ball' | 'ring' | 'mat' | 'dumbbells' | 'ankleWeights' | 'bar' | 'triangle' | 'generic';
 export type StudioItem = { id: string; slug: string; color: string; x: number; z: number; rotation: number };
-export const STATION_COUNT = 6;
+export const STATION_COUNT = 3;
 export function accessoryKind(product: Product): AccessoryKind | null {
   const category = product.category.trim().toLowerCase();
   if (category === 'mat') return 'mat';
@@ -70,12 +70,12 @@ export function displaySize(product: Product): [number, number, number] {
     default: return [.2, .1, .2];
   }
 }
-// Six fixed display stations, independent of quantities in the selection.
+// Three mats, each centered in front of its own bay on the mirrored back wall.
 export const STATIONS = Array.from({ length: STATION_COUNT }, (_, index) => ({
-  x: (index % 3 - 1) * 1.8, z: index < 3 ? -1.25 : 1.25,
+  x: (index - 1) * 2.05, z: .42,
 }));
 export type VisualItem = StudioItem & { sourceId: string; y: number; tiltX: number; tiltZ: number };
-// Six fixed visual places per display zone: selected variants share slots, never overlap.
+// Each model receives three distinct display positions; colors share only that model's lane.
 export type DisplayZone = AccessoryKind
   | 'dumbbells-mat' | 'ankleWeights-mat' | 'ankleWeights-heavy'
   | 'block-marble' | 'mat-left-center' | 'mat-right-center'
@@ -121,47 +121,47 @@ const LANE_PREFERENCES: Partial<Record<DisplayZone, DisplayZone[]>> = {
 
 export function displayPlacement(zone: DisplayZone, index: number) {
   const station = STATIONS[index % STATION_COUNT];
-  const shelfX = .65 + index * .39;
-  const defaults = { x: shelfX, y: 0, z: -2.45, tiltX: 0, tiltZ: 0 };
+  // Three products along each shelf on the left wall, with safe spacing.
+  const shelfZ = .54 + index * .78;
+  const defaults = { x: -2.80, y: .05, z: shelfZ, tiltX: 0, tiltZ: 0 };
   switch (zone) {
-    case 'mat': return { ...defaults, ...station };
-    case 'dumbbells-mat': return { ...defaults, x: station.x - .17, y: .027, z: station.z - .46 };
-    case 'ankleWeights-mat': return { ...defaults, x: station.x + .17, y: .027, z: station.z + .46 };
-    case 'ankleWeights-heavy': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .46 };
+    case 'mat': return { ...defaults, ...station, y: 0 };
+    // Distinct positions on every mat, all in front of the matching mirror.
+    case 'dumbbells-mat': return { ...defaults, x: station.x - .17, y: .027, z: station.z - .47 };
+    case 'ankleWeights-mat': return { ...defaults, x: station.x + .17, y: .027, z: station.z + .48 };
+    case 'ankleWeights-heavy': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .48 };
     case 'mat-left-center': return { ...defaults, x: station.x - .17, y: .027, z: station.z };
     case 'mat-right-center': return { ...defaults, x: station.x + .17, y: .027, z: station.z };
-    // Unclassified accessories use the right-side floor aisle, not a mat slot.
-    case 'generic': return { ...defaults, x: 2.6, y: .027, z: -1.7 + index * .65 };
+    case 'generic': return { ...defaults, x: station.x + .20, y: .027, z: station.z + .71 };
     case 'mat-left-upper': return { ...defaults, x: station.x - .17, y: .027, z: station.z - .72 };
     case 'mat-right-upper': return { ...defaults, x: station.x + .17, y: .027, z: station.z - .72 };
     case 'mat-left-lower': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .72 };
     case 'mat-right-lower': return { ...defaults, x: station.x + .17, y: .027, z: station.z + .72 };
-    case 'ball': return { ...defaults, x: -2.80 + (index % 3) * .22, y: .35, z: -.12 + Math.floor(index / 3) * .22 };
-    case 'dumbbells': return { ...defaults, y: .82 };
-    case 'ankleWeights': return { ...defaults, y: 1.27 };
-    case 'block': return { ...defaults, y: 1.72 };
-    case 'block-marble': return { ...defaults, y: 2.17 };
-    case 'triangle': return { ...defaults, y: 2.62 };
-    case 'ring': return { ...defaults, x: -3.02, y: 1.65, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
-    case 'ring-alt': return { ...defaults, x: -3.02, y: 2.2, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
-    case 'ring-high': return { ...defaults, x: -3.02, y: 2.72, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
-    case 'ring-side': return { ...defaults, x: -3.02, y: 1.65, z: .72 + index * .36, tiltZ: Math.PI / 2 };
-    case 'bar': return { ...defaults, x: -3.01, y: .65, z: -1.9 + index * .23, tiltZ: Math.PI / 2 };
-    case 'bar-alt': return { ...defaults, x: -3.01, y: .65, z: .4 + index * .23, tiltZ: Math.PI / 2 };
+    // Three balls are placed inside the basket immediately below the shelves.
+    case 'ball': return { ...defaults, x: -2.79, y: .31, z: .73 + index * .52 };
+    case 'dumbbells': return { ...defaults, y: .83 };
+    case 'ankleWeights': return { ...defaults, y: 1.26 };
+    case 'block': return { ...defaults, y: 1.69 };
+    case 'block-marble': return { ...defaults, y: 2.12 };
+    case 'triangle': return { ...defaults, y: 2.55 };
+    case 'ring': return { ...defaults, x: -3.02, y: .86, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'ring-alt': return { ...defaults, x: -3.02, y: 1.43, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'ring-high': return { ...defaults, x: -3.02, y: 2.02, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'ring-side': return { ...defaults, x: -3.02, y: 2.61, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'bar': return { ...defaults, x: -3.02, y: .39, z: -2.20 + index * .55, tiltZ: Math.PI / 2 };
+    case 'bar-alt': return { ...defaults, x: -3.02, y: .57, z: -2.20 + index * .55, tiltZ: Math.PI / 2 };
   }
 }
-// Additional galleries expand to the right of the original six-mat room.
-// A gallery holds six display models in two rows of three, with full clearance
+// Additional galleries expand to the right of the original three-mat room.
+// A gallery holds three display models with full clearance
 // for long bars. They are visual stations, not order quantities.
 export const OVERFLOW_GALLERY_START_X = 4.35;
 export const OVERFLOW_GALLERY_WIDTH = 5.1;
 export function overflowPlacement(gallery: number, index: number) {
-  const col = index % 3;
-  const row = Math.floor(index / 3);
   return {
-    x: OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + col * 1.45,
+    x: OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + index * 1.45,
     y: .48,
-    z: row === 0 ? -1.1 : 1.1,
+    z: .35,
     tiltX: 0,
     tiltZ: 0,
   };
@@ -187,7 +187,7 @@ export function buildVisualItems(
   const result: VisualItem[] = [];
   const occupiedLanes = new Set<DisplayZone>();
   let overflowFamilies = 0;
-  // Display six copies for EACH model, not six shared by an entire category.
+  // Display three copies for EACH model, not three shared by an entire category.
   const ranked = [...families].sort(([keyA, a], [keyB, b]) =>
     LANE_ORDER.indexOf(a.zone) - LANE_ORDER.indexOf(b.zone) || keyA.localeCompare(keyB));
   for (const [familyKey, family] of ranked) {
@@ -198,7 +198,7 @@ export function buildVisualItems(
       LANE_ORDER.filter(candidate => candidate !== 'ball' && candidate !== 'ring' &&
         candidate !== 'bar' && candidate !== 'ring-alt' && candidate !== 'ring-high' && candidate !== 'ring-side' && candidate !== 'bar-alt');
     const lane = [...preference, ...fallback].find(candidate => candidate !== 'mat' && !occupiedLanes.has(candidate));
-    // Once the original studio fills up, allocate a complete new six-piece
+    // Once the original studio fills up, allocate a complete new three-piece
     // gallery module. Never silently discard a selected model.
     const overflowIndex = lane ? -1 : overflowFamilies++;
     if (lane) occupiedLanes.add(lane);
