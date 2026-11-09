@@ -82,7 +82,7 @@ export function displayPlacement(zone: DisplayZone, index: number) {
     // Mat products sit at distinct offsets, not at the same spot on a mat.
     case 'dumbbells-mat': return { ...defaults, x: station.x - .18, y: .027, z: station.z - .32 };
     case 'ankleWeights-mat': return { ...defaults, x: station.x + .18, y: .027, z: station.z + .32 };
-    case 'ball': return { ...defaults, x: 1.35 + (index % 3) * .22, y: .35, z: -2.48 + Math.floor(index / 3) * .22 };
+    case 'ball': return { ...defaults, x: -2.80 + (index % 3) * .22, y: .35, z: -.12 + Math.floor(index / 3) * .22 };
     case 'block': return { ...defaults, y: 1.72 };
     case 'dumbbells': return { ...defaults, y: .82 };
     case 'ankleWeights': return { ...defaults, y: 1.27 };
