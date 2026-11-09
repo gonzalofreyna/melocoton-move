@@ -3,6 +3,18 @@ import type { Product } from '../fetchProducts';
 export type AccessoryKind = 'block' | 'ball' | 'ring' | 'mat' | 'dumbbells' | 'ankleWeights' | 'bar' | 'triangle' | 'generic';
 export type StudioItem = { id: string; slug: string; color: string; x: number; z: number; rotation: number };
 export const STATION_COUNT = 3;
+// Cotización del estudio: el 15% aplica por renglón con 5+ piezas
+// del mismo producto. No se agrupan categorías ni modelos distintos.
+export function studioQuotePrice(unitPrice: number, quantity: number) {
+  const qty = Math.max(0, Math.floor(quantity));
+  const regularUnit = Math.round(unitPrice * 100) / 100;
+  const discounted = qty >= 5;
+  const finalUnit = discounted ? Math.round(regularUnit * 0.85 * 100) / 100 : regularUnit;
+  const subtotal = Math.round(regularUnit * qty * 100) / 100;
+  const total = Math.round(finalUnit * qty * 100) / 100;
+  return { discounted, regularUnit, finalUnit, subtotal, total, savings: Math.round((subtotal - total) * 100) / 100 };
+}
+
 export function accessoryKind(product: Product): AccessoryKind | null {
   const category = product.category.trim().toLowerCase();
   if (category === 'mat') return 'mat';
