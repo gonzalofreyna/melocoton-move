@@ -72,7 +72,8 @@ export function displaySize(product: Product): [number, number, number] {
 }
 // Three mats, each centered in front of its own bay on the mirrored back wall.
 export const STATIONS = Array.from({ length: STATION_COUNT }, (_, index) => ({
-  x: (index - 1) * 2.05, z: .42,
+  // Rear edge of a 1.82m mat stays ~13cm ahead of the mirror wall.
+  x: (index - 1) * 2.05, z: -1.70,
 }));
 export type VisualItem = StudioItem & { sourceId: string; y: number; tiltX: number; tiltZ: number };
 // Each model receives three distinct display positions; colors share only that model's lane.
