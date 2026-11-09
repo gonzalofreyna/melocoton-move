@@ -145,10 +145,10 @@ export function displayPlacement(zone: DisplayZone, index: number) {
     case 'block': return { ...defaults, y: 1.69 };
     case 'block-marble': return { ...defaults, y: 2.12 };
     case 'triangle': return { ...defaults, y: 2.55 };
-    case 'ring': return { ...defaults, x: -3.02, y: .86, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
-    case 'ring-alt': return { ...defaults, x: -3.02, y: 1.43, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
-    case 'ring-high': return { ...defaults, x: -3.02, y: 2.02, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
-    case 'ring-side': return { ...defaults, x: -3.02, y: 2.61, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'ring': return { ...defaults, x: -3.02, y: 2.72, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'ring-alt': return { ...defaults, x: -3.02, y: 2.49, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'ring-high': return { ...defaults, x: -3.02, y: 2.26, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
+    case 'ring-side': return { ...defaults, x: -3.02, y: 2.03, z: -2.18 + index * .49, tiltZ: Math.PI / 2 };
     case 'bar': return { ...defaults, x: -3.02, y: .39, z: -2.20 + index * .55, tiltZ: Math.PI / 2 };
     case 'bar-alt': return { ...defaults, x: -3.02, y: .57, z: -2.20 + index * .55, tiltZ: Math.PI / 2 };
   }
