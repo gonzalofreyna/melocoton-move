@@ -49,6 +49,8 @@ assert.ok([0, 1, 2].every(i => displayPlacement('ball', i).x === -2.79));
 assert.ok([0, 1, 2].every(i => displayPlacement('ball', i).z >= .7));
 assert.ok([0, 1, 2].every(i => displayPlacement('block', i).x < -2.5));
 assert.ok([0, 1, 2].every(i => displayPlacement('ring', i).z < -.8));
+assert.ok([0, 1, 2].every(i => displayPlacement('ring', i).y > 2.5));
+assert.ok([0, 1, 2].every(i => displayPlacement('ring', i).y > displayPlacement('bar', i).y + 1.5));
 
 const pink = product('Polainas 0.5 kg', 'polainas-0-5kg-rosa', '#F8B0C6');
 assert.equal(groupAccessories([pol05, pink]).length, 1);
