@@ -108,7 +108,15 @@ export default function MobileStudio(props: Props) {
   const summary = props.summary;
   const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, props.matQuantity * MAT_PRICE);
   const count = summary.reduce((sum, [, row]) => sum + row.quantity, props.matQuantity);
-  const height = finalizing ? 'min(90dvh, 840px)' : sizeHeight[sheet];
+  const height = finalizing ? 'calc(100dvh - 56px - env(safe-area-inset-top, 0px))' : sizeHeight[sheet];
+  function openSummary() {
+    setFinalizing(true);
+    setTab('order');
+    scrollArea.current?.scrollTo({ top: 0 });
+  }
+  useEffect(() => {
+    if (finalizing) scrollArea.current?.scrollTo({ top: 0 });
+  }, [finalizing]);
 
   function selectTab(next: Tab) {
     setTab(next);
@@ -141,7 +149,7 @@ export default function MobileStudio(props: Props) {
     <header className="absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-brand-line bg-white/95 px-3 backdrop-blur-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', height: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
       <a href="/" className="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm" aria-label="Salir del configurador"><span aria-hidden="true">‹</span> Volver</a>
       <span className="text-sm font-semibold">Crea tu estudio</span>
-      <button type="button" onClick={() => { setFinalizing(true); setTab('order'); }} className="min-h-11 rounded-xl px-2 text-sm" aria-label="Finalizar diseño">Finalizar</button>
+      <button type="button" onClick={openSummary} className="min-h-11 rounded-xl px-2 text-sm" aria-label="Finalizar diseño">Finalizar</button>
     </header>
     <div className="absolute inset-x-0 z-0 overflow-hidden transition-[bottom] duration-300 ease-out"
       style={{ top: 'calc(56px + env(safe-area-inset-top, 0px))', bottom: height }}>
@@ -177,7 +185,7 @@ export default function MobileStudio(props: Props) {
             <button type="button" className="rounded-lg border border-brand-line px-3 py-2 text-xs"
               onClick={() => setSheet(current => current === 'expanded' ? 'half' : 'expanded')}>{sheet === 'expanded' ? 'Reducir' : 'Ampliar'}</button>
             <button type="button" className="rounded-lg bg-brand-wine px-3 py-2 text-xs text-white"
-              onClick={() => { if (finalizing) { setFinalizing(false); selectTab('accessories'); } else { setFinalizing(true); setTab('order'); } }}>{finalizing ? 'Volver al diseño' : 'Finalizar diseño'}</button>
+              onClick={() => { if (finalizing) { setFinalizing(false); selectTab('accessories'); } else { openSummary(); } }}>{finalizing ? 'Volver al diseño' : 'Finalizar diseño'}</button>
           </div>
         </div>
       </div>
@@ -188,8 +196,8 @@ export default function MobileStudio(props: Props) {
           <span className="text-lg leading-5" aria-hidden="true">{t.symbol}</span>{t.label}
         </button>)}
       </nav>}
-      <div ref={scrollArea} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-3"
-        style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+      <div ref={scrollArea} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-3"
+        style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: '80px' }}>
         {!finalizing && tab === 'accessories' && <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Accesorios</h2>
@@ -302,9 +310,19 @@ export default function MobileStudio(props: Props) {
             <span>Subtotal estimado</span><span>{money(total)}</span>
           </div>
           <p className="text-xs text-brand-muted">El resumen es una cotización preliminar; esta demo aún no envía órdenes ni reserva inventario.</p>
-          <button type="button" className="mm-button min-h-11 w-full" onClick={() => { setFinalizing(false); selectTab('accessories'); }}>Seguir diseñando</button>
+
         </div>}
       </div>
+      {finalizing && <div className="shrink-0 border-t border-brand-line bg-white px-4 pt-3 shadow-[0_-6px_18px_rgba(48,41,43,0.06)]"
+        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="mb-2 flex items-center justify-between text-sm font-semibold">
+          <span>Subtotal estimado</span><span>{money(total)}</span>
+        </div>
+        <button type="button" className="mm-button min-h-12 w-full"
+          onClick={() => { setFinalizing(false); selectTab('accessories'); }}>
+          Seguir diseñando
+        </button>
+      </div>}
     </section>
     <span className="sr-only" role="status" aria-live="polite">{notice}</span>
   </div>;
