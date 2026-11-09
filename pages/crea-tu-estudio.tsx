@@ -77,7 +77,7 @@ export default function CreaTuEstudio() {
   const selected = items.find(i => i.id === selectedId);
   const selectedProduct = products.find(p => p.slug === selected?.slug);
   const selectedVariants = groups.find(g => g.some(p => p.slug === selected?.slug)) || [];
-  const visualItems = useMemo(() => buildVisualItems(items, products, selectedId, 'uniform'), [items, products, selectedId]);
+  const visualItems = useMemo(() => buildVisualItems(items, products, selectedId), [items, products, selectedId]);
   const summary = useMemo(() => {
     const counts = new Map<string, number>();
     for (const visual of visualItems) {
