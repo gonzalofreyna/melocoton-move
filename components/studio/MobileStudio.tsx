@@ -17,6 +17,7 @@ type Props = {
   estimatedTotal: number;
   subtotalBeforeDiscount: number;
   specialDiscount: number;
+  totalPieces: number;
   remove: (id: string) => void;
   updateSelected: (change: Partial<StudioItem>) => void;
   matShape: MatShape; matColor: string; matEnabled: boolean; matQuantity: number;
@@ -283,16 +284,16 @@ export default function MobileStudio(props: Props) {
           {count === 0 && <p className="text-sm text-brand-muted">Todavía no has añadido productos.</p>}
           {props.matQuantity > 0 && <div className="border-b border-brand-line pb-3">
             <p className="text-sm font-semibold">Tapete personalizado · {matShapes.find(m => m.id === props.matShape)?.label}</p>
-            <p className="text-xs text-brand-muted">{solidColorNames[props.matColor]} · {props.matQuantity >= 5 ? <><span className="line-through">{money(MAT_PRICE)}</span> <strong>{money(studioQuotePrice(MAT_PRICE, props.matQuantity).finalUnit)} / pieza · Precio especial 15%</strong></> : `${money(MAT_PRICE)} / pieza`}</p>
+            <p className="text-xs text-brand-muted">{solidColorNames[props.matColor]} · {(props.totalPieces > 30 || props.matQuantity >= 5) ? <><span className="line-through">{money(MAT_PRICE)}</span> <strong>{money(studioQuotePrice(MAT_PRICE, props.matQuantity, props.totalPieces).finalUnit)} / pieza · Precio especial {props.totalPieces > 30 ? '20%' : '15%'}</strong></> : `${money(MAT_PRICE)} / pieza`}</p>
             <div className="mt-2 flex items-center justify-between">
               <div className="flex items-center gap-2"><button className="h-11 w-11 rounded-full border border-brand-line" aria-label="Quitar tapete" onClick={() => props.setMatQuantity(Math.max(0, props.matQuantity - 1))}>−</button>
                 <span>{props.matQuantity}</span><button className="h-11 w-11 rounded-full border border-brand-line" aria-label="Añadir tapete" onClick={() => props.setMatQuantity(props.matQuantity + 1)}>+</button></div>
-              <span className="text-sm">{money(studioQuotePrice(MAT_PRICE, props.matQuantity).total)}</span>
+              <span className="text-sm">{money(studioQuotePrice(MAT_PRICE, props.matQuantity, props.totalPieces).total)}</span>
             </div>
           </div>}
           {summary.map(([key, row]) => <div key={key} className="border-b border-brand-line pb-3">
             <p className="text-left text-sm font-semibold">{row.product.name}</p>
-            <p className="text-xs text-brand-muted">{colorName(row.color)} · {row.quantity >= 5 ? <><span className="line-through">{money(unitPrice(row.product))}</span> <strong>{money(studioQuotePrice(unitPrice(row.product), row.quantity).finalUnit)} / pieza · Precio especial 15%</strong></> : `${money(unitPrice(row.product))} / pieza`}</p>
+            <p className="text-xs text-brand-muted">{colorName(row.color)} · {(props.totalPieces > 30 || row.quantity >= 5) ? <><span className="line-through">{money(unitPrice(row.product))}</span> <strong>{money(studioQuotePrice(unitPrice(row.product), row.quantity, props.totalPieces).finalUnit)} / pieza · Precio especial {props.totalPieces > 30 ? '20%' : '15%'}</strong></> : `${money(unitPrice(row.product))} / pieza`}</p>
             <div className="mt-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button type="button" className="h-11 w-11 rounded-full border border-brand-line" aria-label={'Quitar una pieza de ' + row.product.name}
@@ -301,17 +302,17 @@ export default function MobileStudio(props: Props) {
                 <button type="button" className="h-11 w-11 rounded-full border border-brand-line" aria-label={'Añadir una pieza de ' + row.product.name}
                   disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => props.setOrderQuantity(key, row.quantity + 1)}>+</button>
               </div>
-              <span className="text-sm">{money(studioQuotePrice(unitPrice(row.product), row.quantity).total)}</span>
+              <span className="text-sm">{money(studioQuotePrice(unitPrice(row.product), row.quantity, props.totalPieces).total)}</span>
             </div>
           </div>)}
-          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">El 15% se aplica a cada producto al seleccionar 5 o más piezas del mismo modelo, sin combinar productos distintos. Precios sujetos a confirmación. WhatsApp no genera una compra ni reserva inventario.</p>
+          <p className="border-t border-brand-line pt-3 text-xs text-brand-muted">Con más de 30 piezas en total, aplica 20% a toda la selección y sustituye el 15%. Con 30 o menos, aplica 15% a cada producto con 5 o más piezas. Precios sujetos a confirmación; WhatsApp no genera una compra.</p>
         </div>}
       </div>
       {finalizing && <div className="shrink-0 border-t border-brand-line bg-white px-4 pt-3 shadow-[0_-6px_18px_rgba(48,41,43,0.06)]"
         style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="mb-2 space-y-1 text-sm">
           <div className="flex items-center justify-between"><span>Subtotal</span><span>{money(props.subtotalBeforeDiscount)}</span></div>
-          {props.specialDiscount > 0 && <div className="flex items-center justify-between text-green-700"><span>Descuento especial 15%</span><span>−{money(props.specialDiscount)}</span></div>}
+          {props.specialDiscount > 0 && <div className="flex items-center justify-between text-green-700"><span>Descuento especial {props.totalPieces > 30 ? '20%' : '15%'}</span><span>−{money(props.specialDiscount)}</span></div>}
           <div className="flex items-center justify-between font-semibold"><span>Total estimado</span><span>{money(props.estimatedTotal)}</span></div>
         </div>
         {props.canRequestQuote ? <a href={props.whatsappUrl} target="_blank" rel="noopener noreferrer"
