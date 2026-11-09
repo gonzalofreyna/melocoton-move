@@ -177,6 +177,7 @@ export default function CreaTuEstudio() {
       selectedId={selectedId} onSelect={setSelectedId}
       add={add} remove={remove} updateSelected={updateSelected} summary={summary} setOrderQuantity={setOrderQuantity}
       whatsappUrl={whatsappUrl} canRequestQuote={canRequestQuote} estimatedTotal={estimatedTotal}
+      subtotalBeforeDiscount={subtotalBeforeDiscount} specialDiscount={specialDiscount}
       matShape={matShape} matColor={matColor} matEnabled={matEnabled} matQuantity={matQuantity}
       updateMat={updateMat} setMatQuantity={setMobileMatQuantity}
       floorColor={floorColor} setFloorColor={setFloorColor} wallColor={wallColor} setWallColor={setWallColor}
