@@ -126,7 +126,8 @@ export function displayPlacement(zone: DisplayZone, index: number) {
     case 'ankleWeights-heavy': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .46 };
     case 'mat-left-center': return { ...defaults, x: station.x - .17, y: .027, z: station.z };
     case 'mat-right-center': return { ...defaults, x: station.x + .17, y: .027, z: station.z };
-    case 'generic': return { ...defaults, x: station.x, y: .027, z: station.z + .73 };
+    // Unclassified accessories use the right-side floor aisle, not a mat slot.
+    case 'generic': return { ...defaults, x: 2.6, y: .027, z: -1.7 + index * .65 };
     case 'mat-left-upper': return { ...defaults, x: station.x - .17, y: .027, z: station.z - .72 };
     case 'mat-right-upper': return { ...defaults, x: station.x + .17, y: .027, z: station.z - .72 };
     case 'mat-left-lower': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .72 };
