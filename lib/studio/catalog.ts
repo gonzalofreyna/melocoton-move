@@ -61,14 +61,28 @@ export const STATIONS = Array.from({ length: STATION_COUNT }, (_, index) => ({
   x: (index % 3 - 1) * 1.8, z: index < 3 ? -1.25 : 1.25,
 }));
 export type VisualItem = StudioItem & { sourceId: string; y: number; tiltX: number; tiltZ: number };
-// Storage positions are shared by every variant of the same accessory family.
-export function displayPlacement(kind: AccessoryKind, index: number) {
+// Six fixed visual places per display zone: selected variants share slots, never overlap.
+export type DisplayZone = AccessoryKind | 'dumbbells-mat' | 'ankleWeights-mat';
+export function displayZone(product: Product): DisplayZone | null {
+  const kind = accessoryKind(product);
+  if (!kind) return null;
+  const identity = `${product.name} ${product.slug}`.toLowerCase();
+  // Match exactly 1 kg / 1.0 kg; 0.5 kg and 2.5 kg remain on their shelves.
+  const oneKg = /(?:^|[^\\d.,])1(?:[.,]0)?\\s*[-_ ]?\\s*(?:kg|kilo(?:gramos?)?)(?![\\d])/i.test(identity);
+  if (kind === 'dumbbells' && oneKg) return 'dumbbells-mat';
+  if (kind === 'ankleWeights' && oneKg) return 'ankleWeights-mat';
+  return kind;
+}
+export function displayPlacement(zone: DisplayZone, index: number) {
   const station = STATIONS[index];
   const shelfX = .65 + index * .39;
   const defaults = { x: shelfX, y: 0, z: -2.45, tiltX: 0, tiltZ: 0 };
-  switch (kind) {
+  switch (zone) {
     case 'mat': return { ...defaults, ...station };
-    case 'ball': return { ...defaults, x: 1.35 + (index % 3) * .22, y: .25, z: -2.48 + Math.floor(index / 3) * .22 };
+    // Mat products sit at distinct offsets, not at the same spot on a mat.
+    case 'dumbbells-mat': return { ...defaults, x: station.x - .18, y: .027, z: station.z - .32 };
+    case 'ankleWeights-mat': return { ...defaults, x: station.x + .18, y: .027, z: station.z + .32 };
+    case 'ball': return { ...defaults, x: 1.35 + (index % 3) * .22, y: .35, z: -2.48 + Math.floor(index / 3) * .22 };
     case 'block': return { ...defaults, y: 1.72 };
     case 'dumbbells': return { ...defaults, y: .82 };
     case 'ankleWeights': return { ...defaults, y: 1.27 };
@@ -78,28 +92,42 @@ export function displayPlacement(kind: AccessoryKind, index: number) {
     case 'bar': return { ...defaults, x: -3.01, y: .65, z: -1.9 + index * .23, tiltZ: Math.PI / 2 };
   }
 }
+function variantFamily(product: Product, zone: DisplayZone) {
+  if (zone === 'block') return /marmol|marble/i.test(`${product.slug} ${product.name}`) ? 'block-marble' : 'block-solid';
+  return product.name.trim().toLowerCase().replace(/\\s+/g, ' ');
+}
 export function buildVisualItems(items: StudioItem[], products: Product[], selectedId?: string | null): VisualItem[] {
   const catalog = new Map(products.map(p => [p.slug, p]));
-  const kinds = new Map<AccessoryKind, Map<string, StudioItem>>();
+  const zones = new Map<DisplayZone, Map<string, Map<string, StudioItem>>>();
   for (const item of items) {
-    const product = catalog.get(item.slug), kind = product && accessoryKind(product);
-    if (!kind) continue;
-    const variants = kinds.get(kind) || new Map<string, StudioItem>();
+    const product = catalog.get(item.slug);
+    const zone = product && displayZone(product);
+    if (!product || !zone) continue;
+    const families = zones.get(zone) || new Map<string, Map<string, StudioItem>>();
+    const family = variantFamily(product, zone);
+    const variants = families.get(family) || new Map<string, StudioItem>();
     const key = `${item.slug}|${item.color}`;
     if (!variants.has(key) || item.id === selectedId) variants.set(key, item);
-    kinds.set(kind, variants);
+    families.set(family, variants);
+    zones.set(zone, families);
   }
   const result: VisualItem[] = [];
-  for (const [kind, variants] of kinds) {
-    const all = [...variants.values()];
-    const examples = all.slice(0, STATION_COUNT);
-    const selected = all.find(i => i.id === selectedId);
-    if (selected && !examples.includes(selected)) examples[STATION_COUNT - 1] = selected;
-    STATIONS.forEach((station, index) => {
-      const item = examples[index % examples.length];
-      result.push({ ...item, id: `${kind}-station-${index}`, sourceId: item.id,
-        ...displayPlacement(kind, index), rotation: 0 });
-    });
+  for (const [zone, families] of zones) {
+    // Allocate the same six physical slots across distinct groups. Round robin
+    // guarantees the solid and marbled blocks can both be seen without overlap.
+    const groups = [...families.values()].map(group => [...group.values()]);
+    const chosen: StudioItem[] = [];
+    for (let i = 0; i < STATION_COUNT; i++) {
+      const group = groups[i % groups.length];
+      chosen.push(group[Math.floor(i / groups.length) % group.length]);
+    }
+    const selected = groups.flat().find(i => i.id === selectedId);
+    if (selected && !chosen.includes(selected)) chosen[STATION_COUNT - 1] = selected;
+    for (let index = 0; index < STATION_COUNT; index++) {
+      const item = chosen[index];
+      result.push({ ...item, id: `${zone}-station-${index}`, sourceId: item.id,
+        ...displayPlacement(zone, index), rotation: 0 });
+    }
   }
   return result;
 }
