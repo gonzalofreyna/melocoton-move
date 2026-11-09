@@ -149,7 +149,7 @@ export default function MobileStudio(props: Props) {
         mat={props.matEnabled ? { shape: props.matShape, color: props.matColor } : null}
         selectedId={props.selectedId} onSelect={handleSceneSelect}
         view={props.view} reset={props.reset} floorColor={props.floorColor} wallColor={props.wallColor} />
-      <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px]">6 representaciones por modelo</div>
+      <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px]">3 representaciones por modelo</div>
       <div className="absolute right-3 top-3 flex gap-1 rounded-xl bg-white/90 p-1 shadow-sm">
         <button type="button" className="min-h-9 rounded-lg px-2 text-xs" aria-pressed={props.view === 'perspective'}
           onClick={() => props.setView('perspective')}>3D</button>
@@ -242,7 +242,7 @@ export default function MobileStudio(props: Props) {
         </div>}
         {!finalizing && tab === 'mat' && <div className="space-y-3">
           <h2 className="text-lg font-semibold">Tu mat personalizado</h2>
-          <p className="text-xs text-brand-muted">Forma y color de Crea tu Mat. Los seis lugares muestran la misma configuración.</p>
+          <p className="text-xs text-brand-muted">Forma y color de Crea tu Mat. Los tres lugares muestran la misma configuración.</p>
           <p className="text-sm font-semibold">Forma</p>
           <div className="grid grid-cols-3 gap-2">{matShapes.map(m => <button type="button" key={m.id} aria-pressed={props.matEnabled && props.matShape === m.id}
             className={'min-h-11 rounded-xl border px-2 text-sm ' + (props.matEnabled && props.matShape === m.id ? 'border-brand-wine bg-brand-sand font-semibold' : 'border-brand-line')}
@@ -273,7 +273,7 @@ export default function MobileStudio(props: Props) {
         </div>}
         {finalizing && <div className="space-y-3">
           <h2 className="text-lg font-semibold">Tu estudio está listo</h2>
-          <p className="text-xs text-brand-muted">Estas son cantidades sugeridas según las seis posiciones del diseño. Ajústalas libremente; no cambiarán la vista 3D.</p>
+          <p className="text-xs text-brand-muted">Estas son cantidades sugeridas según las tres posiciones del diseño. Ajústalas libremente; no cambiarán la vista 3D.</p>
           {count === 0 && <p className="text-sm text-brand-muted">Todavía no has añadido productos.</p>}
           {props.matQuantity > 0 && <div className="border-b border-brand-line pb-3">
             <p className="text-sm font-semibold">Tapete personalizado · {matShapes.find(m => m.id === props.matShape)?.label}</p>
