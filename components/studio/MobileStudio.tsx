@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Product } from '../../lib/fetchProducts';
 import { MAT_DIMENSIONS, MAT_PRICE, matShapes, solidColors, solidColorNames, type MatShape } from '../../lib/mat-config';
-import { canAdd, colorName, unitPrice, type PreviewMode, type StudioItem, type VisualItem } from '../../lib/studio/catalog';
+import { canAdd, colorName, unitPrice, type StudioItem, type VisualItem } from '../../lib/studio/catalog';
 import StudioScene from './StudioScene';
 
 type Tab = 'accessories' | 'mat' | 'space' | 'order';
@@ -14,7 +14,6 @@ type Props = {
   setOrderQuantity: (key: string, quantity: number) => void;
   remove: (id: string) => void;
   updateSelected: (change: Partial<StudioItem>) => void;
-  previewMode: PreviewMode; setPreviewMode: (mode: PreviewMode) => void;
   matShape: MatShape; matColor: string; matEnabled: boolean; matQuantity: number;
   updateMat: (change: { shape?: MatShape; color?: string }) => void;
   setMatQuantity: (quantity: number) => void;
@@ -54,8 +53,8 @@ function Palette({ options, selected, onChange }: {
   </div>;
 }
 
-function MobileProduct({ variants, items, add, mode }: {
-  variants: Product[]; items: StudioItem[]; add: Props['add']; mode: PreviewMode;
+function MobileProduct({ variants, items, add }: {
+  variants: Product[]; items: StudioItem[]; add: Props['add'];
 }) {
   const options = variants.flatMap(p => (p.colors.length ? p.colors : ['']).map(color => ({ product: p, color })));
   const selectedKeys = items.filter(i => variants.some(p => p.slug === i.slug)).map(i => i.slug + '|' + i.color);
@@ -80,7 +79,7 @@ function MobileProduct({ variants, items, add, mode }: {
         </button>;
       })}
     </div>
-    <p className="mt-2 text-xs text-brand-muted">{mode === 'uniform' ? 'Un color a la vez: tocar otro reemplaza el anterior.' : 'Puedes combinar colores; toca uno seleccionado para quitarlo.'} La cantidad se decide al finalizar.</p>
+    <p className="mt-2 text-xs text-brand-muted">El color elegido se aplica a los tres ejemplares del producto. Puedes cambiarlo cuando quieras; las cantidades se deciden al finalizar.</p>
   </div>;
 }
 
@@ -204,11 +203,6 @@ export default function MobileStudio(props: Props) {
             <span className="text-xs text-brand-muted">Toca para elegir</span>
           </div>
           <p className="text-xs text-brand-muted">1. Abre un accesorio. 2. Toca un color. 3. Mira el resultado arriba. No necesitas añadir piezas.</p>
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-brand-sand/40 p-1" aria-label="Vista de colores">
-            {([{ id: 'uniform', name: 'Uniforme' }, { id: 'multi', name: 'Multicolor' }] as const).map(m =>
-              <button key={m.id} className={'min-h-10 rounded-lg text-sm ' + (props.previewMode === m.id ? 'bg-white font-semibold shadow-sm' : '')}
-                type="button" aria-pressed={props.previewMode === m.id} onClick={() => props.setPreviewMode(m.id)}>{m.name}</button>)}
-          </div>
           {active && activeProduct && <div className="rounded-xl border border-brand-wine/30 bg-brand-sand/40 p-3" aria-label="Editar accesorio seleccionado">
             <div className="flex items-center gap-3">
               <img src={activeProduct.image} alt="" className="h-12 w-12 rounded-lg bg-white object-contain" />
@@ -243,7 +237,7 @@ export default function MobileStudio(props: Props) {
                     <span className="mt-1 block text-xs text-brand-muted">Desde {money(Math.min(...variants.map(unitPrice)))}</span></span>
                   <span className="px-2 text-lg" aria-hidden="true">{open ? '−' : '+'}</span>
                 </button>
-                {open && <MobileProduct variants={variants} items={props.items} add={handleAdd} mode={props.previewMode} />}
+                {open && <MobileProduct variants={variants} items={props.items} add={handleAdd} />}
               </div>;
             })}
           </div>}
