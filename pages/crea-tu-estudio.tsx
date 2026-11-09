@@ -2,7 +2,6 @@ import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { useProducts } from '../context/ProductsContext';
-import { useCart } from '../context/CartContext';
 import type { Product } from '../lib/fetchProducts';
 import { MAT_DIMENSIONS, MAT_PRICE, matShapes, solidColors, solidColorNames, type MatShape } from '../lib/mat-config';
 import { buildVisualItems, canAdd, colorName, groupAccessories, unitPrice, type StudioItem } from '../lib/studio/catalog';
@@ -40,7 +39,6 @@ function ProductPicker({ variants, items, onAdd }: { variants: Product[]; items:
 }
 export default function CreaTuEstudio() {
   const { products, loading, error, refresh } = useProducts();
-  const { cart, addToCart, updateQuantity, openCart } = useCart();
   // Match media after hydration so just one WebGL scene is mounted at a time.
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   useEffect(() => {
@@ -55,7 +53,6 @@ export default function CreaTuEstudio() {
   const [search, setSearch] = useState('');
   const [openProduct, setOpenProduct] = useState<string | null>(null);
   const [finalizing, setFinalizing] = useState(false);
-  const [purchaseError, setPurchaseError] = useState('');
   const visibleGroups = groups.filter(g => (filter === 'all' || g[0].category === filter) && g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
   // Design selections are never order quantities: one entry per color only.
   const [items, setItems] = useState<StudioItem[]>([]);
@@ -100,42 +97,30 @@ export default function CreaTuEstudio() {
   }, [items, products, visualItems, orderQuantities]);
   const accessoryCount = summary.reduce((sum, [, row]) => sum + row.quantity, 0);
   const accessorySubtotal = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0);
-  function buyAccessories() {
-    setPurchaseError('');
-    // Reuse the existing MiniCart pricing and Stripe checkout, not a second
-    // discount calculation. Cart items are identified by catalog variant slug.
-    const selected = summary.filter(([, row]) => row.quantity > 0);
-    if (!selected.length) {
-      setPurchaseError('Selecciona al menos un accesorio para comprar.');
-      return;
-    }
-    const unavailable = selected.find(([, row]) => {
-      const existing = cart.find(i => i.slug === row.product.slug)?.quantity || 0;
-      return row.product.stock != null && existing + row.quantity > row.product.stock;
-    });
-    if (unavailable) {
-      setPurchaseError('No hay suficiente existencia de ' + unavailable[1].product.name + ' para sumarla al carrito. Ajusta las cantidades.');
-      return;
-    }
-    for (const [, row] of selected) {
-      const p = row.product;
-      const existing = cart.find(i => i.slug === p.slug)?.quantity || 0;
-      addToCart({
-        slug: p.slug, sku: p.sku, category: p.category, name: p.name,
-        image: p.image, price: unitPrice(p),
-        freeShipping: p.freeShipping === true,
-        maxStock: p.stock, shippingType: p.shippingType || 'standard'
-      });
-      updateQuantity(p.slug, existing + row.quantity);
-    }
-    openCart();
-    setMessage('Accesorios añadidos al carrito. El precio especial se calcula automáticamente.');
-  }
-  function buyPersonalizedMat() {
-    // The personalized-mat flow has its own backend and Stripe integration.
-    // It cannot be merged with the catalog checkout without server changes.
-    window.location.assign('/crea-tu-mat');
-  }
+  const estimatedTotal = accessorySubtotal + matQuantity * MAT_PRICE;
+  // WhatsApp is a quotation request, never a payment or an order submission.
+  // Keep the 3D presentation quantity separate from the quantities chosen here.
+  const whatsappMessage = [
+    '¡Hola! Quisiera solicitar una cotización para equipar mi estudio con Melocotón Move.',
+    '',
+    '*Mi selección de Crea tu estudio:*',
+    ...summary.filter(([, row]) => row.quantity > 0).map(([, row], index) =>
+      `${index + 1}. ${row.product.name}\nColor: ${colorName(row.color)}\nCantidad: ${row.quantity} pieza(s)\nPrecio de referencia: ${money(unitPrice(row.product))} c/u\nImporte: ${money(unitPrice(row.product) * row.quantity)}`
+    ),
+    ...(matQuantity > 0 ? [
+      `*Tapete personalizado*\nForma: ${matShapes.find(m => m.id === matShape)?.label || matShape}\nColor: ${solidColorNames[matColor] || matColor}\nCantidad: ${matQuantity} pieza(s)\nPrecio de referencia: ${money(MAT_PRICE)} c/u\nImporte: ${money(matQuantity * MAT_PRICE)}`
+    ] : []),
+    '',
+    `*Subtotal estimado de referencia: ${money(estimatedTotal)}*`,
+    'Los precios son de referencia; agradecería confirmar disponibilidad y precios especiales aplicables.',
+    '',
+    '*Preferencias visuales del espacio (no incluidas en el pedido):*',
+    `Piso: ${floorColor} | Paredes: ${wallColor}`,
+    '',
+    '¿Podrían ayudarme a preparar la cotización y darme seguimiento? ¡Gracias!'
+  ].join('\n');
+  const whatsappUrl = `https://wa.me/523310125501?text=${encodeURIComponent(whatsappMessage)}`;
+  const canRequestQuote = accessoryCount > 0 || matQuantity > 0;
   function add(product: Product, color: string) {
     // One color per product model; all three visual copies change together.
     const family = groups.find(g => g.some(p => p.slug === product.slug)) || [product];
@@ -184,7 +169,7 @@ export default function CreaTuEstudio() {
       products={products} groups={groups} items={items} visualItems={visualItems}
       selectedId={selectedId} onSelect={setSelectedId}
       add={add} remove={remove} updateSelected={updateSelected} summary={summary} setOrderQuantity={setOrderQuantity}
-      onBuyAccessories={buyAccessories} onBuyPersonalizedMat={buyPersonalizedMat} accessoryCount={accessoryCount} purchaseError={purchaseError}
+      whatsappUrl={whatsappUrl} canRequestQuote={canRequestQuote} estimatedTotal={estimatedTotal}
       matShape={matShape} matColor={matColor} matEnabled={matEnabled} matQuantity={matQuantity}
       updateMat={updateMat} setMatQuantity={setMobileMatQuantity}
       floorColor={floorColor} setFloorColor={setFloorColor} wallColor={wallColor} setWallColor={setWallColor}
@@ -196,7 +181,7 @@ export default function CreaTuEstudio() {
     <Head><title>Crea tu estudio 3D | Melocotón Move</title><meta name="robots" content="noindex,nofollow" /></Head>
     <div className="bg-[#faf8f5] text-brand-ink pb-24">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-8 py-8 sm:py-12">
-        <div className="flex flex-wrap justify-between items-end gap-4 mb-7"><div><p className="mm-eyebrow">Melocotón Move · Demo interactiva</p><h1 className="mm-heading text-4xl sm:text-5xl mt-3">Tu espacio, a tu manera.</h1><p className="mm-copy mt-3">Elige tus accesorios y tapetes y prueba sus colores en tu estudio.</p></div><a href="/arma-tu-studio" className="mm-text-link">Ir al cotizador</a></div>
+        <div className="flex flex-wrap justify-between items-end gap-4 mb-7"><div><p className="mm-eyebrow">Melocotón Move · Diseño interactivo</p><h1 className="mm-heading text-4xl sm:text-5xl mt-3">Tu espacio, a tu manera.</h1><p className="mm-copy mt-3">Elige tus accesorios y tapetes, prueba sus colores y solicita una cotización por WhatsApp.</p></div></div>
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
           <section aria-label="Diseño de tu estudio" className="lg:sticky lg:top-28 min-w-0">
             <div className="relative"><StudioScene items={visualItems} products={products} mat={matEnabled ? { shape: matShape, color: matColor } : null} selectedId={selectedId} onSelect={setSelectedId} view={view} reset={reset} floorColor={floorColor} wallColor={wallColor} />
@@ -261,7 +246,7 @@ export default function CreaTuEstudio() {
               </div>}
             </div>
 
-            <button type="button" className="mm-button w-full min-h-11" onClick={() => setFinalizing(v => !v)}>{finalizing ? 'Seguir diseñando' : 'Finalizar diseño · Revisar cantidades'}</button>
+            <button type="button" className="mm-button w-full min-h-11" onClick={() => setFinalizing(v => !v)}>{finalizing ? 'Seguir diseñando' : 'Ver cotización · Revisar cantidades'}</button>
             {finalizing && <section className="bg-white border border-brand-line rounded-2xl p-5" aria-label="Tu selección">
               <h2 className="font-display text-2xl">Tu estudio está listo</h2><p className="text-xs text-brand-muted mt-2">Cantidades sugeridas según las tres posiciones del modelo. Editarlas no modifica el diseño.</p>
               {!items.length && !matQuantity && <p className="text-sm text-brand-muted mt-3">Añade tu primera pieza para comenzar.</p>}
@@ -278,12 +263,11 @@ export default function CreaTuEstudio() {
                 </div>
               </div>}
               <ul className="divide-y divide-brand-line mt-2">{summary.map(([key, row]) => <li key={key} className="py-3"><button className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => setSelectedId(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>{row.product.name}</button><p className="text-xs text-brand-muted mt-1">{colorName(row.color)} · {money(unitPrice(row.product))} / pieza</p><div className="flex items-center justify-between mt-2"><div className="flex items-center gap-3"><button className="h-11 w-11 border border-brand-line rounded-full" aria-label={`Quitar una pieza de ${row.product.name}, ${colorName(row.color)}`} onClick={() => setOrderQuantity(key, row.quantity - 1)}>−</button><span>{row.quantity}</span><button className="h-11 w-11 border border-brand-line rounded-full disabled:opacity-30" aria-label={`Añadir una pieza de ${row.product.name}, ${colorName(row.color)}`} disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => setOrderQuantity(key, row.quantity + 1)}>+</button></div><span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span></div></li>)}</ul>
-              <div className="flex justify-between border-t border-brand-line pt-4 mt-3 font-semibold"><span>{accessoryCount > 0 ? "Accesorios antes de precio especial" : "Tapetes estimados por separado"}</span><span>{money(accessoryCount > 0 ? accessorySubtotal : matQuantity * MAT_PRICE)}</span></div>
-              <p className="text-xs leading-5 text-brand-muted mt-2">El carrito calcula el precio especial vigente de los accesorios antes del pago. {matQuantity > 0 ? `Los ${matQuantity} tapetes personalizados (${money(matQuantity * MAT_PRICE)} de referencia) se configuran y pagan por separado en Crea tu Mat.` : ""}</p>
-              {purchaseError && <p role="alert" className="mt-3 text-sm text-red-700">{purchaseError}</p>}
-              {accessoryCount > 0 && <button type="button" className="mm-button mt-4 w-full min-h-12" onClick={buyAccessories}>Comprar accesorios · Ver carrito</button>}
-              {matQuantity > 0 && <button type="button" className="mm-button-outline mt-3 w-full min-h-12" onClick={buyPersonalizedMat}>Configurar y comprar tapetes por separado</button>}
-              {!accessoryCount && !matQuantity && <p className="mt-3 text-xs text-brand-muted">Selecciona un producto para continuar a la compra.</p>}
+              <div className="flex justify-between border-t border-brand-line pt-4 mt-3 font-semibold"><span>Subtotal estimado</span><span>{money(estimatedTotal)}</span></div>
+              <p className="text-xs leading-5 text-brand-muted mt-2">Cotización orientativa, sujeta a confirmación de disponibilidad y precios especiales. Los colores del piso y paredes son únicamente una referencia visual.</p>
+              {canRequestQuote ? <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="mm-button mt-4 flex min-h-12 w-full items-center justify-center text-center">
+                Solicitar cotización por WhatsApp
+              </a> : <p className="mt-3 text-xs text-brand-muted">Selecciona al menos un producto para solicitar tu cotización.</p>}
             </section>}
           </aside>
         </div>
