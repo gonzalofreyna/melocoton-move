@@ -96,7 +96,10 @@ function variantFamily(product: Product, zone: DisplayZone) {
   if (zone === 'block') return /marmol|marble/i.test(`${product.slug} ${product.name}`) ? 'block-marble' : 'block-solid';
   return product.name.trim().toLowerCase().replace(/\s+/g, ' ');
 }
-export function buildVisualItems(items: StudioItem[], products: Product[], selectedId?: string | null): VisualItem[] {
+export type PreviewMode = 'uniform' | 'multi';
+export function buildVisualItems(
+  items: StudioItem[], products: Product[], selectedId?: string | null, mode: PreviewMode = 'uniform'
+): VisualItem[] {
   const catalog = new Map(products.map(p => [p.slug, p]));
   const zones = new Map<DisplayZone, Map<string, Map<string, StudioItem>>>();
   for (const item of items) {
@@ -107,24 +110,25 @@ export function buildVisualItems(items: StudioItem[], products: Product[], selec
     const family = variantFamily(product, zone);
     const variants = families.get(family) || new Map<string, StudioItem>();
     const key = `${item.slug}|${item.color}`;
-    if (!variants.has(key) || item.id === selectedId) variants.set(key, item);
+    // Reinsert so the last added color is considered the currently showcased one,
+    // even when the same color was already in the order.
+    variants.delete(key);
+    variants.set(key, item);
     families.set(family, variants);
     zones.set(zone, families);
   }
   const result: VisualItem[] = [];
   for (const [zone, families] of zones) {
-    // Allocate the same six physical slots across distinct groups. Round robin
-    // guarantees the solid and marbled blocks can both be seen without overlap.
-    const groups = [...families.values()].map(group => [...group.values()]);
-    const chosen: StudioItem[] = [];
-    for (let i = 0; i < STATION_COUNT; i++) {
-      const group = groups[i % groups.length];
-      chosen.push(group[Math.floor(i / groups.length) % group.length]);
-    }
-    const selected = groups.flat().find(i => i.id === selectedId);
-    if (selected && !chosen.includes(selected)) chosen[STATION_COUNT - 1] = selected;
+    const groups = [...families.values()].map(variants => {
+      const unique = [...variants.values()];
+      // The order retains all selected colors. Only the preview is limited.
+      return mode === 'multi' ? unique.slice(-STATION_COUNT) : unique.slice(-1);
+    });
+    // Share the six fixed positions across families to prevent two types of
+    // blocks or other accessories from rendering in the same physical spot.
     for (let index = 0; index < STATION_COUNT; index++) {
-      const item = chosen[index];
+      const group = groups[index % groups.length];
+      const item = group[Math.floor(index / groups.length) % group.length];
       result.push({ ...item, id: `${zone}-station-${index}`, sourceId: item.id,
         ...displayPlacement(zone, index), rotation: 0 });
     }
