@@ -150,6 +150,23 @@ export function displayPlacement(zone: DisplayZone, index: number) {
     case 'bar-alt': return { ...defaults, x: -3.01, y: .65, z: .4 + index * .23, tiltZ: Math.PI / 2 };
   }
 }
+// Additional galleries expand to the right of the original six-mat room.
+// A gallery holds six display models in two rows of three, with full clearance
+// for long bars. They are visual stations, not order quantities.
+export const OVERFLOW_GALLERY_START_X = 4.35;
+export const OVERFLOW_GALLERY_WIDTH = 5.1;
+export function overflowPlacement(gallery: number, index: number) {
+  const col = index % 3;
+  const row = Math.floor(index / 3);
+  return {
+    x: OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + col * 1.45,
+    y: .48,
+    z: row === 0 ? -1.1 : 1.1,
+    tiltX: 0,
+    tiltZ: 0,
+  };
+}
+
 export type PreviewMode = 'uniform' | 'multi';
 export function buildVisualItems(
   items: StudioItem[], products: Product[], selectedId?: string | null, mode: PreviewMode = 'uniform'
@@ -169,6 +186,7 @@ export function buildVisualItems(
   }
   const result: VisualItem[] = [];
   const occupiedLanes = new Set<DisplayZone>();
+  let overflowFamilies = 0;
   // Display six copies for EACH model, not six shared by an entire category.
   const ranked = [...families].sort(([keyA, a], [keyB, b]) =>
     LANE_ORDER.indexOf(a.zone) - LANE_ORDER.indexOf(b.zone) || keyA.localeCompare(keyB));
@@ -180,16 +198,17 @@ export function buildVisualItems(
       LANE_ORDER.filter(candidate => candidate !== 'ball' && candidate !== 'ring' &&
         candidate !== 'bar' && candidate !== 'ring-alt' && candidate !== 'ring-high' && candidate !== 'ring-side' && candidate !== 'bar-alt');
     const lane = [...preference, ...fallback].find(candidate => candidate !== 'mat' && !occupiedLanes.has(candidate));
-    // Capacity is finite: never render one family on top of another.
-    if (!lane) continue;
-    occupiedLanes.add(lane);
+    // Once the original studio fills up, allocate a complete new six-piece
+    // gallery module. Never silently discard a selected model.
+    const overflowIndex = lane ? -1 : overflowFamilies++;
+    if (lane) occupiedLanes.add(lane);
     const values = [...family.variants.values()];
     const shown = mode === 'multi' ? values.slice(-STATION_COUNT) : values.slice(-1);
     for (let index = 0; index < STATION_COUNT; index++) {
       const item = shown[index % shown.length];
       result.push({
         ...item, id: encodeURIComponent(familyKey) + '-station-' + index, sourceId: item.id,
-        ...displayPlacement(lane, index), rotation: 0
+        ...(lane ? displayPlacement(lane, index) : overflowPlacement(overflowIndex, index)), rotation: 0
       });
     }
   }
