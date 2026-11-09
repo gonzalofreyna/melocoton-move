@@ -168,9 +168,8 @@ export function overflowPlacement(gallery: number, index: number) {
   };
 }
 
-export type PreviewMode = 'uniform' | 'multi';
 export function buildVisualItems(
-  items: StudioItem[], products: Product[], selectedId?: string | null, mode: PreviewMode = 'uniform'
+  items: StudioItem[], products: Product[], selectedId?: string | null
 ): VisualItem[] {
   const catalog = new Map(products.map(p => [p.slug, p]));
   const families = new Map<string, { zone: DisplayZone; variants: Map<string, StudioItem> }>();
@@ -204,9 +203,8 @@ export function buildVisualItems(
     const overflowIndex = lane ? -1 : overflowFamilies++;
     if (lane) occupiedLanes.add(lane);
     const values = [...family.variants.values()];
-    const shown = mode === 'multi' ? values.slice(-STATION_COUNT) : values.slice(-1);
+    const item = values[values.length - 1];
     for (let index = 0; index < STATION_COUNT; index++) {
-      const item = shown[index % shown.length];
       result.push({
         ...item, id: encodeURIComponent(familyKey) + '-station-' + index, sourceId: item.id,
         ...(lane ? displayPlacement(lane, index) : overflowPlacement(overflowIndex, index)), rotation: 0
