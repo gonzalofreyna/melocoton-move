@@ -7,7 +7,7 @@ import type { Product } from '../../lib/fetchProducts';
 import { MAT_DIMENSIONS, type MatShape } from '../../lib/mat-config';
 import { accessoryKind, displaySize, colorName, unitPrice, type VisualItem } from '../../lib/studio/catalog';
 
-type Props = { items: VisualItem[]; products: Product[]; mat: { shape: MatShape; color: string } | null; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number; floorColor: string; wallColor: string };
+type Props = { fill?: boolean; items: VisualItem[]; products: Product[]; mat: { shape: MatShape; color: string } | null; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number; floorColor: string; wallColor: string };
 function dispose(root: THREE.Object3D) {
   root.traverse(obj => {
     const mesh = obj as THREE.Mesh;
@@ -214,7 +214,7 @@ export default function StudioScene(props: Props) {
   const matDetail = detail?.sourceId === 'studio-mat' && props.mat;
   const detailItem = detail && props.items.find(i => i.sourceId === detail.sourceId);
   const detailProduct = detailItem && props.products.find(p => p.slug === detailItem.slug);
-  return <div className="relative h-[360px] sm:h-[520px] lg:h-[600px] overflow-hidden rounded-2xl" style={{ touchAction: 'none' }}>
+  return <div className={props.fill ? "absolute inset-0 overflow-hidden" : "relative h-[360px] sm:h-[520px] lg:h-[600px] overflow-hidden rounded-2xl"} style={{ touchAction: 'none' }}>
     <div ref={host} className="h-full w-full" />
     {detail && detailItem && detailProduct && <div role="group" aria-label="Detalle del producto" className={`absolute z-10 w-[230px] rounded-xl border border-brand-line bg-white/95 p-3 shadow-lg ${detail.pinned ? '' : 'pointer-events-none'}`} style={{ left: detail.x, top: detail.y, touchAction: 'auto' }}>
       <div className="flex gap-2"><img src={detailProduct.image} alt="" className="h-12 w-12 rounded-lg object-contain" /><h3 className="text-xs font-semibold leading-4 flex-1">{detailProduct.name}</h3>{detail.pinned && <button aria-label="Cerrar ficha" className="h-8 w-8 shrink-0" onClick={() => { pinned.current = false; setDetail(null); }}>×</button>}</div>
