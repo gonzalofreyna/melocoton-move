@@ -1,5 +1,5 @@
 export type MatShape = "capsula" | "clasico" | "bala";
-type MatFinish =
+export type MatFinish =
   | { type: "solid"; value: string; label: string }
   | { type: "texture"; value: string; label: string };
 export const MAT_DIMENSIONS: Record<MatShape, { height: number; width: number }> = {
