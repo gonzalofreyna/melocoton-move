@@ -1,10 +1,11 @@
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useProducts } from '../context/ProductsContext';
 import type { Product } from '../lib/fetchProducts';
 import { MAT_DIMENSIONS, MAT_PRICE, matShapes, solidColors, solidColorNames, type MatShape } from '../lib/mat-config';
 import { buildVisualItems, canAdd, colorName, groupAccessories, unitPrice, type StudioItem, type PreviewMode } from '../lib/studio/catalog';
+const MobileStudio = dynamic(() => import('../components/studio/MobileStudio'), { ssr: false });
 const StudioScene = dynamic(() => import('../components/studio/StudioScene'), { ssr: false, loading: () => <div className="h-[360px] sm:h-[520px] lg:h-[600px] rounded-2xl bg-brand-sand grid place-items-center">Preparando tu espacio…</div> });
 const money = (value: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
 
@@ -31,6 +32,15 @@ function ProductPicker({ variants, items, onAdd }: { variants: Product[]; items:
 }
 export default function CreaTuEstudio() {
   const { products, loading, error, refresh } = useProducts();
+  // Match media after hydration so just one WebGL scene is mounted at a time.
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1023px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   const groups = useMemo(() => groupAccessories(products.filter(p => p.category.trim().toLowerCase() !== 'mat')), [products]);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -77,6 +87,30 @@ export default function CreaTuEstudio() {
   }
   function updateSelected(change: Partial<StudioItem>) { setItems(current => current.map(i => i.id === selectedId ? { ...i, ...change } : i)); }
   function remove(id: string) { setItems(current => current.filter(i => i.id !== id)); if (id === selectedId) setSelectedId(null); }
+  const setMobileMatQuantity = (quantity: number) => {
+    const next = Math.max(0, Math.floor(quantity));
+    setMatQuantity(next);
+    setMatEnabled(next > 0);
+    if (!next && selectedId === 'studio-mat') setSelectedId(null);
+  };
+  if (isMobile === null) return <>
+    <Head><title>Crea tu estudio 3D | Melocotón Move</title><meta name="robots" content="noindex,nofollow" /></Head>
+    <div role="status" className="grid min-h-[50vh] place-items-center text-sm text-brand-muted">Preparando tu estudio…</div>
+  </>;
+  if (isMobile) return <>
+    <Head><title>Crea tu estudio 3D | Melocotón Move</title><meta name="robots" content="noindex,nofollow" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" /></Head>
+    <MobileStudio
+      products={products} groups={groups} items={items} visualItems={visualItems}
+      selectedId={selectedId} onSelect={setSelectedId}
+      add={add} remove={remove} updateSelected={updateSelected}
+      previewMode={previewMode} setPreviewMode={setPreviewMode}
+      matShape={matShape} matColor={matColor} matEnabled={matEnabled} matQuantity={matQuantity}
+      updateMat={updateMat} setMatQuantity={setMobileMatQuantity}
+      floorColor={floorColor} setFloorColor={setFloorColor} wallColor={wallColor} setWallColor={setWallColor}
+      view={view} setView={setView} reset={reset} onReset={() => setReset(n => n + 1)}
+      loading={loading} error={error} refresh={() => void refresh()}
+    />
+  </>;
   return <>
     <Head><title>Crea tu estudio 3D | Melocotón Move</title><meta name="robots" content="noindex,nofollow" /></Head>
     <div className="bg-[#faf8f5] text-brand-ink pb-24">
