@@ -196,7 +196,7 @@ export default function MobileStudio(props: Props) {
         </button>)}
       </nav>}
       <div ref={scrollArea} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-3"
-        style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(144px + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: '144px' }}>
+        style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 0px))', scrollPaddingBottom: '32px' }}>
         {!finalizing && tab === 'accessories' && <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Accesorios</h2>
