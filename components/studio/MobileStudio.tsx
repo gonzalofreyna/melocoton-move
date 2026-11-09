@@ -149,7 +149,7 @@ export default function MobileStudio(props: Props) {
         mat={props.matEnabled ? { shape: props.matShape, color: props.matColor } : null}
         selectedId={props.selectedId} onSelect={handleSceneSelect}
         view={props.view} reset={props.reset} floorColor={props.floorColor} wallColor={props.wallColor} />
-      <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px]">6 lugares de muestra</div>
+      <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px]">6 representaciones por modelo</div>
       <div className="absolute right-3 top-3 flex gap-1 rounded-xl bg-white/90 p-1 shadow-sm">
         <button type="button" className="min-h-9 rounded-lg px-2 text-xs" aria-pressed={props.view === 'perspective'}
           onClick={() => props.setView('perspective')}>3D</button>
