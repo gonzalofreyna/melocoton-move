@@ -13,6 +13,9 @@ import { motion } from "framer-motion";
 export default function MobileNavbar() {
   const router = useRouter();
   const { cartCount, toggleCart } = useCart();
+  // Crea tu estudio has its own full-screen mobile navigation and scrollable
+  // product sheet. Never overlay the site's bottom navbar on that route.
+  const hideForStudio = router.pathname === "/crea-tu-estudio";
 
   const isActive = (path: string) => router.pathname === path;
 
@@ -26,6 +29,8 @@ export default function MobileNavbar() {
     scale: 0.9,
     transition: { duration: 0.15, ease: "easeOut" as const },
   };
+
+  if (hideForStudio) return null;
 
   return (
     <motion.nav

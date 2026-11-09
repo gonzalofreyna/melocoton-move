@@ -1,10 +1,11 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useScrollVisibility } from "../hooks/useScrollVisibility";
 import { useAppConfig } from "../context/ConfigContext";
 
 export default function TopBanner() {
   const visible = useScrollVisibility();
+  const reducedMotion = useReducedMotion();
   const { config, loading } = useAppConfig();
   const messages = config?.topBanner?.messages ?? [];
   const enabled =
@@ -20,14 +21,15 @@ export default function TopBanner() {
     return () => clearInterval(interval);
   }, [messages, enabled]);
 
-  if (loading || !visible || !enabled || messages.length === 0) return null;
+  if (loading || !enabled || messages.length === 0) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4 }}
+      initial={false}
+      animate={{ opacity: visible ? 1 : 0, y: visible ? "0%" : "-110%" }}
+      transition={reducedMotion ? { duration: 0 } : { duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      style={{ pointerEvents: visible ? "auto" : "none" }}
+      aria-hidden={!visible}
       className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-brand-wine text-white"
     >
       <div className="relative flex h-[36px] items-center justify-center overflow-hidden px-3 text-center text-[11px] font-medium tracking-[0.045em] sm:text-xs">
