@@ -55,17 +55,11 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
       onHeightChange?.(Math.ceil(header.offsetTop + header.offsetHeight));
     };
 
+    // Keep the content offset stable while scrolling: changes to search
+    // visibility or header animation must never resize the entire page.
     updateOffset();
-    const observer = typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(updateOffset)
-      : null;
-    observer?.observe(header);
     window.addEventListener("resize", updateOffset);
-
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", updateOffset);
-    };
+    return () => window.removeEventListener("resize", updateOffset);
   }, [onHeightChange]);
 
   // 🔄 Cargar productos para sugerencias (desktop)
