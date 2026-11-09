@@ -96,10 +96,12 @@ export default function CreaTuEstudio() {
     return [...unique.entries()];
   }, [items, products, visualItems, orderQuantities]);
   const accessoryCount = summary.reduce((sum, [, row]) => sum + row.quantity, 0);
-  const subtotalBeforeDiscount = summary.reduce((sum, [, row]) => sum + studioQuotePrice(unitPrice(row.product), row.quantity).subtotal, 0)
-    + studioQuotePrice(MAT_PRICE, matQuantity).subtotal;
-  const estimatedTotal = summary.reduce((sum, [, row]) => sum + studioQuotePrice(unitPrice(row.product), row.quantity).total, 0)
-    + studioQuotePrice(MAT_PRICE, matQuantity).total;
+  const totalPieces = accessoryCount + matQuantity;
+  const discountLabel = totalPieces > 30 ? '20% por más de 30 piezas' : '15% por producto desde 5 piezas';
+  const subtotalBeforeDiscount = summary.reduce((sum, [, row]) => sum + studioQuotePrice(unitPrice(row.product), row.quantity, totalPieces).subtotal, 0)
+    + studioQuotePrice(MAT_PRICE, matQuantity, totalPieces).subtotal;
+  const estimatedTotal = summary.reduce((sum, [, row]) => sum + studioQuotePrice(unitPrice(row.product), row.quantity, totalPieces).total, 0)
+    + studioQuotePrice(MAT_PRICE, matQuantity, totalPieces).total;
   const specialDiscount = Math.round((subtotalBeforeDiscount - estimatedTotal) * 100) / 100;
   // WhatsApp is a quotation request, never a payment or an order submission.
   // Keep the 3D presentation quantity separate from the quantities chosen here.
@@ -108,16 +110,16 @@ export default function CreaTuEstudio() {
     '',
     '*Mi selección de Crea tu estudio:*',
     ...summary.filter(([, row]) => row.quantity > 0).map(([, row], index) => {
-      const price = studioQuotePrice(unitPrice(row.product), row.quantity);
-      return `${index + 1}. ${row.product.name}\nColor: ${colorName(row.color)}\nCantidad: ${row.quantity} pieza(s)\nPrecio regular: ${money(price.regularUnit)} c/u${price.discounted ? `\n*Precio especial (15%): ${money(price.finalUnit)} c/u*\nDescuento: -${money(price.savings)}` : ''}\nImporte: ${money(price.total)}`;
+      const price = studioQuotePrice(unitPrice(row.product), row.quantity, totalPieces);
+      return `${index + 1}. ${row.product.name}\nColor: ${colorName(row.color)}\nCantidad: ${row.quantity} pieza(s)\nPrecio regular: ${money(price.regularUnit)} c/u${price.discounted ? `\n*Precio especial (${Math.round(price.rate * 100)}%): ${money(price.finalUnit)} c/u*\nDescuento: -${money(price.savings)}` : ''}\nImporte: ${money(price.total)}`;
     }),
     ...(matQuantity > 0 ? (() => {
-      const price = studioQuotePrice(MAT_PRICE, matQuantity);
-      return [`*Tapete personalizado*\nForma: ${matShapes.find(m => m.id === matShape)?.label || matShape}\nColor: ${solidColorNames[matColor] || matColor}\nCantidad: ${matQuantity} pieza(s)\nPrecio regular: ${money(price.regularUnit)} c/u${price.discounted ? `\n*Precio especial (15%): ${money(price.finalUnit)} c/u*\nDescuento: -${money(price.savings)}` : ''}\nImporte: ${money(price.total)}`];
+      const price = studioQuotePrice(MAT_PRICE, matQuantity, totalPieces);
+      return [`*Tapete personalizado*\nForma: ${matShapes.find(m => m.id === matShape)?.label || matShape}\nColor: ${solidColorNames[matColor] || matColor}\nCantidad: ${matQuantity} pieza(s)\nPrecio regular: ${money(price.regularUnit)} c/u${price.discounted ? `\n*Precio especial (${Math.round(price.rate * 100)}%): ${money(price.finalUnit)} c/u*\nDescuento: -${money(price.savings)}` : ''}\nImporte: ${money(price.total)}`];
     })() : []),
     '',
     `Subtotal antes de descuentos: ${money(subtotalBeforeDiscount)}`,
-    `Descuento especial (15% por producto desde 5 piezas): -${money(specialDiscount)}`,
+    `Descuento especial (${discountLabel}): -${money(specialDiscount)}`,
     `*Total estimado: ${money(estimatedTotal)}*`,
     'Precios sujetos a confirmación de disponibilidad y condiciones comerciales.',
     '',
@@ -177,7 +179,7 @@ export default function CreaTuEstudio() {
       selectedId={selectedId} onSelect={setSelectedId}
       add={add} remove={remove} updateSelected={updateSelected} summary={summary} setOrderQuantity={setOrderQuantity}
       whatsappUrl={whatsappUrl} canRequestQuote={canRequestQuote} estimatedTotal={estimatedTotal}
-      subtotalBeforeDiscount={subtotalBeforeDiscount} specialDiscount={specialDiscount}
+      subtotalBeforeDiscount={subtotalBeforeDiscount} specialDiscount={specialDiscount} totalPieces={totalPieces}
       matShape={matShape} matColor={matColor} matEnabled={matEnabled} matQuantity={matQuantity}
       updateMat={updateMat} setMatQuantity={setMobileMatQuantity}
       floorColor={floorColor} setFloorColor={setFloorColor} wallColor={wallColor} setWallColor={setWallColor}
@@ -260,19 +262,19 @@ export default function CreaTuEstudio() {
               {!items.length && !matQuantity && <p className="text-sm text-brand-muted mt-3">Añade tu primera pieza para comenzar.</p>}
               {matQuantity > 0 && <div className="border-b border-brand-line py-3">
                 <button type="button" className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => { setFilter('mat'); setSelectedId('studio-mat'); }}>Tapete personalizado · {matShapes.find(s => s.id === matShape)?.label}</button>
-                <p className="text-xs text-brand-muted mt-1">{solidColorNames[matColor]} · {matQuantity >= 5 ? <><span className="line-through">{money(MAT_PRICE)}</span> <strong>{money(studioQuotePrice(MAT_PRICE, matQuantity).finalUnit)} / pieza · Precio especial 15%</strong></> : `${money(MAT_PRICE)} / pieza`}</p>
+                <p className="text-xs text-brand-muted mt-1">{solidColorNames[matColor]} · {(totalPieces > 30 || matQuantity >= 5) ? <><span className="line-through">{money(MAT_PRICE)}</span> <strong>{money(studioQuotePrice(MAT_PRICE, matQuantity, totalPieces).finalUnit)} / pieza · Precio especial {totalPieces > 30 ? '20%' : '15%'}</strong></> : `${money(MAT_PRICE)} / pieza`}</p>
                 <div className="flex justify-between items-center mt-2">
                   <div className="flex items-center gap-3">
                     <button type="button" className="h-11 w-11 border border-brand-line rounded-full" aria-label="Quitar un tapete" onClick={() => { setMatQuantity(q => Math.max(0, q - 1)); if (matQuantity <= 1) setMatEnabled(false); }}>−</button>
                     <span>{matQuantity}</span>
                     <button type="button" className="h-11 w-11 border border-brand-line rounded-full" aria-label="Añadir un tapete" onClick={() => setMatQuantity(q => q + 1)}>+</button>
                   </div>
-                  <span className="text-sm">{money(studioQuotePrice(MAT_PRICE, matQuantity).total)}</span>
+                  <span className="text-sm">{money(studioQuotePrice(MAT_PRICE, matQuantity, totalPieces).total)}</span>
                 </div>
               </div>}
-              <ul className="divide-y divide-brand-line mt-2">{summary.map(([key, row]) => <li key={key} className="py-3"><button className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => setSelectedId(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>{row.product.name}</button><p className="text-xs text-brand-muted mt-1">{colorName(row.color)} · {row.quantity >= 5 ? <><span className="line-through">{money(unitPrice(row.product))}</span> <strong>{money(studioQuotePrice(unitPrice(row.product), row.quantity).finalUnit)} / pieza · Precio especial 15%</strong></> : `${money(unitPrice(row.product))} / pieza`}</p><div className="flex items-center justify-between mt-2"><div className="flex items-center gap-3"><button className="h-11 w-11 border border-brand-line rounded-full" aria-label={`Quitar una pieza de ${row.product.name}, ${colorName(row.color)}`} onClick={() => setOrderQuantity(key, row.quantity - 1)}>−</button><span>{row.quantity}</span><button className="h-11 w-11 border border-brand-line rounded-full disabled:opacity-30" aria-label={`Añadir una pieza de ${row.product.name}, ${colorName(row.color)}`} disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => setOrderQuantity(key, row.quantity + 1)}>+</button></div><span className="text-sm">{money(studioQuotePrice(unitPrice(row.product), row.quantity).total)}</span></div></li>)}</ul>
-              <div className="border-t border-brand-line pt-4 mt-3 space-y-1 text-sm"><div className="flex justify-between"><span>Subtotal</span><span>{money(subtotalBeforeDiscount)}</span></div>{specialDiscount > 0 && <div className="flex justify-between text-green-700"><span>Descuento especial 15%</span><span>−{money(specialDiscount)}</span></div>}<div className="flex justify-between font-semibold text-base"><span>Total estimado</span><span>{money(estimatedTotal)}</span></div></div>
-              <p className="text-xs leading-5 text-brand-muted mt-2">Precio especial del 15% para cada producto con 5 o más piezas del mismo modelo. No se suman productos diferentes. Cotización sujeta a confirmación; piso y paredes son únicamente una referencia visual.</p>
+              <ul className="divide-y divide-brand-line mt-2">{summary.map(([key, row]) => <li key={key} className="py-3"><button className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => setSelectedId(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>{row.product.name}</button><p className="text-xs text-brand-muted mt-1">{colorName(row.color)} · {(totalPieces > 30 || row.quantity >= 5) ? <><span className="line-through">{money(unitPrice(row.product))}</span> <strong>{money(studioQuotePrice(unitPrice(row.product), row.quantity, totalPieces).finalUnit)} / pieza · Precio especial {totalPieces > 30 ? '20%' : '15%'}</strong></> : `${money(unitPrice(row.product))} / pieza`}</p><div className="flex items-center justify-between mt-2"><div className="flex items-center gap-3"><button className="h-11 w-11 border border-brand-line rounded-full" aria-label={`Quitar una pieza de ${row.product.name}, ${colorName(row.color)}`} onClick={() => setOrderQuantity(key, row.quantity - 1)}>−</button><span>{row.quantity}</span><button className="h-11 w-11 border border-brand-line rounded-full disabled:opacity-30" aria-label={`Añadir una pieza de ${row.product.name}, ${colorName(row.color)}`} disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => setOrderQuantity(key, row.quantity + 1)}>+</button></div><span className="text-sm">{money(studioQuotePrice(unitPrice(row.product), row.quantity, totalPieces).total)}</span></div></li>)}</ul>
+              <div className="border-t border-brand-line pt-4 mt-3 space-y-1 text-sm"><div className="flex justify-between"><span>Subtotal</span><span>{money(subtotalBeforeDiscount)}</span></div>{specialDiscount > 0 && <div className="flex justify-between text-green-700"><span>Descuento especial {totalPieces > 30 ? '20%' : '15%'}</span><span>−{money(specialDiscount)}</span></div>}<div className="flex justify-between font-semibold text-base"><span>Total estimado</span><span>{money(estimatedTotal)}</span></div></div>
+              <p className="text-xs leading-5 text-brand-muted mt-2">Al superar 30 piezas en total (incluidos tapetes), se aplica 20% a toda la selección en lugar del 15%. Con 30 o menos, 15% por cada producto con 5 o más piezas. Cotización sujeta a confirmación; piso y paredes son referencias visuales.</p>
               {canRequestQuote ? <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="mm-button mt-4 flex min-h-12 w-full items-center justify-center text-center">
                 Solicitar cotización por WhatsApp
               </a> : <p className="mt-3 text-xs text-brand-muted">Selecciona al menos un producto para solicitar tu cotización.</p>}
