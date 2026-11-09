@@ -58,6 +58,25 @@ const selectedVisual = buildVisualItems(variants, manyColors, variants[7].id);
 assert.equal(selectedVisual.length, 6);
 assert.ok(selectedVisual.some(i => i.sourceId === variants[7].id));
 assert.ok(selectedVisual.every(i => variants.some(v => v.id === i.sourceId && v.color === i.color)));
+// Uniform mode showcases the most recently added color while keeping every
+// order line. Multicolor mode distributes variants without creating new slots.
+const uniformPreview = buildVisualItems(variants, manyColors, variants[0].id);
+assert.equal(uniformPreview.length, 6);
+assert.ok(uniformPreview.every(i => i.slug === manyColors[7].slug));
+const multiPreview = buildVisualItems(variants, manyColors, null, 'multi');
+assert.equal(multiPreview.length, 6);
+assert.equal(new Set(multiPreview.map(i => i.slug)).size, 6);
+assert.ok(multiPreview.every(i => manyColors.slice(2).some(p => p.slug === i.slug)));
+assert.equal(new Set(multiPreview.map(i => `${i.x}:${i.y}:${i.z}`)).size, 6);
+const multiBlocks = buildVisualItems([...makeItems({ ...block, stock: 100 }, 1), ...makeItems({ ...block, name: 'Bloque marmoleado', slug: 'bloque-yoga-marmoleado', stock: 100 }, 1)],
+  [{ ...block, stock: 100 }, { ...block, name: 'Bloque marmoleado', slug: 'bloque-yoga-marmoleado', stock: 100 }], null, 'multi');
+assert.equal(new Set(multiBlocks.map(i => `${i.x}:${i.y}:${i.z}`)).size, 6);
+const duplicateColor = [...variants, { ...variants[1], id: 'latest-same-color' }];
+const lastRepeated = buildVisualItems(duplicateColor, manyColors, null, 'uniform');
+assert.ok(lastRepeated.every(i => i.color === variants[1].color));
+assert.equal(duplicateColor.length, 9);
+console.log('Preview modes: latest color replacement, six multicolor variants and unchanged order passed.');
+
 console.log('Six-station preview: fixed layout, unlimited visual-independent quantities, mixed types and colors passed.');
 
 for (let i = 0; i < 6; i++) {
