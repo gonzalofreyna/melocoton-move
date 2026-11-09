@@ -19,15 +19,22 @@ function ColorOptions({ products, value, items, excludingId, onChange }: { produ
     }))}
   </div>;
 }
-function ProductPicker({ variants, items, onAdd }: { variants: Product[]; items: StudioItem[]; onAdd: (p: Product, color: string) => void }) {
-  const [choice, setChoice] = useState<{ slug: string; color: string } | null>(null);
-  const product = variants.find(p => p.slug === choice?.slug) || variants.find(p => canAdd(p, items)) || variants[0];
-  const color = choice?.slug === product.slug && product.colors.includes(choice.color) ? choice.color : product.colors[0] || '';
-  const available = canAdd(product, items);
+function ProductPicker({ variants, items, onAdd, mode }: { variants: Product[]; items: StudioItem[]; onAdd: (p: Product, color: string) => void; mode: PreviewMode }) {
+  const selected = items.filter(i => variants.some(v => v.slug === i.slug));
+  const product = variants.find(v => v.slug === selected[selected.length - 1]?.slug) || variants[0];
   return <article className="p-3 bg-white rounded-b-xl">
     <div className="flex gap-4"><img src={product.image} alt={product.name} className="h-20 w-20 rounded-xl object-contain bg-[#faf8f5]" /><div className="flex-1"><h3 className="text-sm font-semibold leading-5">{product.name}</h3><p className="mt-2 text-sm">{money(unitPrice(product))} <span className="text-brand-muted">/ pieza</span></p></div></div>
-    <div className="mt-3"><ColorOptions products={variants} items={items} value={`${product.slug}|${color}`} onChange={(p, c) => setChoice({ slug: p.slug, color: c })} /><p className="text-xs text-brand-muted mt-1">{colorName(color)}</p></div>
-    <button type="button" disabled={!available} onClick={() => onAdd(product, color)} className="mm-button w-full mt-3 disabled:opacity-40">{available ? 'Añadir al estudio' : 'Sin existencia disponible'}</button>
+    <p className="mt-3 text-xs text-brand-muted">Toca un color para verlo inmediatamente en el modelo.</p>
+    <div className="mt-2 flex flex-wrap gap-1">
+      {variants.flatMap(p => (p.colors.length ? p.colors : ['']).map(color => {
+        const active = selected.some(i => i.slug === p.slug && i.color === color);
+        return <button key={p.slug + '|' + color} type="button" title={colorName(color)} aria-label={colorName(color)} aria-pressed={active}
+          onClick={() => onAdd(p, color)} className={'grid h-11 w-11 place-items-center rounded-full border-2 ' + (active ? 'border-brand-wine' : 'border-transparent')}>
+          <span className="h-7 w-7 rounded-full border border-black/15" style={{ backgroundColor: /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#c5b6a6' }} />
+        </button>;
+      }))}
+    </div>
+    <p className="mt-2 text-xs text-brand-muted">{mode === 'uniform' ? 'Un color a la vez.' : 'Toca varios colores para combinarlos.'} Las cantidades se deciden al finalizar.</p>
   </article>;
 }
 export default function CreaTuEstudio() {
@@ -46,6 +53,7 @@ export default function CreaTuEstudio() {
   const [search, setSearch] = useState('');
   const [openProduct, setOpenProduct] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('uniform');
+  const [finalizing, setFinalizing] = useState(false);
   const visibleGroups = groups.filter(g => (filter === 'all' || g[0].category === filter) && g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
   // Design selections are never order quantities: one entry per color only.
   const [items, setItems] = useState<StudioItem[]>([]);
@@ -83,7 +91,7 @@ export default function CreaTuEstudio() {
       if (!product) continue;
       const key = item.slug + '|' + item.color;
       const quantity = orderQuantities[key] ?? counts.get(key) ?? 0;
-      if (quantity > 0) unique.set(key, { product, color: item.color, quantity });
+      unique.set(key, { product, color: item.color, quantity });
     }
     return [...unique.entries()];
   }, [items, products, visualItems, orderQuantities]);
@@ -183,7 +191,7 @@ export default function CreaTuEstudio() {
             <p className="text-xs text-brand-muted leading-5 mt-4">Representaciones simplificadas y medidas de referencia; los tapetes con medidas de empaque se muestran a 67.3 × 181.3 cm. Los pares se añaden como una unidad de venta con dos piezas. Los estampados, marmoleados y acabados muestran el color base registrado; el acabado real se ve en la foto del producto. La vista muestra 6 tapetes de la forma y color elegidos. Las zonas de accesorios tienen hasta seis posiciones sin superposiciones: en modo uniforme muestran el último color añadido por grupo y en multicolor distribuyen las variantes. Las cantidades del pedido no cambian al alternar vistas; las mancuernas y polainas de 1 kg se muestran sobre los tapetes. Las cantidades reales se muestran en el resumen. No se guarda tu diseño al salir.</p>
           </section>
           <aside className="space-y-4">
-            <div className="flex justify-between items-center"><h2 className="font-display text-2xl">Accesorios y tapetes</h2><span className="text-xs text-brand-muted">Personaliza tu estudio</span></div>
+            <div className="flex justify-between items-center"><h2 className="font-display text-2xl">Accesorios y tapetes</h2><span className="text-xs text-brand-muted">Paso 1 · Diseña</span></div>
             <label className="block text-sm">Buscar producto<input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Tapete, polainas, mancuernas…" className="mm-field w-full mt-2" /></label>
             <div className="flex flex-wrap gap-2" aria-label="Filtrar catálogo">{[['all', 'Todos'], ['accesorios', 'Accesorios'], ['mat', 'Tapetes']].map(([value, label]) => <button key={value} onClick={() => setFilter(value)} aria-pressed={filter === value} className={filter === value ? 'mm-button !px-4' : 'mm-button-outline !px-4'}>{label}</button>)}</div>
             {(filter === 'all' || filter === 'mat') && (!search.trim() || 'tapetes crea tu mat personalizados'.includes(search.toLowerCase().trim())) && <section className="rounded-2xl border border-brand-line p-4 bg-white" aria-label="Configurar tapetes">
@@ -210,12 +218,12 @@ export default function CreaTuEstudio() {
                 <button type="button" aria-pressed={previewMode === 'multi'} onClick={() => setPreviewMode('multi')} className={`min-h-11 rounded-xl border px-3 text-sm ${previewMode === 'multi' ? 'border-brand-wine bg-brand-sand font-semibold' : 'border-brand-line'}`}>Multicolor</button>
               </div>
               <p className="text-xs leading-5 text-brand-muted mt-2">{previewMode === 'uniform'
-                ? 'Cada grupo muestra el último color añadido. Añadir otro color reemplaza la vista anterior, pero conserva ambos en tu pedido.'
-                : 'Los colores distintos del pedido se reparten entre los lugares disponibles, máximo seis por grupo visual. No se crean objetos adicionales.'}</p>
-              <p className="text-xs text-brand-muted mt-1">Cambiar de modo nunca modifica cantidades ni colores de tu pedido.</p>
+                ? 'Cada grupo muestra un solo color. Tocar otro reemplaza el anterior, sin sumar unidades.'
+                : 'Los colores elegidos para el diseño se reparten entre los seis lugares disponibles sin añadir más objetos.'}</p>
+              <p className="text-xs text-brand-muted mt-1">En esta etapa solo estás diseñando. Definirás las cantidades al finalizar.</p>
             </section>
             <div className="rounded-2xl border border-brand-line bg-white p-3" aria-label="Catálogo compacto de accesorios">
-              <p className="text-xs text-brand-muted mb-2">Selecciona un producto para abrir sus colores y añadirlo. El resto permanece compacto.</p>
+              <p className="text-xs text-brand-muted mb-2">Elige un producto y toca sus colores. Verás el cambio inmediatamente en el modelo.</p>
               {loading && <p role="status">Cargando catálogo…</p>}
               {error && <div role="alert" className="text-sm">No pudimos cargar los accesorios.<button onClick={() => void refresh()} className="block underline min-h-11">Reintentar</button></div>}
               {!loading && !error && filter !== 'mat' && visibleGroups.length === 0 && <p className="text-sm py-3">No hay accesorios que coincidan con tu búsqueda.</p>}
@@ -229,14 +237,15 @@ export default function CreaTuEstudio() {
                       <span className="flex-1 min-w-0"><span className="block text-sm font-medium leading-5 line-clamp-2">{variants[0].name}</span><span className="text-xs text-brand-muted">{money(Math.min(...variants.map(unitPrice)))} / pieza</span></span>
                       <span aria-hidden="true" className="text-xl text-brand-muted">{expanded ? '−' : '+'}</span>
                     </button>
-                    {expanded && <div className="border-t border-brand-line"><ProductPicker variants={variants} items={items} onAdd={add} /></div>}
+                    {expanded && <div className="border-t border-brand-line"><ProductPicker variants={variants} items={items} onAdd={add} mode={previewMode} /></div>}
                   </div>;
                 })}
               </div>}
             </div>
 
-            <section className="bg-white border border-brand-line rounded-2xl p-5" aria-label="Tu selección">
-              <h2 className="font-display text-2xl">Cantidades del pedido <span className="text-sm font-sans">({items.length + matQuantity})</span></h2>
+            <button type="button" className="mm-button w-full min-h-11" onClick={() => setFinalizing(v => !v)}>{finalizing ? 'Seguir diseñando' : 'Finalizar diseño · Revisar cantidades'}</button>
+            {finalizing && <section className="bg-white border border-brand-line rounded-2xl p-5" aria-label="Tu selección">
+              <h2 className="font-display text-2xl">Tu estudio está listo</h2><p className="text-xs text-brand-muted mt-2">Cantidades sugeridas según las seis posiciones del modelo. Editarlas no modifica el diseño.</p>
               {!items.length && !matQuantity && <p className="text-sm text-brand-muted mt-3">Añade tu primera pieza para comenzar.</p>}
               {matQuantity > 0 && <div className="border-b border-brand-line py-3">
                 <button type="button" className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => { setFilter('mat'); setSelectedId('studio-mat'); }}>Tapete personalizado · {matShapes.find(s => s.id === matShape)?.label}</button>
@@ -250,9 +259,9 @@ export default function CreaTuEstudio() {
                   <span className="text-sm">{money(matQuantity * MAT_PRICE)}</span>
                 </div>
               </div>}
-              <ul className="divide-y divide-brand-line mt-2">{summary.map(([key, row]) => <li key={key} className="py-3"><button className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => setSelectedId(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>{row.product.name}</button><p className="text-xs text-brand-muted mt-1">{colorName(row.color)} · {money(unitPrice(row.product))} / pieza</p><div className="flex items-center justify-between mt-2"><div className="flex items-center gap-3"><button className="h-11 w-11 border border-brand-line rounded-full" aria-label={`Quitar una pieza de ${row.product.name}, ${colorName(row.color)}`} onClick={() => remove(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>−</button><span>{row.quantity}</span><button className="h-11 w-11 border border-brand-line rounded-full disabled:opacity-30" aria-label={`Añadir una pieza de ${row.product.name}, ${colorName(row.color)}`} disabled={!canAdd(row.product, items)} onClick={() => add(row.product, row.color)}>+</button></div><span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span></div></li>)}</ul>
+              <ul className="divide-y divide-brand-line mt-2">{summary.map(([key, row]) => <li key={key} className="py-3"><button className="text-left text-sm leading-5 underline decoration-brand-line" onClick={() => setSelectedId(items.find(i => `${i.slug}|${i.color}` === key)!.id)}>{row.product.name}</button><p className="text-xs text-brand-muted mt-1">{colorName(row.color)} · {money(unitPrice(row.product))} / pieza</p><div className="flex items-center justify-between mt-2"><div className="flex items-center gap-3"><button className="h-11 w-11 border border-brand-line rounded-full" aria-label={`Quitar una pieza de ${row.product.name}, ${colorName(row.color)}`} onClick={() => setOrderQuantity(key, row.quantity - 1)}>−</button><span>{row.quantity}</span><button className="h-11 w-11 border border-brand-line rounded-full disabled:opacity-30" aria-label={`Añadir una pieza de ${row.product.name}, ${colorName(row.color)}`} disabled={row.product.stock != null && row.quantity >= row.product.stock} onClick={() => setOrderQuantity(key, row.quantity + 1)}>+</button></div><span className="text-sm">{money(unitPrice(row.product) * row.quantity)}</span></div></li>)}</ul>
               <div className="flex justify-between border-t border-brand-line pt-4 mt-3 font-semibold"><span>Subtotal estimado</span><span>{money(total)}</span></div><p className="text-xs leading-5 text-brand-muted mt-2">Precios del catálogo, antes de promociones por cantidad. Esta demo no genera pedidos ni reserva inventario. La forma, el color y el precio de los tapetes se toman de Crea tu Mat.</p>
-            </section>
+            </section>}
           </aside>
         </div>
         <p className="sr-only" role="status" aria-live="polite">{message}</p>
