@@ -4,9 +4,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createRoom } from './room';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { Product } from '../../lib/fetchProducts';
+import { MAT_DIMENSIONS, type MatShape } from '../../lib/mat-config';
 import { accessoryKind, displaySize, colorName, unitPrice, type VisualItem } from '../../lib/studio/catalog';
 
-type Props = { items: VisualItem[]; products: Product[]; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number; floorColor: string; wallColor: string };
+type Props = { items: VisualItem[]; products: Product[]; mat: { shape: MatShape; color: string } | null; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number; floorColor: string; wallColor: string };
 function dispose(root: THREE.Object3D) {
   root.traverse(obj => {
     const mesh = obj as THREE.Mesh;
@@ -14,6 +15,30 @@ function dispose(root: THREE.Object3D) {
     if (mesh.material) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach(m => m.dispose());
   });
 }
+
+// A single chosen mat design is replicated at the six fixed stations.
+// Rounded ends use the same silhouette rules as Crea tu Mat.
+function createStudioMatGeometry(shape: MatShape) {
+  const { width, height: length } = MAT_DIMENSIONS[shape];
+  const w = width / 100, l = length / 100, halfW = w / 2, halfL = l / 2;
+  const topR = shape === 'clasico' ? .08 : halfW;
+  const bottomR = shape === 'capsula' ? halfW : .08;
+  const outline = new THREE.Shape();
+  outline.moveTo(-halfW + bottomR, -halfL);
+  outline.lineTo(halfW - bottomR, -halfL);
+  outline.quadraticCurveTo(halfW, -halfL, halfW, -halfL + bottomR);
+  outline.lineTo(halfW, halfL - topR);
+  outline.quadraticCurveTo(halfW, halfL, halfW - topR, halfL);
+  outline.lineTo(-halfW + topR, halfL);
+  outline.quadraticCurveTo(-halfW, halfL, -halfW, halfL - topR);
+  outline.lineTo(-halfW, -halfL + bottomR);
+  outline.quadraticCurveTo(-halfW, -halfL, -halfW + bottomR, -halfL);
+  outline.closePath();
+  const geometry = new THREE.ExtrudeGeometry(outline, { depth: .005, bevelEnabled: false, curveSegments: 16 });
+  geometry.rotateX(-Math.PI / 2);
+  return geometry;
+}
+
 export default function StudioScene(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const latest = useRef(props); latest.current = props;
@@ -105,6 +130,19 @@ export default function StudioScene(props: Props) {
   useEffect(() => {
     const state = sceneState.current; if (!state) return;
     dispose(state.products); state.products.clear();
+    if (props.mat) {
+      const geometry = createStudioMatGeometry(props.mat.shape);
+      const material = new THREE.MeshStandardMaterial({ color: props.mat.color, roughness: .86, side: THREE.DoubleSide });
+      const positions = [[-1.8, -1.25], [0, -1.25], [1.8, -1.25], [-1.8, 1.25], [0, 1.25], [1.8, 1.25]];
+      positions.forEach(([x, z]) => {
+        const mat = new THREE.Mesh(geometry.clone(), material.clone());
+        mat.position.set(x, .011, z);
+        mat.receiveShadow = true;
+        mat.userData.itemId = 'studio-mat';
+        state.products.add(mat);
+      });
+      geometry.dispose(); material.dispose();
+    }
     props.items.forEach(item => {
       const product = props.products.find(p => p.slug === item.slug); if (!product) return;
       const group = new THREE.Group(); group.position.set(item.x, item.y, item.z); group.rotation.set(item.tiltX, item.rotation, item.tiltZ);
@@ -160,7 +198,7 @@ export default function StudioScene(props: Props) {
       state.products.add(group);
     });
     state.render();
-  }, [props.items, props.products, props.selectedId]);
+  }, [props.items, props.products, props.selectedId, props.mat]);
   useEffect(() => {
     const state = sceneState.current; if (!state) return;
     state.camera.position.set(...(props.view === 'top' ? [0, 11.6, .01] : [6.5, 5.2, 8.6]) as [number, number, number]);
@@ -171,8 +209,9 @@ export default function StudioScene(props: Props) {
     state.floorMaterial.color.set(props.floorColor); state.wallMaterial.color.set(props.wallColor); state.render();
   }, [props.floorColor, props.wallColor]);
   useEffect(() => {
-    if (detail && !props.items.some(i => i.sourceId === detail.sourceId)) { pinned.current = false; setDetail(null); }
+    if (detail && !props.items.some(i => i.sourceId === detail.sourceId) && !(detail.sourceId === 'studio-mat' && props.mat)) { pinned.current = false; setDetail(null); }
   }, [props.items, detail]);
+  const matDetail = detail?.sourceId === 'studio-mat' && props.mat;
   const detailItem = detail && props.items.find(i => i.sourceId === detail.sourceId);
   const detailProduct = detailItem && props.products.find(p => p.slug === detailItem.slug);
   return <div className="relative h-[360px] sm:h-[520px] lg:h-[600px] overflow-hidden rounded-2xl" style={{ touchAction: 'none' }}>
@@ -182,6 +221,12 @@ export default function StudioScene(props: Props) {
       <p className="text-xs mt-2">{colorName(detailItem.color)} · {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(unitPrice(detailProduct))}</p>
       <p className="text-xs text-brand-muted mt-1 line-clamp-2">{detailProduct.materials?.slice(0, 2).join(' · ') || 'Accesorio para tu estudio'}</p>
       <p className="text-[10px] text-brand-muted mt-2">{detail.pinned ? 'Edita el color en el panel debajo de la vista.' : 'Toca para seleccionar y cambiar el color.'}</p>
+    </div>}
+    {detail && matDetail && <div className="absolute z-10 w-[230px] rounded-xl border border-brand-line bg-white/95 p-3 shadow-lg pointer-events-none" style={{ left: detail.x, top: detail.y }}>
+      <h3 className="text-xs font-semibold">Tapete personalizado</h3>
+      <p className="text-xs mt-2">Forma: {MAT_DIMENSIONS[matDetail.shape] ? ({ capsula: 'Cápsula', bala: 'Bala', clasico: 'Clásico' } as const)[matDetail.shape] : ''}</p>
+      <p className="text-xs mt-1">Color: {matDetail.color}</p>
+      <p className="text-[10px] text-brand-muted mt-2">Edita su forma y color en el panel de tapetes.</p>
     </div>}
     {failed && <div role="alert" className="absolute inset-0 grid place-content-center bg-brand-sand p-8 text-center">No fue posible mostrar la vista 3D en este dispositivo. Puedes seguir seleccionando accesorios en el catálogo.</div>}
   </div>;
