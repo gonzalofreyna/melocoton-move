@@ -127,12 +127,21 @@ export default function CreaTuEstudio() {
     setOrderQuantities(current => ({ ...current, [key]: capped }));
   }
   function updateSelected(change: Partial<StudioItem>) {
-    const p = products.find(p => p.slug === change.slug);
     const original = items.find(i => i.id === selectedId);
-    if (p && change.color !== undefined && original) {
-      const family = groups.find(g => g.some(v => v.slug === original.slug));
+    if (!original) return;
+    const nextProduct = products.find(p => p.slug === (change.slug ?? original.slug));
+    if (nextProduct && change.color !== undefined) {
+      // Editing an accessory in uniform mode must recolor all three copies
+      // of that model. Route through the same action as the catalog swatches.
+      if (previewMode === 'uniform') {
+        add(nextProduct, change.color);
+        return;
+      }
+      // In multicolor mode, edit only the chosen color variant, preserving the
+      // other colors of the same model and its three display stations.
       setItems(current => {
-        const rest = current.filter(i => i.id !== original.id && (previewMode === 'multi' || !family?.some(v => v.slug === i.slug)));
+        const rest = current.filter(i => i.id !== original.id &&
+          !(i.slug === nextProduct.slug && i.color === change.color));
         return [...rest, { ...original, ...change }];
       });
       return;
@@ -185,7 +194,7 @@ export default function CreaTuEstudio() {
             </div>
             {selected && selectedProduct && <div className="rounded-2xl bg-white border border-brand-line p-5 mt-4">
               <div className="flex justify-between gap-3"><h2 className="font-semibold text-sm">{selectedProduct.name}</h2><button className="text-sm underline min-h-11" onClick={() => remove(selected.id)}>Quitar una unidad</button></div>
-              <ColorOptions products={selectedVariants} items={items} excludingId={selected.id} value={`${selected.slug}|${selected.color}`} onChange={(p, color) => { if (canAdd(p, items, selected.id)) updateSelected({ slug: p.slug, color }); }} />
+              <ColorOptions products={selectedVariants} items={items} excludingId={selected.id} value={`${selected.slug}|${selected.color}`} onChange={(p, color) => updateSelected({ slug: p.slug, color })} />
               <p className="text-xs text-brand-muted mt-1">{colorName(selected.color)} · {money(unitPrice(selectedProduct))}</p>
 
             </div>}
