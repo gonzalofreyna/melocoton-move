@@ -100,7 +100,7 @@ const plainBlock = { ...block, slug: 'bloque-yoga-espuma-negro', name: 'Bloque d
 const marbleBlock = { ...block, slug: 'bloque-yoga-marmoleado-negro', name: 'Bloque de Yoga Marmoleado', stock: 99 };
 const twoBlocks = buildVisualItems([...makeItems(plainBlock, 1), ...makeItems(marbleBlock, 1)], [plainBlock, marbleBlock]);
 assert.equal(twoBlocks.length, 12);
-assert.equal(new Set(twoBlocks.map(i => `${i.x}:${i.y}:${i.z}`)).size, 6);
+assert.equal(new Set(twoBlocks.map(i => `${i.x}:${i.y}:${i.z}`)).size, 12);
 assert.ok(twoBlocks.some(i => i.slug === plainBlock.slug));
 assert.ok(twoBlocks.some(i => i.slug === marbleBlock.slug));
 const oneKgDumbbell = { ...base, name: 'Mancuerna Capsula 1 kg', slug: 'mancuerna-capsula-1kg' };
