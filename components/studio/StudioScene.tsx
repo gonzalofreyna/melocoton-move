@@ -21,8 +21,10 @@ function dispose(root: THREE.Object3D) {
 function createStudioMatGeometry(shape: MatShape) {
   const { width, height: length } = MAT_DIMENSIONS[shape];
   const w = width / 100, l = length / 100, halfW = w / 2, halfL = l / 2;
-  const topR = shape === 'clasico' ? .08 : halfW;
-  const bottomR = shape === 'capsula' ? halfW : .08;
+  // Following rotateX(-PI/2), the +Y end faces the mirror (-Z).
+  // Bala: flat end toward mirror, rounded tip pointing into the room.
+  const topR = shape === 'capsula' ? halfW : .08;
+  const bottomR = shape === 'clasico' ? .08 : halfW;
   const outline = new THREE.Shape();
   outline.moveTo(-halfW + bottomR, -halfL);
   outline.lineTo(halfW - bottomR, -halfL);
