@@ -20,6 +20,16 @@ assert.equal(studioQuotePrice(199, 0).total, 0);
 // Five units of a separate product do not change the four-unit line.
 assert.equal(studioQuotePrice(199, 4).discounted, false);
 assert.equal(studioQuotePrice(319, 5).discounted, true);
+ // 30 units retain the per-product 15% rule; at 31, all product lines get 20%.
+assert.equal(studioQuotePrice(199, 4, 30).rate, 0);
+assert.equal(studioQuotePrice(199, 5, 30).rate, .15);
+assert.equal(studioQuotePrice(199, 4, 31).rate, .20);
+assert.equal(studioQuotePrice(199, 4, 31).finalUnit, 159.2);
+assert.equal(studioQuotePrice(199, 5, 31).rate, .20);
+assert.equal(studioQuotePrice(199, 5, 31).total, 796);
+assert.equal(studioQuotePrice(1399, 2, 31).rate, .20);
+assert.equal(studioQuotePrice(199, 0, 31).total, 0);
+
 assert.equal(STATION_COUNT, 3);
 assert.equal(STATIONS.length, 3);
 assert.equal(JSON.stringify(STATIONS.map(s => s.x)), JSON.stringify([-2.05, 0, 2.05]));
