@@ -66,7 +66,9 @@ export function createRoom() {
   for (let i = 0; i < 17; i++) box(.012, .3, .025, basketX - .46 + i * .057, .16, basketZ + .31, wood);
   // Left-wall racks for rings and weighted bars.
   for (const y of [.25, 1.1, 1.65]) box(.07, .055, 2.6, -3.1, y, -.7, wood);
-  for (let i = 0; i < 6; i++) rod(new THREE.Vector3(-3.12, 1.65, -1.85 + i * .43), new THREE.Vector3(-2.95, 1.65, -1.85 + i * .43), .012, dark);
+  for (const y of [1.65, 2.2]) {
+    for (let i = 0; i < 6; i++) rod(new THREE.Vector3(-3.12, y, -1.85 + i * .43), new THREE.Vector3(-2.95, y, -1.85 + i * .43), .012, dark);
+  }
   // Small plant on the top shelf.
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(.13, .1, .22, 20), new THREE.MeshStandardMaterial({ color: '#c3b39f' }));
   pot.position.set(2.7, 2.73, -2.45); room.add(pot);
