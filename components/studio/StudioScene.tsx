@@ -5,7 +5,7 @@ import { createRoom } from './room';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { Product } from '../../lib/fetchProducts';
 import { MAT_DIMENSIONS, type MatShape } from '../../lib/mat-config';
-import { accessoryKind, displaySize, colorName, unitPrice, OVERFLOW_GALLERY_START_X, OVERFLOW_GALLERY_WIDTH, type VisualItem } from '../../lib/studio/catalog';
+import { accessoryKind, displaySize, colorName, unitPrice, STATIONS, STATION_COUNT, OVERFLOW_GALLERY_START_X, OVERFLOW_GALLERY_WIDTH, type VisualItem } from '../../lib/studio/catalog';
 
 type Props = { fill?: boolean; items: VisualItem[]; products: Product[]; mat: { shape: MatShape; color: string } | null; selectedId: string | null; onSelect: (id: string) => void; view: 'perspective' | 'top'; reset: number; floorColor: string; wallColor: string };
 function dispose(root: THREE.Object3D) {
@@ -16,7 +16,7 @@ function dispose(root: THREE.Object3D) {
   });
 }
 
-// A single chosen mat design is replicated at the six fixed stations.
+// A single chosen mat design is replicated at the three stations in front of the mirrors.
 // Rounded ends use the same silhouette rules as Crea tu Mat.
 function createStudioMatGeometry(shape: MatShape) {
   const { width, height: length } = MAT_DIMENSIONS[shape];
@@ -136,7 +136,7 @@ export default function StudioScene(props: Props) {
     if (props.mat) {
       const geometry = createStudioMatGeometry(props.mat.shape);
       const material = new THREE.MeshStandardMaterial({ color: props.mat.color, roughness: .86, side: THREE.DoubleSide });
-      const positions = [[-1.8, -1.25], [0, -1.25], [1.8, -1.25], [-1.8, 1.25], [0, 1.25], [1.8, 1.25]];
+      const positions = STATIONS.map(station => [station.x, station.z]);
       positions.forEach(([x, z]) => {
         const mat = new THREE.Mesh(geometry.clone(), material.clone());
         mat.position.set(x, .011, z);
@@ -153,21 +153,19 @@ export default function StudioScene(props: Props) {
       ? Math.max(...overflowModels.map(item => Math.floor((item.x - OVERFLOW_GALLERY_START_X + .1) / OVERFLOW_GALLERY_WIDTH))) + 1 : 0;
     for (let gallery = 0; gallery < galleryCount; gallery++) {
       const center = OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + 1.45;
-      const platform = new THREE.Mesh(new THREE.BoxGeometry(4.65, .1, 4.9),
+      const platform = new THREE.Mesh(new THREE.BoxGeometry(4.65, .1, 3.4),
         new THREE.MeshStandardMaterial({ color: '#d6cbbd', roughness: .8 }));
       platform.position.set(center, -.05, 0); platform.receiveShadow = true;
       state.products.add(platform);
       const backdrop = new THREE.Mesh(new THREE.BoxGeometry(4.65, 2.4, .08),
         new THREE.MeshStandardMaterial({ color: '#e9e1d6', roughness: .95 }));
-      backdrop.position.set(center, 1.2, -2.45); state.products.add(backdrop);
-      for (const rowZ of [-1.1, 1.1]) {
-        for (let col = 0; col < 3; col++) {
-          const pedestal = new THREE.Mesh(new RoundedBoxGeometry(1.38, .38, 1.6, 3, .07),
-            new THREE.MeshStandardMaterial({ color: '#ede7df', roughness: .85 }));
-          pedestal.position.set(OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + col * 1.45, .19, rowZ);
-          pedestal.castShadow = true; pedestal.receiveShadow = true;
-          state.products.add(pedestal);
-        }
+      backdrop.position.set(center, 1.2, -1.6); state.products.add(backdrop);
+      for (let col = 0; col < STATION_COUNT; col++) {
+        const pedestal = new THREE.Mesh(new RoundedBoxGeometry(1.38, .38, 1.6, 3, .07),
+          new THREE.MeshStandardMaterial({ color: '#ede7df', roughness: .85 }));
+        pedestal.position.set(OVERFLOW_GALLERY_START_X + gallery * OVERFLOW_GALLERY_WIDTH + col * 1.45, .19, .35);
+        pedestal.castShadow = true; pedestal.receiveShadow = true;
+        state.products.add(pedestal);
       }
     }
     props.items.forEach(item => {
