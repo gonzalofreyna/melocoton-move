@@ -17,10 +17,20 @@ export function accessoryKind(product: Product): AccessoryKind | null {
   if (slug.startsWith('pesa-triangular-')) return 'triangle';
   return 'generic';
 }
+// Only color variants of the exact same model share a family.
+// Different weights, finishes and models retain independent display slots.
+export function productFamilyKey(product: Product) {
+  const normalized = product.name.trim().toLocaleLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+  const identity = (product.name + ' ' + product.slug).toLowerCase();
+  const weight = identity.match(/(?:^|[^\d])(\d+(?:[.,-]\d+)?)\s*[-_ ]?\s*(kg|kilos?|kilogramos?|lb|lbs)(?![a-z])/i);
+  const weightKey = weight ? weight[1].replace(/[,-]/g, '.') + ' ' + (weight[2].startsWith('k') ? 'kg' : 'lb') : '';
+  return normalized + '|' + weightKey;
+}
 export function groupAccessories(products: Product[]) {
   const groups = new Map<string, Product[]>();
   products.filter(p => accessoryKind(p)).forEach(p => {
-    const key = p.name.trim().toLowerCase().replace(/\s+/g, ' ');
+    const key = productFamilyKey(p);
     groups.set(key, [...(groups.get(key) || []), p]);
   });
   return [...groups.values()];
@@ -62,75 +72,112 @@ export const STATIONS = Array.from({ length: STATION_COUNT }, (_, index) => ({
 }));
 export type VisualItem = StudioItem & { sourceId: string; y: number; tiltX: number; tiltZ: number };
 // Six fixed visual places per display zone: selected variants share slots, never overlap.
-export type DisplayZone = AccessoryKind | 'dumbbells-mat' | 'ankleWeights-mat';
+export type DisplayZone = AccessoryKind
+  | 'dumbbells-mat' | 'ankleWeights-mat' | 'ankleWeights-heavy'
+  | 'block-marble' | 'mat-left-center' | 'mat-right-center'
+  | 'mat-left-upper' | 'mat-right-upper' | 'mat-left-lower'
+  | 'mat-right-lower' | 'ring-alt' | 'bar-alt';
+
 export function displayZone(product: Product): DisplayZone | null {
   const kind = accessoryKind(product);
   if (!kind) return null;
-  const identity = `${product.name} ${product.slug}`.toLowerCase();
-  // Match exactly 1 kg / 1.0 kg; 0.5 kg and 2.5 kg remain on their shelves.
-  const oneKg = /(?:^|[^\d.,])1(?:[.,]0)?\s*[-_ ]?\s*(?:kg|kilo(?:gramos?)?)(?![\d])/i.test(identity);
-  if (kind === 'dumbbells' && oneKg) return 'dumbbells-mat';
-  if (kind === 'ankleWeights' && oneKg) return 'ankleWeights-mat';
+  const identity = (product.name + ' ' + product.slug).toLowerCase();
+  if (kind === 'block' && /marmol|mármol|marble|marmolead/i.test(identity)) return 'block-marble';
+  const weight = identity.match(/(?:^|[^\d])(\d+(?:[.,-]\d+)?)\s*[-_ ]?\s*(?:kg|kilo(?:gramos?)?)(?![a-z])/i);
+  const kg = weight ? Number(weight[1].replace(/[,-]/g, '.')) : null;
+  if (kind === 'dumbbells' && kg === 1) return 'dumbbells-mat';
+  if (kind === 'ankleWeights' && kg === 1) return 'ankleWeights-mat';
+  if (kind === 'ankleWeights' && kg === 1.5) return 'ankleWeights-heavy';
   return kind;
 }
+
+// Five shelf rows, independent floor/mat stations and dedicated wall racks.
+// A family uses six positions of its own; no two families occupy the same lane.
+const LANE_ORDER: DisplayZone[] = [
+  'ball', 'ring', 'bar',
+  'ankleWeights', 'ankleWeights-mat', 'ankleWeights-heavy',
+  'dumbbells', 'dumbbells-mat', 'block', 'block-marble', 'triangle',
+  'generic', 'mat-left-center', 'mat-right-upper', 'mat-left-upper',
+  'mat-right-center', 'mat-left-lower', 'mat-right-lower', 'ring-alt', 'bar-alt'
+];
+const LANE_PREFERENCES: Partial<Record<DisplayZone, DisplayZone[]>> = {
+  block: ['block', 'block-marble', 'mat-right-upper'],
+  'block-marble': ['block-marble', 'mat-right-upper', 'block'],
+  ankleWeights: ['ankleWeights', 'mat-left-lower'],
+  'ankleWeights-mat': ['ankleWeights-mat', 'mat-right-lower'],
+  'ankleWeights-heavy': ['ankleWeights-heavy', 'mat-left-lower'],
+  dumbbells: ['dumbbells', 'mat-left-center'],
+  'dumbbells-mat': ['dumbbells-mat', 'mat-left-center'],
+  triangle: ['triangle', 'mat-right-upper'],
+  generic: ['generic', 'mat-right-center'],
+  ring: ['ring', 'ring-alt'],
+  bar: ['bar', 'bar-alt'],
+  ball: ['ball', 'mat-right-upper'],
+};
+
 export function displayPlacement(zone: DisplayZone, index: number) {
-  const station = STATIONS[index];
+  const station = STATIONS[index % STATION_COUNT];
   const shelfX = .65 + index * .39;
   const defaults = { x: shelfX, y: 0, z: -2.45, tiltX: 0, tiltZ: 0 };
   switch (zone) {
     case 'mat': return { ...defaults, ...station };
-    // Mat products sit at distinct offsets, not at the same spot on a mat.
-    case 'dumbbells-mat': return { ...defaults, x: station.x - .18, y: .027, z: station.z - .32 };
-    case 'ankleWeights-mat': return { ...defaults, x: station.x + .18, y: .027, z: station.z + .32 };
+    case 'dumbbells-mat': return { ...defaults, x: station.x - .17, y: .027, z: station.z - .46 };
+    case 'ankleWeights-mat': return { ...defaults, x: station.x + .17, y: .027, z: station.z + .46 };
+    case 'ankleWeights-heavy': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .46 };
+    case 'mat-left-center': return { ...defaults, x: station.x - .17, y: .027, z: station.z };
+    case 'mat-right-center': case 'generic': return { ...defaults, x: station.x + .17, y: .027, z: station.z };
+    case 'mat-left-upper': return { ...defaults, x: station.x - .17, y: .027, z: station.z - .72 };
+    case 'mat-right-upper': return { ...defaults, x: station.x + .17, y: .027, z: station.z - .72 };
+    case 'mat-left-lower': return { ...defaults, x: station.x - .17, y: .027, z: station.z + .72 };
+    case 'mat-right-lower': return { ...defaults, x: station.x + .17, y: .027, z: station.z + .72 };
     case 'ball': return { ...defaults, x: -2.80 + (index % 3) * .22, y: .35, z: -.12 + Math.floor(index / 3) * .22 };
-    case 'block': return { ...defaults, y: 1.72 };
     case 'dumbbells': return { ...defaults, y: .82 };
     case 'ankleWeights': return { ...defaults, y: 1.27 };
-    case 'triangle': return { ...defaults, y: 2.17 };
-    case 'generic': return { ...defaults, y: 2.62 };
+    case 'block': return { ...defaults, y: 1.72 };
+    case 'block-marble': return { ...defaults, y: 2.17 };
+    case 'triangle': return { ...defaults, y: 2.62 };
     case 'ring': return { ...defaults, x: -3.02, y: 1.65, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
+    case 'ring-alt': return { ...defaults, x: -3.02, y: 2.2, z: -1.85 + index * .43, tiltZ: Math.PI / 2 };
     case 'bar': return { ...defaults, x: -3.01, y: .65, z: -1.9 + index * .23, tiltZ: Math.PI / 2 };
+    case 'bar-alt': return { ...defaults, x: -3.01, y: .65, z: .4 + index * .23, tiltZ: Math.PI / 2 };
   }
-}
-function variantFamily(product: Product, zone: DisplayZone) {
-  if (zone === 'block') return /marmol|marble/i.test(`${product.slug} ${product.name}`) ? 'block-marble' : 'block-solid';
-  return product.name.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 export type PreviewMode = 'uniform' | 'multi';
 export function buildVisualItems(
   items: StudioItem[], products: Product[], selectedId?: string | null, mode: PreviewMode = 'uniform'
 ): VisualItem[] {
   const catalog = new Map(products.map(p => [p.slug, p]));
-  const zones = new Map<DisplayZone, Map<string, Map<string, StudioItem>>>();
+  const families = new Map<string, { zone: DisplayZone; variants: Map<string, StudioItem> }>();
   for (const item of items) {
     const product = catalog.get(item.slug);
     const zone = product && displayZone(product);
     if (!product || !zone) continue;
-    const families = zones.get(zone) || new Map<string, Map<string, StudioItem>>();
-    const family = variantFamily(product, zone);
-    const variants = families.get(family) || new Map<string, StudioItem>();
-    const key = `${item.slug}|${item.color}`;
-    // Reinsert so the last added color is considered the currently showcased one,
-    // even when the same color was already in the order.
-    variants.delete(key);
-    variants.set(key, item);
-    families.set(family, variants);
-    zones.set(zone, families);
+    const familyKey = productFamilyKey(product);
+    const group = families.get(familyKey) || { zone, variants: new Map<string, StudioItem>() };
+    const key = item.slug + '|' + item.color;
+    group.variants.delete(key);
+    group.variants.set(key, item);
+    families.set(familyKey, group);
   }
   const result: VisualItem[] = [];
-  for (const [zone, families] of zones) {
-    const groups = [...families.values()].map(variants => {
-      const unique = [...variants.values()];
-      // The order retains all selected colors. Only the preview is limited.
-      return mode === 'multi' ? unique.slice(-STATION_COUNT) : unique.slice(-1);
-    });
-    // Share the six fixed positions across families to prevent two types of
-    // blocks or other accessories from rendering in the same physical spot.
+  const occupiedLanes = new Set<DisplayZone>();
+  // Display six copies for EACH model, not six shared by an entire category.
+  const ranked = [...families].sort(([keyA, a], [keyB, b]) =>
+    LANE_ORDER.indexOf(a.zone) - LANE_ORDER.indexOf(b.zone) || keyA.localeCompare(keyB));
+  for (const [familyKey, family] of ranked) {
+    const preference = LANE_PREFERENCES[family.zone] || [family.zone];
+    const lane = [...preference, ...LANE_ORDER].find(candidate => candidate !== 'mat' && !occupiedLanes.has(candidate));
+    // Capacity is finite: never render one family on top of another.
+    if (!lane) continue;
+    occupiedLanes.add(lane);
+    const values = [...family.variants.values()];
+    const shown = mode === 'multi' ? values.slice(-STATION_COUNT) : values.slice(-1);
     for (let index = 0; index < STATION_COUNT; index++) {
-      const group = groups[index % groups.length];
-      const item = group[Math.floor(index / groups.length) % group.length];
-      result.push({ ...item, id: `${zone}-station-${index}`, sourceId: item.id,
-        ...displayPlacement(zone, index), rotation: 0 });
+      const item = shown[index % shown.length];
+      result.push({
+        ...item, id: encodeURIComponent(familyKey) + '-station-' + index, sourceId: item.id,
+        ...displayPlacement(lane, index), rotation: 0
+      });
     }
   }
   return result;
