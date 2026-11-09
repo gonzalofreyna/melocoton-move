@@ -80,7 +80,10 @@ export default function StudioScene(props: Props) {
     const resize = () => {
       const { width, height } = container.getBoundingClientRect();
       if (!width || !height) return;
-      renderer.setSize(width, height); camera.aspect = width / height; camera.updateProjectionMatrix(); render();
+      renderer.setSize(width, height); camera.aspect = width / height;
+      // Fit the whole studio in narrow portrait viewports instead of cropping its sides.
+      camera.zoom = latest.current.fill ? Math.max(.58, Math.min(1, camera.aspect)) : 1;
+      camera.updateProjectionMatrix(); render();
     };
     const observer = new ResizeObserver(resize); observer.observe(container); controls.update(); resize();
     const ray = new THREE.Raycaster(); let down = { x: 0, y: 0 };
@@ -103,8 +106,8 @@ export default function StudioScene(props: Props) {
     const pointerLeave = () => { if (!pinned.current) setDetail(null); };
     const pointerUp = (e: PointerEvent) => {
       if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
-      const hit = hitAt(e); pinned.current = Boolean(hit);
-      setDetail(hit ? { ...hit, pinned: true } : null);
+      const hit = hitAt(e); pinned.current = Boolean(hit) && !latest.current.fill;
+      setDetail(hit && !latest.current.fill ? { ...hit, pinned: true } : null);
       if (hit) latest.current.onSelect(hit.sourceId);
     };
     const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') { pinned.current = false; setDetail(null); } };
