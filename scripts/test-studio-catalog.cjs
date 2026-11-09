@@ -145,6 +145,15 @@ const sameNameMarble = { ...marbleBlock, name: 'Bloque de Yoga' };
 assert.equal(groupAccessories([sameNamePlain, sameNameMarble]).length, 2);
 assert.equal(buildVisualItems([...makeItems(sameNamePlain, 1), ...makeItems(sameNameMarble, 1)],
   [sameNamePlain, sameNameMarble]).length, 12, 'Different finishes cannot share a model lane');
+const ringModels = [
+  { ...ring, name: 'Aro Magic Ring 32 cm', slug: 'magic-ring-pilates-32cm' },
+  { ...ring, name: 'Aro Magic Ring 5 lb', slug: 'magic-ring-pilates-5lb' },
+  { ...ring, name: 'Aro Magic Ring 7 lb', slug: 'magic-ring-pilates-7lb' },
+  { ...ring, name: 'Aro Magic Ring 10 lb', slug: 'magic-ring-pilates-10lb' },
+];
+const allRings = buildVisualItems(ringModels.flatMap(p => makeItems(p, 1)), ringModels);
+assert.equal(allRings.length, 24, 'Four ring models each retain six places');
+assert.equal(new Set(allRings.map(i => i.x + ':' + i.y + ':' + i.z)).size, 24);
 console.log('Independent product lanes: 0.5 kg vs 1.5 kg polainas, blocks, and colors verified.');
 
 console.log('Distinct blocks and 1 kg mat placements: no overlapping groups.');
