@@ -108,7 +108,6 @@ export default function MobileStudio(props: Props) {
   const visibleGroups = useMemo(() => props.groups.filter(g =>
     g.some(p => p.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))), [props.groups, search]);
   const summary = props.summary;
-  const total = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, props.matQuantity * MAT_PRICE);
   const accessorySubtotal = summary.reduce((sum, [, row]) => sum + unitPrice(row.product) * row.quantity, 0);
   const count = summary.reduce((sum, [, row]) => sum + row.quantity, props.matQuantity);
   const height = finalizing ? 'calc(100dvh - 56px - env(safe-area-inset-top, 0px))' : sizeHeight[sheet];
