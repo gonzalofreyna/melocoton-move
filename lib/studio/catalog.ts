@@ -68,7 +68,7 @@ export function displayZone(product: Product): DisplayZone | null {
   if (!kind) return null;
   const identity = `${product.name} ${product.slug}`.toLowerCase();
   // Match exactly 1 kg / 1.0 kg; 0.5 kg and 2.5 kg remain on their shelves.
-  const oneKg = /(?:^|[^\\d.,])1(?:[.,]0)?\\s*[-_ ]?\\s*(?:kg|kilo(?:gramos?)?)(?![\\d])/i.test(identity);
+  const oneKg = /(?:^|[^\d.,])1(?:[.,]0)?\s*[-_ ]?\s*(?:kg|kilo(?:gramos?)?)(?![\d])/i.test(identity);
   if (kind === 'dumbbells' && oneKg) return 'dumbbells-mat';
   if (kind === 'ankleWeights' && oneKg) return 'ankleWeights-mat';
   return kind;
@@ -94,7 +94,7 @@ export function displayPlacement(zone: DisplayZone, index: number) {
 }
 function variantFamily(product: Product, zone: DisplayZone) {
   if (zone === 'block') return /marmol|marble/i.test(`${product.slug} ${product.name}`) ? 'block-marble' : 'block-solid';
-  return product.name.trim().toLowerCase().replace(/\\s+/g, ' ');
+  return product.name.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 export function buildVisualItems(items: StudioItem[], products: Product[], selectedId?: string | null): VisualItem[] {
   const catalog = new Map(products.map(p => [p.slug, p]));
