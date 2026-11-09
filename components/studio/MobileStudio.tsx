@@ -15,6 +15,7 @@ type Props = {
   onBuyAccessories: () => void;
   onBuyPersonalizedMat: () => void;
   accessoryCount: number;
+  purchaseError: string;
   remove: (id: string) => void;
   updateSelected: (change: Partial<StudioItem>) => void;
   matShape: MatShape; matColor: string; matEnabled: boolean; matQuantity: number;
@@ -311,6 +312,7 @@ export default function MobileStudio(props: Props) {
         <div className="mb-2 flex items-center justify-between text-sm font-semibold">
           <span>{props.accessoryCount > 0 ? "Accesorios antes de descuento" : "Tapetes por separado"}</span><span>{money(props.accessoryCount > 0 ? accessorySubtotal : props.matQuantity * MAT_PRICE)}</span>
         </div>
+        {props.purchaseError && <p role="alert" className="mb-2 text-xs text-red-700">{props.purchaseError}</p>}
         {props.accessoryCount > 0 && <button type="button" className="mm-button min-h-12 w-full" onClick={props.onBuyAccessories}>
           Comprar accesorios · Ver carrito
         </button>}
