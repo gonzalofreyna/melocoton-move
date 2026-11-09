@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useScrollVisibility } from "../hooks/useScrollVisibility";
 import {
   UserIcon,
@@ -27,6 +27,7 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
   const [openSearchModal, setOpenSearchModal] = useState(false); // 👈 nuevo estado
 
   const visible = useScrollVisibility();
+  const reducedMotion = useReducedMotion();
   const { cartCount, toggleCart } = useCart();
   const router = useRouter();
   const isHome = router.pathname === "/";
@@ -65,7 +66,7 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
       observer?.disconnect();
       window.removeEventListener("resize", updateOffset);
     };
-  }, [visible, onHeightChange]);
+  }, [onHeightChange]);
 
   // 🔄 Cargar productos para sugerencias (desktop)
   useEffect(() => {
@@ -138,14 +139,13 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
 
   return (
     <>
-      <AnimatePresence>
-        {visible && (
-          <motion.header
+      <motion.header
             ref={headerRef}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
+            initial={false}
+            animate={{ opacity: visible ? 1 : 0, y: visible ? "0%" : "-150%" }}
+            transition={reducedMotion ? { duration: 0 } : { duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            style={{ pointerEvents: visible ? "auto" : "none" }}
+            aria-hidden={!visible}
             className={`fixed left-0 top-9 z-40 grid w-full grid-cols-3 items-center gap-2 px-4 py-2.5 transition-colors duration-300 md:px-6 md:py-3 ${overlayHeader ? "border-b border-transparent bg-transparent text-white [&_nav]:!text-white [&_nav_a]:!text-white" : "border-b border-brand-line bg-white/95 text-brand-blue shadow-[0_4px_22px_rgba(48,41,43,0.06)] backdrop-blur-md"}`}
           >
             {/* 🍑 Columna izquierda: navegación */}
@@ -289,9 +289,7 @@ export default function Header({ onHeightChange }: { onHeightChange?: (offset: n
               </button>
             </div>
           </motion.header>
-        )}
-      </AnimatePresence>
-
+ 
       {/* 📂 Drawer menú móvil */}
       <MobileMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
