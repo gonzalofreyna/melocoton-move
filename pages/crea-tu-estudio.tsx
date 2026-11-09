@@ -12,8 +12,8 @@ const money = (value: number) => new Intl.NumberFormat('es-MX', { style: 'curren
 function ColorOptions({ products, value, items, excludingId, onChange }: { products: Product[]; value: string; items: StudioItem[]; excludingId?: string; onChange: (p: Product, color: string) => void }) {
   return <div className="flex flex-wrap gap-1" aria-label="Colores disponibles">
     {products.flatMap(p => (p.colors.length ? p.colors : ['']).map(color => {
-      const key = `${p.slug}|${color}`; const available = canAdd(p, items, excludingId);
-      return <button key={key} type="button" disabled={!available} aria-pressed={value === key} aria-label={`${colorName(color)}${available ? '' : ' · sin existencia disponible'}`} title={colorName(color)} onClick={() => onChange(p, color)} className={`h-11 w-11 grid place-items-center rounded-full border-2 disabled:opacity-30 ${value === key ? 'border-brand-wine' : 'border-transparent'}`}>
+      const key = `${p.slug}|${color}`; const available = true; // Preview colors are not inventory reservations.
+      return <button key={key} type="button" aria-pressed={value === key} aria-label={colorName(color)} title={colorName(color)} onClick={() => onChange(p, color)} className={`h-11 w-11 grid place-items-center rounded-full border-2 disabled:opacity-30 ${value === key ? 'border-brand-wine' : 'border-transparent'}`}>
         <span className="h-7 w-7 rounded-full border border-black/15" style={{ backgroundColor: color || '#c5b6a6' }} />
       </button>;
     }))}
@@ -90,7 +90,8 @@ export default function CreaTuEstudio() {
       const product = products.find(p => p.slug === item.slug);
       if (!product) continue;
       const key = item.slug + '|' + item.color;
-      const quantity = orderQuantities[key] ?? counts.get(key) ?? 0;
+      const suggested = counts.get(key) ?? 0;
+      const quantity = Math.max(0, Math.min(orderQuantities[key] ?? suggested, product.stock == null ? 999 : product.stock));
       unique.set(key, { product, color: item.color, quantity });
     }
     return [...unique.entries()];
