@@ -140,6 +140,11 @@ const distinctColorVariant = { ...halfKgAnkle, slug: 'polainas-0-5kg-rosa', colo
 const twoColors = buildVisualItems([...makeItems(halfKgAnkle, 1), ...makeItems(distinctColorVariant, 1)], [halfKgAnkle, distinctColorVariant], null, 'multi');
 assert.equal(twoColors.length, STATION_COUNT, 'Colors of one model keep one six-slot lane');
 assert.equal(new Set(twoColors.map(i => i.slug)).size, 2, 'Both colors appear without displacing a separate model');
+const sameNamePlain = { ...plainBlock, name: 'Bloque de Yoga' };
+const sameNameMarble = { ...marbleBlock, name: 'Bloque de Yoga' };
+assert.equal(groupAccessories([sameNamePlain, sameNameMarble]).length, 2);
+assert.equal(buildVisualItems([...makeItems(sameNamePlain, 1), ...makeItems(sameNameMarble, 1)],
+  [sameNamePlain, sameNameMarble]).length, 12, 'Different finishes cannot share a model lane');
 console.log('Independent product lanes: 0.5 kg vs 1.5 kg polainas, blocks, and colors verified.');
 
 console.log('Distinct blocks and 1 kg mat placements: no overlapping groups.');
