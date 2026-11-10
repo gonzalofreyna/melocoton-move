@@ -165,36 +165,143 @@ export default function SuccessPage({
   };
 
   const handleDownloadPDF = async () => {
-    if (!pdfRef.current) return;
-    const html2canvas = (await import("html2canvas")).default;
+    // PDF vectorial A4: independiente de la vista móvil y sin capturas HTML.
     const { jsPDF } = await import("jspdf");
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const W = 210;
+    const margin = 19;
+    const right = W - margin;
+    const ink: [number, number, number] = [57, 49, 51];
+    const muted: [number, number, number] = [113, 108, 110];
+    const peach: [number, number, number] = [239, 206, 193];
+    let y = 0;
 
-    const canvas = await html2canvas(pdfRef.current, { scale: 2 });
-    const imgData = canvas.toDataURL("image/jpeg", 0.98);
+    const text = (value: string, x: number, yy: number, size = 10, bold = false, color = ink, align: "left" | "right" = "left") => {
+      pdf.setFont("helvetica", bold ? "bold" : "normal");
+      pdf.setFontSize(size);
+      pdf.setTextColor(...color);
+      pdf.text(value, x, yy, { align });
+    };
+    const rule = (yy: number) => {
+      pdf.setDrawColor(228, 222, 218);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, yy, right, yy);
+    };
+    const pageBreak = (needed: number) => {
+      if (y + needed <= 266) return;
+      pdf.addPage();
+      y = 23;
+      text("MELOCOTÓN MOVE", margin, y, 11, true);
+      y += 12;
+      rule(y);
+      y += 10;
+    };
+    const lines = (value: string, width: number, size = 9) => {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(size);
+      return pdf.splitTextToSize(value, width) as string[];
+    };
 
-    const pdf = new jsPDF({
-      unit: "px",
-      format: [canvas.width, canvas.height],
-      orientation: "portrait",
+    // Cabecera corporativa.
+    pdf.setFillColor(...peach);
+    pdf.rect(0, 0, W, 7, "F");
+    text("MELOCOTÓN", margin, 26, 22, true);
+    text("MOVE", margin, 33, 10, true, muted);
+    text("COMPROBANTE DE COMPRA", right, 27, 10, true, ink, "right");
+    text("Pago confirmado", right, 34, 9, false, muted, "right");
+    rule(42);
+
+    y = 54;
+    text("RESUMEN DEL PEDIDO", margin, y, 9, true);
+    y += 8;
+    text("Fecha de emisión", margin, y, 9, false, muted);
+    text(new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" }), right, y, 9, false, ink, "right");
+    y += 8;
+    if (customerEmail) {
+      text("Correo de compra", margin, y, 9, false, muted);
+      const emailLines = lines(customerEmail, 89, 9);
+      emailLines.forEach((line, index) => text(line, right, y + index * 5, 9, false, ink, "right"));
+      y += Math.max(8, emailLines.length * 5 + 3);
+    }
+    if (orderId) {
+      text("Referencia Stripe", margin, y, 9, false, muted);
+      y += 6;
+      const idLines = lines(orderId, W - margin * 2, 8);
+      idLines.forEach((line) => { text(line, margin, y, 8, false, muted); y += 4.5; });
+      y += 3;
+    }
+    rule(y);
+    y += 11;
+
+    text("DETALLE DE PRODUCTOS", margin, y, 9, true);
+    y += 10;
+    text("PRODUCTO", margin, y, 8, true, muted);
+    text("CANT.", 150, y, 8, true, muted, "right");
+    text("IMPORTE", right, y, 8, true, muted, "right");
+    y += 5;
+    rule(y);
+    y += 8;
+    (items || []).forEach((item) => {
+      const description = lines(item.description || "Artículo", 111, 9);
+      pageBreak(Math.max(12, description.length * 5 + 6));
+      description.forEach((line, index) => text(line, margin, y + index * 5, 9));
+      text(String(item.quantity), 150, y, 9, false, ink, "right");
+      text(fmt(item.paidAmountCents ?? item.amountSubtotal, currency), right, y, 9, false, ink, "right");
+      y += Math.max(12, description.length * 5 + 6);
+      rule(y - 4);
     });
 
-    pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
-    const pdfBlob = pdf.output("blob");
-    const url = URL.createObjectURL(pdfBlob);
+    pageBreak(40);
+    y += 6;
+    text("Envío", margin, y, 9, false, muted);
+    text(shippingLabel || "Envío", right, y, 9, false, ink, "right");
+    y += 10;
+    pdf.setFillColor(249, 245, 242);
+    pdf.roundedRect(margin, y, W - margin * 2, 19, 2, 2, "F");
+    text("TOTAL PAGADO", margin + 7, y + 12, 10, true);
+    text(fmt(amountTotal, currency), right - 7, y + 12, 16, true, ink, "right");
+    y += 31;
 
-    // 🔍 Detectar si es dispositivo móvil
+    if (shippingName || shippingAddress) {
+      pageBreak(37);
+      text("ENTREGA", margin, y, 9, true);
+      y += 9;
+      if (shippingName) { text(shippingName, margin, y, 10, true); y += 6; }
+      const addressLines = lines(shippingAddress || "", W - margin * 2, 9);
+      addressLines.forEach((line) => {
+        pageBreak(6);
+        text(line, margin, y, 9, false, muted);
+        y += 5.5;
+      });
+      y += 5;
+    }
+    if (personalized) {
+      pageBreak(38);
+      rule(y);
+      y += 9;
+      text("INFORMACIÓN DE PERSONALIZACIÓN", margin, y, 9, true);
+      y += 7;
+      const note = "Entrega estimada: 45 días hábiles. Comparte las especificaciones de tu diseño por WhatsApp para confirmar la personalización.";
+      lines(note, W - margin * 2, 9).forEach((line) => { pageBreak(6); text(line, margin, y, 9, false, muted); y += 5.5; });
+    }
+
+    // Pie informativo: comprobante comercial, no CFDI.
+    pageBreak(23);
+    y = Math.max(y + 9, 252);
+    rule(y);
+    text("Gracias por comprar en Melocotón Move", margin, y + 8, 9, true);
+    text("Este comprobante no sustituye una factura fiscal (CFDI).", margin, y + 14, 8, false, muted);
+    text("melocotonmove.com", right, y + 8, 8, false, muted, "right");
+
+    const filename = "Comprobante-MelocotonMove-" + (orderId || "pedido") + ".pdf";
+    // En iOS, abrir el PDF permite compartirlo o guardarlo en Archivos.
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
     if (isMobile) {
-      // 📱 En móvil: abrir en nueva pestaña
-      window.open(url, "_blank");
+      const blobUrl = URL.createObjectURL(pdf.output("blob"));
+      const opened = window.open(blobUrl, "_blank");
+      if (!opened) pdf.save(filename);
     } else {
-      // 💻 En escritorio: forzar descarga
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Comprobante-MelocotonMove-${orderId || "pedido"}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      pdf.save(filename);
     }
   };
 
